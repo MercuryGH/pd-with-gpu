@@ -22,6 +22,18 @@ Before an A-Jacobi iteration starts, we need to group adjacent vertices in one C
 2. 后面的Precomputation
 3. 在仔细读Jacobi算法的过程中，我还发现了一些作者笔误（或者是我的理解错误），它们都在
 
+## A-Jacobi算法之前的一些GPU算法
+
+* Parallel iterative solvers for real-time elastic deformations（包括各种算法介绍，比较详细）.
+* Vivace: A practical gauss-seidel method for stable soft body dynamics（染色GS GPU算法，在Parallel一文中有介绍）
+* Descent methods for elastic body simulation on the GPU（基于下降的 GPU算法，在Parallel一文中有介绍）
+
+## 为什么k阶A-Jacobi是迭代k邻接结点
+
+* Discrete quadratic curvature energies （有两种不同版本的文章，但似乎都没什么用）
+* All these operators take a vertex xi and its 1-ring neighborhood as input, and provide an estimate in the form of a simple formula
+  that we will frame for clarity.
+
 ## 复现操作指南
 
 * Cloth, 20 (default), 20 (default), compute

@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 	viewer.plugins.push_back(&plugin);
 	igl::opengl::glfw::imgui::ImGuiMenu menu;
 	plugin.widgets.push_back(&menu);
-	pd::test();
+	//pd::test();
 
 	// pd simulatee
 	pd::DeformableMesh model;
@@ -37,7 +37,8 @@ int main(int argc, char* argv[])
 	viewer.callback_mouse_down = ui::mouse_down_handler{ &model, &user_control };
 	viewer.callback_mouse_move = ui::mouse_move_handler{ &model, &user_control, &physics_params, &f_ext };
 	viewer.callback_mouse_up = ui::mouse_up_handler{ &user_control };
-	viewer.callback_pre_draw = ui::pre_draw_handler{ &solver, &model, &physics_params, &f_ext, &solver_params }; // frame routine
+	ui::pre_draw_handler frame_callback{ &solver, &model, &physics_params, &f_ext, &solver_params };
+	viewer.callback_pre_draw = frame_callback; // frame routine
 
 	const auto reset_model = [&](Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXi& E)
 	{
@@ -57,12 +58,14 @@ int main(int argc, char* argv[])
 		// reset viewer
 		viewer.data().clear();
 		viewer.data().set_mesh(model.positions(), model.faces());
+		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)0x66 / 0xff, (double)0xcc / 0xff, 1.0);
+		viewer.data().set_colors(TEXTURE_COLOR);
 		viewer.core().align_camera_center(model.positions());
 	};
 
 	menu.callback_draw_viewer_window = [&]() 
 	{
-		ImGui::SetNextWindowSize(ImVec2(400.0f, 500.0f));
+		ImGui::SetNextWindowSize(ImVec2(400.0f, 700.0f));
 		ImGui::Begin("PD Panel");
 
 		//const float w = ImGui::GetContentRegionAvailWidth();
@@ -148,6 +151,11 @@ int main(int argc, char* argv[])
 		if (ImGui::CollapsingHeader("Picking Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
 			ImGui::Text("Ctrl + LMC to apply external force to the model.");
+			ImGui::Text("State: %s", user_control.apply_ext_force ? "Applying" : "Not applying");
+			if (user_control.apply_ext_force)
+			{
+				ImGui::Text("Vertex forced: %d", user_control.ext_forced_vertex_idx);
+			}
 
 			ImGui::InputFloat("Dragging Force", &physics_params.external_force_val, 1.f, 10.f, "%.3f");
 		}
@@ -163,6 +171,7 @@ int main(int argc, char* argv[])
 
 		if (ImGui::CollapsingHeader("Simulating Control"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
+			ImGui::Text("Solver: %s", solver.dirty ? "not ready" : "ready");
 			ImGui::InputFloat("Timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f");
 			ImGui::InputInt("Solver #Itr", &solver_params.n_solver_iterations);
 			if (ImGui::Button("Simulate 1 Step") && viewer.core().is_animating == false)
@@ -171,6 +180,14 @@ int main(int argc, char* argv[])
 			}
 
 			ImGui::Separator();
+			// statistics
+			if (viewer.core().is_animating)
+			{
+				ImGui::Text("Last frame time elapsed: %lf ms", frame_callback.last_elapse_time);
+				ImGui::Text("FPS = %lf", 1000.0 / frame_callback.last_elapse_time);
+
+				// update every 1 seconds
+			}
 
 			ImGui::Checkbox("Auto Simulate!", &viewer.core().is_animating);
 		}

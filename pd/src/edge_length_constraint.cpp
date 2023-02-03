@@ -16,7 +16,7 @@ namespace pd {
 		Eigen::Vector3f vj_pos = q.block(3 * vj, 0, 3, 1);
 		Eigen::Vector3f j2i = vj_pos - vi_pos;
 
-		float delta_x = j2i.norm() - rest_length;
+		float delta_x = j2i.norm() - rest_length; // This is the constraint set C_i (edge length)
 		Eigen::Vector3f j2i_normalized = j2i.normalized();
 		
 		Eigen::Vector3f pi1 = vi_pos + 0.5 * delta_x * j2i_normalized;

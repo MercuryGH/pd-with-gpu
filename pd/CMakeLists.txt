@@ -32,6 +32,5 @@ target_link_libraries(pd
 PRIVATE 
     igl::core 
     igl::imgui
+    util
 )
-
-

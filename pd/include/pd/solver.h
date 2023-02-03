@@ -17,7 +17,9 @@ namespace pd
 			this->dirty = true;
 		}
 
-		void precompute(float dt);
+		// Precompute A = LU(Cholesky) in vanilla PD
+		// Precompute A products and A coefficients in A-Jacobi
+		void precompute(float dt); 
 		void step(const Eigen::MatrixXd& f_ext, int n_iterations);
 
 		// dirty = true indicates the solver needs to recompute

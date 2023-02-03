@@ -11,3 +11,4 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDER ON)
 
 add_subdirectory(pd)
+add_subdirectory(util)

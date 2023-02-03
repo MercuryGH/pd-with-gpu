@@ -130,6 +130,10 @@ namespace pd {
 		};
 
 		const Eigen::MatrixXd result = unflatten(q_nplus1).cast<double>();
+		//{
+		//	std::cout << "Test\n";
+		//	std::cout << result.block(30, 0, 9, 1) << "\n";
+		//}
 		model->update_positions_and_velocities(result, (result - model->positions()) * static_cast<double>(dt_inv));
 	}
 }
