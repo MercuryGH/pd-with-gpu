@@ -194,7 +194,10 @@ namespace ui
 
 		if (solver->dirty == true)
 		{
-			solver->precompute(solver_params->dt);
+			solver->set_dt(solver_params->dt);
+			solver->set_solver(solver_params->selected_solver);
+			solver->precompute();
+			solver->dirty = false;
 		}
 		solver->step(*f_ext, solver_params->n_solver_iterations);
 

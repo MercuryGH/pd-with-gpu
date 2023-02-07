@@ -180,6 +180,36 @@ int main(int argc, char* argv[])
 			}
 
 			ImGui::Separator();
+
+			// Solver Selector
+			const char* items[] = {"Direct", "Parallel Jacobi", "A-Jacobi"};
+			static const char* cur_select_item = "Direct";
+			if (ImGui::BeginCombo("##Current selected solver", cur_select_item))
+			{
+				for (int i = 0; i < IM_ARRAYSIZE(items); i++)
+				{
+					bool is_selected = (cur_select_item == items[i]);
+					if (ImGui::Selectable(items[i], is_selected))
+					{
+						// If changed solver
+						if (solver_params.selected_solver != static_cast<ui::LinearSysSolver>(i))
+						{
+							solver.dirty = true;
+						}
+
+						// change solver
+						cur_select_item = items[i];
+						solver_params.selected_solver = static_cast<ui::LinearSysSolver>(i);
+					}
+					if (is_selected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::Separator();
 			// statistics
 			if (viewer.core().is_animating)
 			{

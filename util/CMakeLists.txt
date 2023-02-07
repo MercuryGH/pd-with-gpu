@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
+
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
-add_library(util STATIC ${srcs})
+if (CUDA_ENABLE)
+    include_directories("E:\\CUDA\\v11.6\\include")
+    file(GLOB_RECURSE cuda_srcs src/*.cu)
+    add_library(util STATIC ${cuda_srcs} ${srcs})
+else()
+    add_library(util STATIC ${srcs})
+endif()
+
 target_include_directories(util PUBLIC include)
 

@@ -2,15 +2,21 @@
 #include <pd/solver.h>
 
 namespace pd {
-	void Solver::precompute(float dt)
+	Solver::Solver()
 	{
-		this->dt = dt;
+		solvers[0] = new CholeskyDirect();
+		solvers[1] = new ParallelJacobi();
+		solvers[2] = new AJacobi();
+	}
+
+	void Solver::precompute_A()
+	{
 		const float dtsqr_inv = 1.0f / (dt * dt);
 		const int n = model->positions().rows(); // #vertex
 
 		// Use triplets (i, j, val) to represent sparse matrix
 		// Triplets will sum up for possible duplicates
-		std::vector<Eigen::Triplet<float>> A_triplets; 
+		std::vector<Eigen::Triplet<float>> A_triplets;
 
 		// preallocate enough space to avoid vector enlarge overhead
 		const size_t vector_init_size = 3 * n;
@@ -30,14 +36,20 @@ namespace pd {
 			A_triplets.emplace_back(3 * i + 2, 3 * i + 2, model->m(i) * dtsqr_inv);
 		}
 
-		Eigen::SparseMatrix<float> A(3 * n, 3 * n);
+		A.resize(3 * n, 3 * n);
 		A.setFromTriplets(A_triplets.begin(), A_triplets.end());
+	}
 
-		cholesky_decomp.compute(A);
+	void Solver::precompute()
+	{
+		precompute_A();
+		linear_sys_solver->set_A(A);
+	}
 
-		//std::cout << "A(1) = " << A.row(1) << "\n";
-
-		dirty = false;
+	void Solver::set_solver(ui::LinearSysSolver sel)
+	{
+		int idx = static_cast<int>(sel);
+		this->linear_sys_solver = this->solvers[idx];
 	}
 
 	void Solver::step(const Eigen::MatrixXd& f_ext, int n_iterations)
@@ -79,7 +91,7 @@ namespace pd {
 		{
 			Eigen::Matrix3f m_i;
 			m_i.setZero();
-			for (int j = 0; j < 3; j++) 
+			for (int j = 0; j < 3; j++)
 				m_i(j, j) = static_cast<float>(model->m(i));
 
 			const auto sn_i = s_n.block(3 * i, 0, 3, 1);
@@ -112,7 +124,9 @@ namespace pd {
 			//	std::cout << "b = " << b << "\n";
 
 			// Ax = b
-			q_nplus1 = cholesky_decomp.solve(b);
+			// This is varied between different solver
+			q_nplus1 = linear_sys_solver->solve(b);
+
 			//if (k == 5)
 			//	std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}

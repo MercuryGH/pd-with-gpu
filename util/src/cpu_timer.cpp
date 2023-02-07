@@ -10,7 +10,7 @@ namespace util
 	void CpuTimer::stop() {
 		end_time = std::chrono::steady_clock::now();
 		running = false;
-		last_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+		//last_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
 	}
 
 	double CpuTimer::elapsed_milliseconds() {
@@ -31,11 +31,11 @@ namespace util
 		return elapsed_milliseconds() / 1000.0;
 	}
 
-	double CpuTimer::last_elpased_milliseconds() {
-		return last_duration;
-	}
+	//double CpuTimer::last_elpased_milliseconds() {
+	//	return last_duration;
+	//}
 
-	double CpuTimer::last_elpased_seconds() {
-		return last_duration / 1000.0;
-	}
+	//double CpuTimer::last_elpased_seconds() {
+	//	return last_duration / 1000.0;
+	//}
 }
