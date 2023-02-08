@@ -7,6 +7,7 @@ namespace pd {
 		solvers[0] = new CholeskyDirect();
 		solvers[1] = new ParallelJacobi();
 		solvers[2] = new AJacobi();
+		linear_sys_solver = solvers[0];
 	}
 
 	void Solver::precompute_A()
@@ -38,6 +39,7 @@ namespace pd {
 
 		A.resize(3 * n, 3 * n);
 		A.setFromTriplets(A_triplets.begin(), A_triplets.end());
+		A.makeCompressed();
 	}
 
 	void Solver::precompute()
@@ -49,11 +51,19 @@ namespace pd {
 	void Solver::set_solver(ui::LinearSysSolver sel)
 	{
 		int idx = static_cast<int>(sel);
-		this->linear_sys_solver = this->solvers[idx];
+		linear_sys_solver = solvers[idx];
 	}
 
-	void Solver::step(const Eigen::MatrixXd& f_ext, int n_iterations)
+	void Solver::clear_solver()
 	{
+		if (linear_sys_solver != nullptr)
+			linear_sys_solver->clear();
+	}
+
+	void Solver::step(const Eigen::MatrixXd& f_ext, int n_itr, int itr_solver_n_itr)
+	{
+		this->linear_sys_solver->set_n_itr(itr_solver_n_itr);
+
 		const float dtsqr = dt * dt;
 		const float dt_inv = 1.0f / dt;
 		const float dtsqr_inv = 1.0f / dtsqr;
@@ -105,7 +115,7 @@ namespace pd {
 		Eigen::VectorXf b;
 		b.resize(3 * n);
 
-		for (int k = 0; k < n_iterations; k++)
+		for (int k = 0; k < n_itr; k++)
 		{
 			b.setZero();
 			for (const auto& constraint : model->constraints)
@@ -120,15 +130,16 @@ namespace pd {
 				b += constraint->get_i_wiSiTAiTBipi(pi);
 			}
 			b += global_solve_b_mass_term;
-			//if (k == 5)
+			//if (k == 0)
 			//	std::cout << "b = " << b << "\n";
 
 			// Ax = b
 			// This is varied between different solver
+			// printf("%d PD itr\n", k);
 			q_nplus1 = linear_sys_solver->solve(b);
 
-			//if (k == 5)
-			//	std::cout << "q_nplus1 = " << q_nplus1 << "\n";
+			//if (k == 0)
+				//std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}
 
 		// 3n * 1 vector to n * 3 matrix

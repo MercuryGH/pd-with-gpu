@@ -35,8 +35,12 @@ namespace pd
 		// Precompute A products and A coefficients in A-Jacobi
 		void precompute_A();
 		void precompute();
-		void step(const Eigen::MatrixXd& f_ext, int n_iterations);
+		void step(const Eigen::MatrixXd& f_ext, int n_itr, int itr_solver_n_itr);
 		void set_solver(ui::LinearSysSolver sel);
+		void clear_solver();
+
+		// algo_changed = true indicates setting new algorithm for the solver
+		bool algo_changed{ false };
 
 		// dirty = true indicates the solver needs to recompute
 		bool dirty{ false };

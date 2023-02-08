@@ -10,6 +10,7 @@ namespace pd
 	public:
 		void set_A(const Eigen::SparseMatrix<float>& A) override;
 		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
+		void clear() override;
 
 	private:
 		Eigen::SimplicialCholesky<Eigen::SparseMatrix<float>> A_cholesky_decomp;

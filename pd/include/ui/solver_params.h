@@ -11,7 +11,8 @@ namespace ui
 	struct SolverParams
 	{
 		float dt{ 0.0166667f };
-		int n_solver_iterations{ 10 };
+		int n_solver_pd_iterations{ 10 };
+		int n_itr_solver_iterations{ 500 };
 
 		LinearSysSolver selected_solver{ LinearSysSolver::DIRECT };
 	};

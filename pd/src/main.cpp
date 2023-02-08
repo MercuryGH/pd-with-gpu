@@ -14,8 +14,6 @@
 #include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
 
-#include <pd/cutest.h>
-
 int main(int argc, char* argv[])
 {
 	igl::opengl::glfw::Viewer viewer;
@@ -173,7 +171,7 @@ int main(int argc, char* argv[])
 		{
 			ImGui::Text("Solver: %s", solver.dirty ? "not ready" : "ready");
 			ImGui::InputFloat("Timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f");
-			ImGui::InputInt("Solver #Itr", &solver_params.n_solver_iterations);
+			ImGui::InputInt("Solver PD #Itr", &solver_params.n_solver_pd_iterations);
 			if (ImGui::Button("Simulate 1 Step") && viewer.core().is_animating == false)
 			{
 				ui::tick(viewer, &model, &physics_params, &solver_params, &solver, &f_ext);
@@ -194,6 +192,7 @@ int main(int argc, char* argv[])
 						// If changed solver
 						if (solver_params.selected_solver != static_cast<ui::LinearSysSolver>(i))
 						{
+							solver.algo_changed = true;
 							solver.dirty = true;
 						}
 
@@ -208,6 +207,7 @@ int main(int argc, char* argv[])
 				}
 				ImGui::EndCombo();
 			}
+			ImGui::InputInt("Itr Solver #Itr", &solver_params.n_itr_solver_iterations);
 
 			ImGui::Separator();
 			// statistics

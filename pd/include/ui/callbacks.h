@@ -147,10 +147,10 @@ namespace ui
 			);
 			const Eigen::Vector3f dir = (p1 - p0).normalized();
 
-			std::cout << f_ext->row(user_control->ext_forced_vertex_idx) << "\n";
+			//std::cout << f_ext->row(user_control->ext_forced_vertex_idx) << "\n";
 			// add force
 			f_ext->row(user_control->ext_forced_vertex_idx) += (dir.transpose() * physics_params->external_force_val).cast<double>();
-			std::cout << f_ext->row(user_control->ext_forced_vertex_idx) << "\n\n";
+			//std::cout << f_ext->row(user_control->ext_forced_vertex_idx) << "\n\n";
 
 			return true;
 		}
@@ -192,14 +192,20 @@ namespace ui
 			f_ext->col(1).array() -= GRAVITY;
 		}
 
+		if (solver->algo_changed == true)
+		{
+			solver->clear_solver();
+			solver->set_solver(solver_params->selected_solver);
+			solver->algo_changed = false;
+		}
+
 		if (solver->dirty == true)
 		{
 			solver->set_dt(solver_params->dt);
-			solver->set_solver(solver_params->selected_solver);
 			solver->precompute();
 			solver->dirty = false;
 		}
-		solver->step(*f_ext, solver_params->n_solver_iterations);
+		solver->step(*f_ext, solver_params->n_solver_pd_iterations, solver_params->n_itr_solver_iterations);
 
 		f_ext->setZero();
 		// If #V or #F is not changed, no need to call clear()
@@ -230,8 +236,6 @@ namespace ui
 
 			// timer ready
 			timer.start();
-
-			model->dimension_check();
 
 			bool flag = model->apply_mass_per_vertex(physics_params->mass_per_vertex);
 			if (flag == true)

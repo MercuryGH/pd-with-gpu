@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(CUDA_ENABLE "use cuda" ON)
 
@@ -12,3 +13,4 @@ set_property(GLOBAL PROPERTY USE_FOLDER ON)
 
 add_subdirectory(pd)
 add_subdirectory(util)
+

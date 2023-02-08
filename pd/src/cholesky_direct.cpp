@@ -9,6 +9,13 @@ namespace pd
 
 	Eigen::VectorXf CholeskyDirect::solve(const Eigen::VectorXf& b) 
 	{
-		return A_cholesky_decomp.solve(b);
+		Eigen::VectorXf ret = A_cholesky_decomp.solve(b);
+		assert(A_cholesky_decomp.info() == Eigen::Success);
+		return ret;
+	}
+
+	void CholeskyDirect::clear()
+	{ 
+		// do nothing 
 	}
 }
