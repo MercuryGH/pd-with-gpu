@@ -3,6 +3,8 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
+#include <pd/types.h>
+#include <pd/deformable_mesh.h>
 
 // interface
 class LinearSystemSolver
@@ -13,7 +15,7 @@ public:
 
 	// Setting any value from coefficient matrix A that can be precomputed.
 	// Precompute A-coefficient for A-Jacobi.
-	virtual void set_A(const Eigen::SparseMatrix<float>& A) = 0;
+	virtual void set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints) = 0;
 
 	// Solve the linear system Ax = b, returns x.
 	virtual Eigen::VectorXf solve(const Eigen::VectorXf& b) = 0;

@@ -11,7 +11,10 @@ namespace pd {
 			Constraint(wi, p.rows()),
 			n(p.rows()),
 			vi(vi),
-			p0(p.row(vi).transpose().cast<float>()) {}
+			p0(p.row(vi).transpose().cast<float>()) 
+		{
+			vertices.push_back(vi);
+		}
 
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
 		Eigen::VectorXf get_i_wiSiTAiTBipi(const Eigen::VectorXf& pi) const override;

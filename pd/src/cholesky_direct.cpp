@@ -2,7 +2,7 @@
 
 namespace pd
 {
-	void CholeskyDirect::set_A(const Eigen::SparseMatrix<float>& A) 
+	void CholeskyDirect::set_A(const Eigen::SparseMatrix<float>& A, const Constraints& constraints)
 	{
 		A_cholesky_decomp.compute(A);
 	}

@@ -8,6 +8,7 @@ namespace ui
 		PARALLEL_JACOBI = 1,
 		A_JACOBI = 2
 	};
+
 	struct SolverParams
 	{
 		float dt{ 0.0166667f };

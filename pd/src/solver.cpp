@@ -40,12 +40,33 @@ namespace pd {
 		A.resize(3 * n, 3 * n);
 		A.setFromTriplets(A_triplets.begin(), A_triplets.end());
 		A.makeCompressed();
+
+		//std::vector<int> v_adj;
+		//for (int i = 0; i < n; i++)
+		//{
+		//	if (std::abs(A.coeff(63, i)) > 1e-3f)
+		//	{
+		//		v_adj.push_back(i);
+		//	}
+		//}
+		//for (auto v : v_adj) std::cout << v << " ";
+		//int cnt = 3;
+		//std::cout << A.coeff(0, 3) << "\n";
+		//for (int i = 0; i < n / 3; i++)
+		//{
+		//	assert(A.coeff(3 * i, 3 * i) == A.coeff(3 * i + 1, 3 * i + 1));
+		//	assert(A.coeff(3 * i + 2, 3 * i + 2) == A.coeff(3 * i + 1, 3 * i + 1));
+		//}
+		//for (int i = 0; i < n - cnt; i++)
+		//{
+		//	std::cout << A.block(3 * i, 3 * i + cnt, 3, 3) << "\n";
+		//}
 	}
 
 	void Solver::precompute()
 	{
 		precompute_A();
-		linear_sys_solver->set_A(A);
+		linear_sys_solver->set_A(A, model->constraints);
 	}
 
 	void Solver::set_solver(ui::LinearSysSolver sel)

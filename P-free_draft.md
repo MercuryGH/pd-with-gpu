@@ -42,6 +42,12 @@ Before an A-Jacobi iteration starts, we need to group adjacent vertices in one C
 * Picking, 4000.000 (default * 10)
 * Physicis, set mass per particle to 1.0 (default / 10), set Gravity and Simulate.
 
+### 坑点
+
+* 第三方库libigl与cuda兼容性问题（环境配置）
+* cuda编译选项为/O2时，程序流程相比/O0时出错（浮点数精度、内存优化等问题统统翻了一遍）
+* 稀疏矩阵的存储格式，经过优化实际存储空间只需要$\Theta(V+E)$，比原先的$\Theta(V^2)$空间好了许多。
+
 ## 单词
 
 * tetrahedron 四面体。

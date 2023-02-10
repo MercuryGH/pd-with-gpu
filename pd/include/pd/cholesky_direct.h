@@ -8,7 +8,7 @@ namespace pd
 	class CholeskyDirect : public LinearSystemSolver
 	{
 	public:
-		void set_A(const Eigen::SparseMatrix<float>& A) override;
+		void set_A(const Eigen::SparseMatrix<float>& A, const Constraints& constraints) override;
 		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
 		void clear() override;
 

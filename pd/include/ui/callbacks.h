@@ -201,6 +201,7 @@ namespace ui
 
 		if (solver->dirty == true)
 		{
+			solver->clear_solver();
 			solver->set_dt(solver_params->dt);
 			solver->precompute();
 			solver->dirty = false;

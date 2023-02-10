@@ -13,6 +13,7 @@ namespace pd
 {
 	class DeformableMesh {
 		friend class Solver;
+		friend class AJacobi;
 	public:
 		DeformableMesh() = default;
 		/*

@@ -14,13 +14,12 @@ namespace pd
 			checkCudaErrors(cudaFree(d_x));
 			checkCudaErrors(cudaFree(d_next_x));
 			is_allocated = false;
-			printf("Parallel Jacobi Solver cleared");
 		}
 	}
 
 	// Make sure A is compressed
 	// Eigen::SparseMatrix can be converted to CUDA sparse matrix but it's quite tricky
-	void ParallelJacobi::set_A(const Eigen::SparseMatrix<float>& A)
+	void ParallelJacobi::set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints)
 	{
 		Eigen::MatrixXf _A = Eigen::MatrixXf(A);
 		n = _A.rows(); // n = 3 * #Vertex
@@ -103,7 +102,7 @@ namespace pd
 			}
 		}
 		//if (true)
-		//	std::cout << "err checker[33] = " << err_checker[33] << "\n" << "ret[33] = " << ret[33] << "\n";
+			//std::cout << "err checker[33] = " << err_checker[33] << "\n" << "ret[33] = " << ret[33] << "\n";
 
 		return ret;
 	}

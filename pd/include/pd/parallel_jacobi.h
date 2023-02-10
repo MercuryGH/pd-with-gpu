@@ -10,14 +10,14 @@ namespace pd
 	public:
 		ParallelJacobi() : LinearSystemSolver(1000) {}
 
-		void set_A(const Eigen::SparseMatrix<float>& A) override;
+		void set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints) override;
 		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
 		void clear() override;
 
 		__global__ friend void itr_shfl_down(float* next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col);
 		__global__ friend void itr_normal(float* next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col);
+
 	private:
-		constexpr static int WARP_SIZE{ 32 };
 		int n{ 0 };
 
 		// device memory pointers, uses dense representation

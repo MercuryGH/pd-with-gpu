@@ -3,7 +3,6 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
-//#include <cuda_runtime.h>
 
 namespace pd {
 	class Constraint
@@ -25,8 +24,14 @@ namespace pd {
 		// return: triplets indicate several entry value in linear system A
 		virtual std::vector<Eigen::Triplet<float>> get_A_wiSiTAiTAiSi() const = 0; 
 
+		const std::vector<int>& get_involved_vertices()
+		{
+			return vertices;
+		}
+
 	protected:
 		int n; // #vertex
 		float wi;
+		std::vector<int> vertices;
 	};
 }

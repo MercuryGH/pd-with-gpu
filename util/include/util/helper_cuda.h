@@ -2,6 +2,8 @@
 
 #include <cuda_runtime.h>
 
+constexpr int WARP_SIZE = 32;
+
 #define checkCudaErrors(call)                                 \
   do {                                                        \
     cudaError_t err = call;                                   \

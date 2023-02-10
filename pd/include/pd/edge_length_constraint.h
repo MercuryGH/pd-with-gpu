@@ -15,6 +15,8 @@ namespace pd {
 			rest_length((p.row(vi) - p.row(vj)).norm())
 		{
 			assert(vi != vj);
+			vertices.push_back(vi);
+			vertices.push_back(vj);
 		}
 
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
