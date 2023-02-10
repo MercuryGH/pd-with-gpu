@@ -1,30 +1,42 @@
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.045984, -0.065786.
-err checker[33] = -0.0346913
-ret[33] = -0.0543357
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.050476, -0.071547.
-err checker[33] = -0.0374036
-ret[33] = -0.0583364
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.051687, -0.073291.
-err checker[33] = -0.0380145
-ret[33] = -0.0593569
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.052605, -0.073348.
-err checker[33] = -0.0393386
-ret[33] = -0.0609383
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.052508, -0.072085.
-err checker[33] = -0.0488767
-ret[33] = -0.0742226
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.052023, -0.070023.
-err checker[33] = -0.0601214
-ret[33] = -0.0828059
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.051327, -0.067485.
-err checker[33] = -0.060569
-ret[33] = -0.0823721
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.050749, -0.065263.
-err checker[33] = -0.0592694
-ret[33] = -0.0805066
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.050431, -0.063741.
-err checker[33] = -0.0581294
-ret[33] = -0.0785017
-Warning: Jacobi Iteration Incomplete. At index 0, values are -0.050314, -0.062827.
-err checker[33] = -0.0573515
-ret[33] = -0.0767251
+itr = 0 data
+
+-2498.734863 16.618296 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -5755.545898, 0.000000.
+err checker[33] = -4527.67
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0
+-1356.716919 587.627319 0.000000
+Warning: A-Jacobi Iteration Incomplete. At index 0, values are -2409.285156, 0.000000.
+err checker[33] = -1988.3
+ret[33] = 0

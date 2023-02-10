@@ -13,7 +13,7 @@ namespace ui
 	{
 		float dt{ 0.0166667f };
 		int n_solver_pd_iterations{ 10 };
-		int n_itr_solver_iterations{ 500 };
+		int n_itr_solver_iterations{ 1 };
 
 		LinearSysSolver selected_solver{ LinearSysSolver::DIRECT };
 	};
