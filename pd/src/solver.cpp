@@ -6,7 +6,9 @@ namespace pd {
 	{
 		solvers[0] = new CholeskyDirect();
 		solvers[1] = new ParallelJacobi();
-		solvers[2] = new AJacobi();
+		solvers[2] = new AJacobi(1);
+		solvers[3] = new AJacobi(2);
+		solvers[4] = new AJacobi(3);
 		linear_sys_solver = solvers[0];
 	}
 

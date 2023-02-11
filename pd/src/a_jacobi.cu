@@ -19,10 +19,7 @@ namespace pd
 				checkCudaErrors(cudaFree(d_x[k]));
 				checkCudaErrors(cudaFree(d_next_x[k]));
 			}
-			for (int k = 0; k < order; k++)
-			{
-				checkCudaErrors(cudaFree(d_diagonals[k]));
-			}
+			checkCudaErrors(cudaFree(d_diagonals));
 
 			const int n_vertex = n / 3;
 			for (int k = 0; k < order; k++)
@@ -50,9 +47,9 @@ namespace pd
 	{
 		n = A.rows();
 		assert((n / 3) * 3 == n);
-		if (order > A_JACOBI_MAX_ORDER)
+		if (order > A_JACOBI_MAX_ORDER || order < 1)
 		{
-			printf("Error: A-Jacobi order too large!\n");
+			printf("Error: Invalid A-Jacobi order!\n");
 			assert(false);
 		}
 		// set precomputation values
@@ -113,32 +110,8 @@ namespace pd
 		}
 
 		// --- Compute d_diagonals
-		for (int k = 0; k < order; k++)
-		{
-			checkCudaErrors(cudaMalloc((void**)&d_diagonals[k], sizeof(float) * n_vertex));
-			if (k == 0)
-			{
-				// l = 1 has no additional operations
-				checkCudaErrors(cudaMemcpy(d_diagonals[k], D.data(), sizeof(float) * n_vertex, cudaMemcpyHostToDevice));
-			}
-			if (k == 1) // >= 2 order
-			{
-				std::vector<float> adj_sums(n_vertex);
-				for (int i = 0; i < n_vertex; i++)
-				{
-					float sum = 0.0f;
-					for (const auto& [k, v] : B[i])
-					{
-						sum += D[k];
-					}
-					adj_sums[i] = sum;
-				}
-				checkCudaErrors(cudaMemcpy(d_diagonals[k], adj_sums.data(), sizeof(float) * n_vertex, cudaMemcpyHostToDevice));
-			}
-			if (k == 2)
-			{
-			}
-		}
+		checkCudaErrors(cudaMalloc((void**)&d_diagonals, sizeof(float) * n_vertex));
+		checkCudaErrors(cudaMemcpy(d_diagonals, D.data(), sizeof(float) * n_vertex, cudaMemcpyHostToDevice));
 
 		const auto get_vertex_k_ring_neighbors = [&](
 			int i,
@@ -153,10 +126,10 @@ namespace pd
 					for (const auto& [k, v] : B[i])
 					{
 						neighbor_indices.push_back(k);
-						neighbor_B_vals.push_back(v);
+						neighbor_B_vals.push_back(order >= 2 ? v * D[k] : v);
 					}
 				}
-				// compute B_{is}B_{sj} for l = 2
+				// compute D_{ss}^{-1} * B_{is}B_{sj} for l = 2
 				if (ring_width == 2)
 				{
 					std::unordered_map<int, float> a_products_on_vertex;
@@ -164,7 +137,19 @@ namespace pd
 					{
 						for (const auto& [j, v2] : B[s])
 						{
-							a_products_on_vertex[j] += v1 * v2;
+							// If D cannot be precomputed, times D is done later.
+							if (order == 2)
+							{
+								a_products_on_vertex[j] += v1 * v2 * D[s];
+							}
+							else if (order == 3)
+							{
+								a_products_on_vertex[j] += v1 * v2 * D[s] * D[j];
+							}
+							else
+							{
+								a_products_on_vertex[j] += v1 * v2;
+							}
 						}
 					}
 
@@ -178,6 +163,33 @@ namespace pd
 				}
 				if (ring_width == 3)
 				{
+					std::unordered_map<int, float> a_products_on_vertex;
+					for (const auto& [t, v1] : B[i])
+					{
+						for (const auto& [s, v2] : B[t])
+						{
+							for (const auto& [j, v3] : B[s])
+							{
+								// If D cannot be precomputed, times D is done later.
+								if (order == 3)
+								{
+									a_products_on_vertex[j] += v1 * v2 * v3 * D[t] * D[s];
+								}
+								else
+								{
+									a_products_on_vertex[j] += v1 * v2 * v3;
+								}
+							}
+						}
+					}
+
+					neighbor_indices.reserve(a_products_on_vertex.size());
+					neighbor_B_vals.reserve(a_products_on_vertex.size());
+					for (const auto& [k, v] : a_products_on_vertex)
+					{
+						neighbor_indices.push_back(k);
+						neighbor_B_vals.push_back(v);
+					}
 				}
 		};
 
@@ -247,7 +259,7 @@ namespace pd
 						d_k_ring_neighbors[0],
 						d_k_ring_neighbor_indices[0],
 						d_k_ring_neighbor_sizes[0],
-						d_diagonals[0],
+						d_diagonals,
 						d_b,
 						n
 						);
@@ -260,7 +272,7 @@ namespace pd
 						d_k_ring_neighbors[0],
 						d_k_ring_neighbor_indices[0],
 						d_k_ring_neighbor_sizes[0],
-						d_diagonals[0],
+						d_diagonals,
 						d_b,
 						n
 						);
@@ -285,8 +297,7 @@ namespace pd
 						d_k_ring_neighbors[1],
 						d_k_ring_neighbor_indices[1],
 						d_k_ring_neighbor_sizes[1],
-						d_diagonals[0],
-						d_diagonals[1],
+						d_diagonals,
 						d_b,
 						n
 						);
@@ -304,8 +315,7 @@ namespace pd
 						d_k_ring_neighbors[1],
 						d_k_ring_neighbor_indices[1],
 						d_k_ring_neighbor_sizes[1],
-						d_diagonals[0],
-						d_diagonals[1],
+						d_diagonals,
 						d_b,
 						n
 						);
@@ -314,6 +324,56 @@ namespace pd
 		}
 		else if (order == 3)
 		{
+			const int n_blocks = n_vertex / WARP_SIZE + (n_vertex % WARP_SIZE == 0 ? 0 : 1);
+			for (int i = 0; i < n_itr; i++)
+			{
+				if (i % 2 == 1)
+				{
+					itr_order_3 << <n_blocks, WARP_SIZE >> > (
+						d_x[0],
+						d_x[1],
+						d_x[2],
+						d_next_x[0],
+						d_next_x[1],
+						d_next_x[2],
+						d_k_ring_neighbors[0],
+						d_k_ring_neighbor_indices[0],
+						d_k_ring_neighbor_sizes[0],
+						d_k_ring_neighbors[1],
+						d_k_ring_neighbor_indices[1],
+						d_k_ring_neighbor_sizes[1],
+						d_k_ring_neighbors[2],
+						d_k_ring_neighbor_indices[2],
+						d_k_ring_neighbor_sizes[2],
+						d_diagonals,
+						d_b,
+						n
+						);
+				}
+				else
+				{
+					itr_order_3 << <n_blocks, WARP_SIZE >> > (
+						d_next_x[0],
+						d_next_x[1],
+						d_next_x[2],
+						d_x[0],
+						d_x[1],
+						d_x[2],
+						d_k_ring_neighbors[0],
+						d_k_ring_neighbor_indices[0],
+						d_k_ring_neighbor_sizes[0],
+						d_k_ring_neighbors[1],
+						d_k_ring_neighbor_indices[1],
+						d_k_ring_neighbor_sizes[1],
+						d_k_ring_neighbors[2],
+						d_k_ring_neighbor_indices[2],
+						d_k_ring_neighbor_sizes[2],
+						d_diagonals,
+						d_b,
+						n
+						);
+				}
+			}
 		}
 
 		checkCudaErrors(cudaMemcpy(ret.data(), d_x[order - 1], sizeof(float) * n, cudaMemcpyDeviceToHost));
@@ -330,8 +390,8 @@ namespace pd
 				break;
 			}
 		}
-		if (true)
-			std::cout << "err checker[33] = " << err_checker[33] << "\n" << "ret[33] = " << ret[33] << "\n";
+		//if (true)
+			//std::cout << "err checker[33] = " << err_checker[33] << "\n" << "ret[33] = " << ret[33] << "\n";
 
 		return ret;
 	}
@@ -351,7 +411,6 @@ namespace pd
 
 		if (idx < n)
 		{
-			float D_ii_inv = d_diagonals[idx];
 			const float* B_ijs = d_1_ring_neighbors[idx];
 			const int* js = d_1_ring_neighbor_indices[idx];
 
@@ -369,6 +428,8 @@ namespace pd
 				sum_1 += B_ij * x[3 * j + 1];
 				sum_2 += B_ij * x[3 * j + 2];
 			}
+
+			float D_ii_inv = d_diagonals[idx];
 
 			next_x[3 * idx] = sum_0 * D_ii_inv + b[3 * idx] * D_ii_inv;
 			next_x[3 * idx + 1] = sum_1 * D_ii_inv + b[3 * idx + 1] * D_ii_inv;
@@ -390,8 +451,7 @@ namespace pd
 		int** __restrict__ d_2_ring_neighbor_indices,
 		const int* __restrict__ d_2_ring_neighbor_sizes,
 
-		const float* __restrict__ d_diagonals,
-		const float* __restrict__ d_diagonal_adj_sums,
+		const float* __restrict__ d_diagonals, // D_ii
 
 		const float* __restrict__ b,
 		int n  // #Vertex
@@ -401,8 +461,6 @@ namespace pd
 
 		if (idx < n)
 		{
-			float D_adj_sum = d_diagonal_adj_sums[idx];
-			float D_ii_inv = d_diagonals[idx];
 			const float* B_issjs = d_2_ring_neighbors[idx];
 			const int* js = d_2_ring_neighbor_indices[idx];
 
@@ -413,10 +471,6 @@ namespace pd
 			float sum_0_2 = 0.0f;
 			float sum_1_2 = 0.0f;
 			float sum_2_2 = 0.0f;
-
-			float b_term_0 = 0.0f;
-			float b_term_1 = 0.0f;
-			float b_term_2 = 0.0f;
 
 			int j_cnt = d_2_ring_neighbor_sizes[idx];
 			for (int k = 0; k < j_cnt; k++)
@@ -431,30 +485,167 @@ namespace pd
 				sum_0_2 += B_issj * x_2[3 * j];
 				sum_1_2 += B_issj * x_2[3 * j + 1];
 				sum_2_2 += B_issj * x_2[3 * j + 2];
-
-				b_term_0 += B_issj * b[3 * j];
-				b_term_1 += B_issj * b[3 * j + 1];
-				b_term_2 += B_issj * b[3 * j + 2];
 			}
 
-			//const float* B_issjs = d_1_ring_neighbors[idx];
-			//const int* js = d_1_ring_neighbor_indices[idx];
+			// b_terms:
+			const float* B_ijs_b = d_1_ring_neighbors[idx];
+			const int* js_b = d_1_ring_neighbor_indices[idx];
+
+			float b_term_0 = 0.0f;
+			float b_term_1 = 0.0f;
+			float b_term_2 = 0.0f;
+
+			int j_cnt_b = d_1_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt_b; k++)
+			{
+				float B_ij = B_ijs_b[k];
+				int j = js_b[k];
+
+				b_term_0 += B_ij * b[3 * j];
+				b_term_1 += B_ij * b[3 * j + 1];
+				b_term_2 += B_ij * b[3 * j + 2];
+			}
+
+			float D_ii_inv = d_diagonals[idx];
 
 			// may contains floating point precision problem
-			b_term_0 = b[3 * idx] * D_ii_inv + b_term_0 * D_ii_inv * D_ii_inv;
-			b_term_1 = b[3 * idx + 1] * D_ii_inv + b_term_1 * D_ii_inv * D_ii_inv;
-			b_term_2 = b[3 * idx + 2] * D_ii_inv + b_term_2 * D_ii_inv * D_ii_inv;
+			b_term_0 = (b[3 * idx] + b_term_0) * D_ii_inv;
+			b_term_1 = (b[3 * idx + 1] + b_term_1) * D_ii_inv;
+			b_term_2 = (b[3 * idx + 2] + b_term_2) * D_ii_inv;
 
-			// wrong at B_{ij} and B_{is}B_{sj}
-			next_x_1[3 * idx] = sum_0_1 * D_ii_inv * D_adj_sum + b_term_0;
-			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv * D_adj_sum + b_term_1;
-			next_x_1[3 * idx + 2] = sum_2_1 * D_ii_inv * D_adj_sum + b_term_2;
-			if (idx == 1)
-				printf("%f %f %f\n", next_x_1[3 * idx], next_x_1[3 * idx + 1], next_x_1[3 * idx + 2]);
+			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + b_term_0;
+			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + b_term_1;
+			next_x_1[3 * idx + 2] = sum_2_1 * D_ii_inv + b_term_2;
+			//if (idx == 1)
+				//printf("%f %f %f\n", next_x_1[3 * idx], next_x_1[3 * idx + 1], next_x_1[3 * idx + 2]);
 
-			next_x_2[3 * idx] = sum_0_2 * D_ii_inv * D_adj_sum + b_term_0;
-			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv * D_adj_sum + b_term_1;
-			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv * D_adj_sum + b_term_2;
+			next_x_2[3 * idx] = sum_0_2 * D_ii_inv + b_term_0;
+			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv + b_term_1;
+			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv + b_term_2;
+		}
+	}
+
+	__global__ void itr_order_3(
+		float* next_x_1,
+		float* next_x_2,
+		float* next_x_3,
+		const float* __restrict__ x_1,
+		const float* __restrict__ x_2,
+		const float* __restrict__ x_3,
+
+		float** __restrict__ d_1_ring_neighbors,
+		int** __restrict__ d_1_ring_neighbor_indices,
+		const int* __restrict__ d_1_ring_neighbor_sizes,
+
+		float** __restrict__ d_2_ring_neighbors,
+		int** __restrict__ d_2_ring_neighbor_indices,
+		const int* __restrict__ d_2_ring_neighbor_sizes,
+
+		float** __restrict__ d_3_ring_neighbors,
+		int** __restrict__ d_3_ring_neighbor_indices,
+		const int* __restrict__ d_3_ring_neighbor_sizes,
+
+		const float* __restrict__ d_diagonals, // D_ii
+		const float* __restrict__ b,
+		int n  // #Vertex
+	)
+	{
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (idx < n)
+		{
+			const float* B_ittssjs = d_3_ring_neighbors[idx];
+			const int* js = d_3_ring_neighbor_indices[idx];
+
+			float sum_0_1 = 0.0f;
+			float sum_1_1 = 0.0f;
+			float sum_2_1 = 0.0f;
+
+			float sum_0_2 = 0.0f;
+			float sum_1_2 = 0.0f;
+			float sum_2_2 = 0.0f;
+
+			float sum_0_3 = 0.0f;
+			float sum_1_3 = 0.0f;
+			float sum_2_3 = 0.0f;
+
+			int j_cnt = d_3_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt; k++)
+			{
+				float B_ittssj = B_ittssjs[k];
+				int j = js[k];
+
+				sum_0_1 += B_ittssj * x_1[3 * j];
+				sum_1_1 += B_ittssj * x_1[3 * j + 1];
+				sum_2_1 += B_ittssj * x_1[3 * j + 2];
+
+				sum_0_2 += B_ittssj * x_2[3 * j];
+				sum_1_2 += B_ittssj * x_2[3 * j + 1];
+				sum_2_2 += B_ittssj * x_2[3 * j + 2];
+
+				sum_0_3 += B_ittssj * x_3[3 * j];
+				sum_1_3 += B_ittssj * x_3[3 * j + 1];
+				sum_2_3 += B_ittssj * x_3[3 * j + 2];
+			}
+
+			// b_terms_1:
+			const float* B_ijs_b = d_1_ring_neighbors[idx];
+			const int* js_b_1 = d_1_ring_neighbor_indices[idx];
+
+			float b_term_0_1 = 0.0f;
+			float b_term_1_1 = 0.0f;
+			float b_term_2_1 = 0.0f;
+
+			int j_cnt_b_1 = d_1_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt_b_1; k++)
+			{
+				float B_ij = B_ijs_b[k];
+				int j = js_b_1[k];
+
+				b_term_0_1 += B_ij * b[3 * j];
+				b_term_1_1 += B_ij * b[3 * j + 1];
+				b_term_2_1 += B_ij * b[3 * j + 2];
+			}
+
+			// b_terms_2:
+			const float* B_issjs_b = d_2_ring_neighbors[idx];
+			const int* js_b_2 = d_2_ring_neighbor_indices[idx];
+
+			float b_term_0_2 = 0.0f;
+			float b_term_1_2 = 0.0f;
+			float b_term_2_2 = 0.0f;
+
+			int j_cnt_b_2 = d_2_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt_b_2; k++)
+			{
+				float B_issj = B_issjs_b[k];
+				int j = js_b_2[k];
+
+				b_term_0_2 += B_issj * b[3 * j];
+				b_term_1_2 += B_issj * b[3 * j + 1];
+				b_term_2_2 += B_issj * b[3 * j + 2];
+			}
+
+			float D_ii_inv = d_diagonals[idx];
+
+			// may contains floating point precision problem
+			b_term_0_1 = (b[3 * idx] + b_term_0_1 + b_term_0_2) * D_ii_inv;
+			b_term_1_1 = (b[3 * idx + 1] + b_term_1_1 + b_term_1_2) * D_ii_inv;
+			b_term_2_1 = (b[3 * idx + 2] + b_term_2_1 + b_term_2_2) * D_ii_inv;
+
+			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + b_term_0_1;
+			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + b_term_1_1;
+			next_x_1[3 * idx + 2] = sum_2_1 * D_ii_inv + b_term_2_1;
+			//if (idx == 1)
+				//printf("%f %f %f\n", next_x_1[3 * idx], next_x_1[3 * idx + 1], next_x_1[3 * idx + 2]);
+
+			next_x_2[3 * idx] = sum_0_2 * D_ii_inv + b_term_0_1;
+			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv + b_term_1_1;
+			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv + b_term_2_1;
+
+			next_x_3[3 * idx] = sum_0_3 * D_ii_inv + b_term_0_1;
+			next_x_3[3 * idx + 1] = sum_1_3 * D_ii_inv + b_term_1_1;
+			next_x_3[3 * idx + 2] = sum_2_3 * D_ii_inv + b_term_2_1;
 		}
 	}
 }

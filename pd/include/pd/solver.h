@@ -54,7 +54,7 @@ namespace pd
 		Eigen::SparseMatrix<float> A;
 
 		LinearSystemSolver* linear_sys_solver;
-		constexpr static int N_SOLVERS = 3;
+		constexpr static int N_SOLVERS = 5;
 		std::array<LinearSystemSolver*, N_SOLVERS> solvers;
 	};
 }

@@ -9,6 +9,7 @@ namespace pd
 	class AJacobi: public LinearSystemSolver
 	{
 	public:
+		AJacobi(int order): order(order) {}
 		void set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints) override;
 
 		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
@@ -36,8 +37,32 @@ namespace pd
 			float** __restrict__ d_2_ring_neighbors,
 			int** __restrict__ d_2_ring_neighbor_indices,
 			const int* __restrict__ d_2_ring_neighbor_sizes,
-			const float* __restrict__ d_diagonals,
-			const float* __restrict__ d_diagonal_adj_sums,
+			const float* __restrict__ d_diagonals, // D_ii
+			const float* __restrict__ b,
+			int n  // #Vertex
+		);
+
+		__global__ friend void itr_order_3(
+			float* next_x_1,
+			float* next_x_2,
+			float* next_x_3,
+			const float* __restrict__ x_1,
+			const float* __restrict__ x_2,
+			const float* __restrict__ x_3,
+
+			float** __restrict__ d_1_ring_neighbors,
+			int** __restrict__ d_1_ring_neighbor_indices,
+			const int* __restrict__ d_1_ring_neighbor_sizes,
+
+			float** __restrict__ d_2_ring_neighbors,
+			int** __restrict__ d_2_ring_neighbor_indices,
+			const int* __restrict__ d_2_ring_neighbor_sizes,
+
+			float** __restrict__ d_3_ring_neighbors,
+			int** __restrict__ d_3_ring_neighbor_indices,
+			const int* __restrict__ d_3_ring_neighbor_sizes,
+
+			const float* __restrict__ d_diagonals, // D_ii
 			const float* __restrict__ b,
 			int n  // #Vertex
 		);
@@ -74,8 +99,8 @@ namespace pd
 		int** d_k_ring_neighbor_indices[A_JACOBI_MAX_ORDER];
 		int* d_k_ring_neighbor_sizes[A_JACOBI_MAX_ORDER]; // indicates the size of d_1_ring_neighbors
 
-		// forall i, D_{ii} ... D_{ss}
-		float* d_diagonals[A_JACOBI_MAX_ORDER];
+		// forall i, D_{ii}
+		float* d_diagonals;
 
 		// sum of D_{ss} forall s adjacent to i
 		//float* d_diagonal_adj_sums; // use only in order = 2
@@ -83,7 +108,7 @@ namespace pd
 
 		float* d_b;
 
-		int order{ 1 };
+		int order{ 0 };
 		// sizeof(d_x) == sizeof(d_next_x) == order
 		//float* d_x;
 		float* d_x[A_JACOBI_MAX_ORDER];

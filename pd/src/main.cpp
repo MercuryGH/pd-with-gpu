@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 			ImGui::Separator();
 
 			// Solver Selector
-			const char* items[] = {"Direct", "Parallel Jacobi", "A-Jacobi"};
+			const char* items[] = {"Direct", "Parallel Jacobi", "A-Jacobi-1", "A-Jacobi-2", "A-Jacobi-3" };
 			static const char* cur_select_item = "Direct";
 			if (ImGui::BeginCombo("##Current selected solver", cur_select_item))
 			{
