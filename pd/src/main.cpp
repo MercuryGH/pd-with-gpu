@@ -14,6 +14,8 @@
 #include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
 
+#include <util/gpu_helper.h>
+
 int main(int argc, char* argv[])
 {
 	igl::opengl::glfw::Viewer viewer;
@@ -21,7 +23,12 @@ int main(int argc, char* argv[])
 	viewer.plugins.push_back(&plugin);
 	igl::opengl::glfw::imgui::ImGuiMenu menu;
 	plugin.widgets.push_back(&menu);
-	//pd::test();
+
+	// print CUDA selection info
+	//int n_gpu_devs;
+	//int best_dev_idx = util::select_best_device(n_gpu_devs);
+	//printf("Available #dev = %d\n", n_gpu_devs);
+	//util::test_device(best_dev_idx);
 
 	// pd simulatee
 	pd::DeformableMesh model;
