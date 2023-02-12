@@ -138,9 +138,13 @@ namespace pd {
 		Eigen::VectorXf b;
 		b.resize(3 * n);
 
+		last_local_step_time = 0;
+		last_global_step_time = 0;
 		for (int k = 0; k < n_itr; k++)
 		{
 			b.setZero();
+
+			timer.start();
 			for (const auto& constraint : model->constraints)
 			{
 				const Eigen::VectorXf pi = constraint->local_solve(q_nplus1);
@@ -152,18 +156,28 @@ namespace pd {
 				// This can be further optimized
 				b += constraint->get_i_wiSiTAiTBipi(pi);
 			}
+
+			timer.stop();
+			last_local_step_time += timer.elapsed_milliseconds();
+
 			b += global_solve_b_mass_term;
 			//if (k == 0)
 			//	std::cout << "b = " << b << "\n";
 
-			// Ax = b
-			// This is varied between different solver
 			// printf("%d PD itr\n", k);
+			
+			timer.start();
+
 			q_nplus1 = linear_sys_solver->solve(b);
+
+			timer.stop();
+			last_global_step_time += timer.elapsed_milliseconds();
 
 			//if (k == 0)
 				//std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}
+		last_local_step_time /= n_itr;
+		last_global_step_time /= n_itr;
 
 		// 3n * 1 vector to n * 3 matrix
 		const auto unflatten = [n](const Eigen::VectorXf& p) {

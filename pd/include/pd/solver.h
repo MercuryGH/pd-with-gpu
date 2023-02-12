@@ -12,6 +12,7 @@
 #include <pd/a_jacobi.h>
 
 #include <ui/solver_params.h>
+#include <util/cpu_timer.h>
 
 namespace pd
 {
@@ -44,6 +45,11 @@ namespace pd
 
 		// dirty = true indicates the solver needs to recompute
 		bool dirty{ false };
+
+		// timer variable
+		util::CpuTimer timer;
+		double last_local_step_time;
+		double last_global_step_time;
 
 	private:
 		// solver params

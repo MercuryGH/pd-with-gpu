@@ -224,9 +224,10 @@ namespace ui
 		Eigen::MatrixX3d* f_ext; 
 		ui::SolverParams* solver_params;
 
-		// self-hosted timer 
 		util::CpuTimer timer;
 		static double last_elapse_time;
+		static double last_local_step_time;
+		static double last_global_step_time;
 
 		bool operator()(igl::opengl::glfw::Viewer& viewer)
 		{
@@ -262,11 +263,15 @@ namespace ui
 
 			timer.stop();
 			last_elapse_time = timer.elapsed_milliseconds();
+			last_global_step_time = solver->last_global_step_time;
+			last_local_step_time = solver->last_local_step_time;
 
 			return false;
 		}
 	};
 	double pre_draw_handler::last_elapse_time; // a must-be static variable
+	double pre_draw_handler::last_local_step_time; // a must-be static variable
+	double pre_draw_handler::last_global_step_time; // a must-be static variable
 }
 
 

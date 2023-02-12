@@ -222,6 +222,8 @@ int main(int argc, char* argv[])
 			{
 				ImGui::Text("Last frame time elapsed: %lf ms", frame_callback.last_elapse_time);
 				ImGui::Text("FPS = %lf", 1000.0 / frame_callback.last_elapse_time);
+				ImGui::Text("Time for global step: %lf ms", frame_callback.last_global_step_time);
+				ImGui::Text("Time for local step: %lf ms", frame_callback.last_local_step_time);
 
 				// update every 1 seconds
 			}
