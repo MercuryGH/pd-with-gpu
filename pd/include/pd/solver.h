@@ -13,6 +13,7 @@
 
 #include <ui/solver_params.h>
 #include <util/cpu_timer.h>
+#include <pd/gpu_local_solver.h>
 
 namespace pd
 {
@@ -51,6 +52,10 @@ namespace pd
 		double last_local_step_time;
 		double last_global_step_time;
 
+		// if use gpu for local step, we need to create virtual function table on the gpu
+		bool use_gpu_for_local_step{ false };
+		std::unique_ptr<GpuLocalSolver> gpu_local_solver{ nullptr };
+
 	private:
 		// solver params
 		float dt;
@@ -62,5 +67,9 @@ namespace pd
 		LinearSystemSolver* linear_sys_solver;
 		constexpr static int N_SOLVERS = 5;
 		std::array<LinearSystemSolver*, N_SOLVERS> solvers;
+
+		// local step
+		void local_step_cpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b);
+		void local_step_gpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b);
 	};
 }

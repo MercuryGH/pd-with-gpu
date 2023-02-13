@@ -83,8 +83,9 @@ namespace pd
 		std::vector<std::pair<int, int>> edges;
 		for (const auto& constraint : constraints)
 		{
-			const std::vector<int>& vertices = constraint->get_involved_vertices();
-			if (vertices.size() == 2) // edge length constraint
+			int* vertices = nullptr;
+			const int n_vertices = constraint->get_involved_vertices(&vertices);
+			if (n_vertices == 2) // edge length constraint
 			{
 				int vi = vertices[0];
 				int vj = vertices[1];
@@ -397,7 +398,7 @@ namespace pd
 	}
 
 	__global__ void itr_order_1(
-		float* next_x,
+		float* __restrict__ next_x,
 		const float* __restrict__ x,
 		float** __restrict__ d_1_ring_neighbors,
 		int** __restrict__ d_1_ring_neighbor_indices,
@@ -438,8 +439,8 @@ namespace pd
 	}
 
 	__global__ void itr_order_2(
-		float* next_x_1,
-		float* next_x_2,
+		float* __restrict__ next_x_1,
+		float* __restrict__ next_x_2,
 		const float* __restrict__ x_1,
 		const float* __restrict__ x_2,
 
@@ -526,9 +527,9 @@ namespace pd
 	}
 
 	__global__ void itr_order_3(
-		float* next_x_1,
-		float* next_x_2,
-		float* next_x_3,
+		float* __restrict__ next_x_1,
+		float* __restrict__ next_x_2,
+		float* __restrict__ next_x_3,
 		const float* __restrict__ x_1,
 		const float* __restrict__ x_2,
 		const float* __restrict__ x_3,

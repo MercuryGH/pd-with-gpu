@@ -107,7 +107,7 @@ namespace pd
 		return ret;
 	}
 
-	__global__ void itr_shfl_down(float* next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
+	__global__ void itr_shfl_down(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
 	{
 		int col_start = threadIdx.x; // indicates i-th thread in a warp, 0 <= i <= 31
 		int row = blockIdx.x;
@@ -134,7 +134,7 @@ namespace pd
 		}
 	}
 
-	__global__ void itr_normal(float* next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
+	__global__ void itr_normal(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <pd/solver.h>
+#include <pd/positional_constraint.h>
+#include <pd/edge_length_constraint.h>
 
 namespace pd {
 	Solver::Solver()
@@ -43,6 +45,16 @@ namespace pd {
 		A.setFromTriplets(A_triplets.begin(), A_triplets.end());
 		A.makeCompressed();
 
+		if (use_gpu_for_local_step)
+		{
+			if (gpu_local_solver == nullptr)
+			{
+				gpu_local_solver = std::make_unique<GpuLocalSolver>();
+			}
+			gpu_local_solver->gpu_local_step_solver_malloc(3 * n);
+			gpu_local_solver->gpu_object_creation(model->constraints);
+		}
+
 		//std::vector<int> v_adj;
 		//for (int i = 0; i < n; i++)
 		//{
@@ -80,7 +92,13 @@ namespace pd {
 	void Solver::clear_solver()
 	{
 		if (linear_sys_solver != nullptr)
+		{
 			linear_sys_solver->clear();
+		}
+		if (use_gpu_for_local_step)
+		{
+			gpu_local_solver->free_local_gpu_memory_entry(model->constraints.size());
+		}
 	}
 
 	void Solver::step(const Eigen::MatrixXd& f_ext, int n_itr, int itr_solver_n_itr)
@@ -143,29 +161,27 @@ namespace pd {
 		for (int k = 0; k < n_itr; k++)
 		{
 			b.setZero();
+			b += global_solve_b_mass_term;
 
 			timer.start();
-			for (const auto& constraint : model->constraints)
+
+			if (use_gpu_for_local_step)
 			{
-				const Eigen::VectorXf pi = constraint->local_solve(q_nplus1);
-
-				//std::cout << pi << "\n";
-				//const auto test = constraint->get_i_wiSiTAiTBipi(pi);
-				//std::cout << "test(0) = " << test(0) << "\n";
-
-				// This can be further optimized
-				b += constraint->get_i_wiSiTAiTBipi(pi);
+				local_step_gpu(q_nplus1, b);
+			}
+			else
+			{
+				local_step_cpu(q_nplus1, b);
 			}
 
 			timer.stop();
 			last_local_step_time += timer.elapsed_milliseconds();
 
-			b += global_solve_b_mass_term;
 			//if (k == 0)
 			//	std::cout << "b = " << b << "\n";
 
 			// printf("%d PD itr\n", k);
-			
+
 			timer.start();
 
 			q_nplus1 = linear_sys_solver->solve(b);
@@ -176,8 +192,8 @@ namespace pd {
 			//if (k == 0)
 				//std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}
-		last_local_step_time /= n_itr;
-		last_global_step_time /= n_itr;
+		//last_local_step_time /= n_itr;
+		//last_global_step_time /= n_itr;
 
 		// 3n * 1 vector to n * 3 matrix
 		const auto unflatten = [n](const Eigen::VectorXf& p) {
@@ -197,5 +213,27 @@ namespace pd {
 		//	std::cout << result.block(30, 0, 9, 1) << "\n";
 		//}
 		model->update_positions_and_velocities(result, (result - model->positions()) * static_cast<double>(dt_inv));
+	}
+
+	void Solver::local_step_cpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b)
+	{
+		for (const auto& constraint : model->constraints)
+		{
+			//constraint->project_i_wiSiTAiTBipi(b.data(), q_nplus1.data(), b.size());
+			//continue;
+			const Eigen::VectorXf pi = constraint->local_solve(q_nplus1);
+
+			//std::cout << pi << "\n";
+			//const auto test = constraint->get_i_wiSiTAiTBipi(pi);
+			//std::cout << "test(0) = " << test(0) << "\n";
+
+			// This can be further optimized
+			b += constraint->get_i_wiSiTAiTBipi(pi);
+		}
+	}
+
+	void Solver::local_step_gpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b)
+	{
+		gpu_local_solver->gpu_local_step_entry(q_nplus1, b, model->constraints.size());
 	}
 }

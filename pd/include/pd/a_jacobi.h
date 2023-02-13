@@ -16,7 +16,7 @@ namespace pd
 		void clear() override;
 
 		__global__ friend void itr_order_1(
-			float* next_x,
+			float* __restrict__ next_x,
 			const float* __restrict__ x,
 			float** __restrict__ d_1_ring_neighbors,
 			int** __restrict__ d_1_ring_neighbor_indices,
@@ -27,8 +27,8 @@ namespace pd
 		);
 
 		__global__ friend void itr_order_2(
-			float* next_x_1,
-			float* next_x_2,
+			float* __restrict__ next_x_1,
+			float* __restrict__ next_x_2,
 			const float* __restrict__ x_1,
 			const float* __restrict__ x_2,
 			float** __restrict__ d_1_ring_neighbors,
@@ -43,9 +43,9 @@ namespace pd
 		);
 
 		__global__ friend void itr_order_3(
-			float* next_x_1,
-			float* next_x_2,
-			float* next_x_3,
+			float* __restrict__ next_x_1,
+			float* __restrict__ next_x_2,
+			float* __restrict__ next_x_3,
 			const float* __restrict__ x_1,
 			const float* __restrict__ x_2,
 			const float* __restrict__ x_3,
@@ -76,7 +76,6 @@ namespace pd
 	private:
 		void precompute_A_jacobi(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints);
 
-	private:
 		int n{ 0 };
 		// A is an n * n with 3 * 3 block matrix
 		// total space for x and b is 3 * #Vertex * sizeof(float) 
@@ -102,15 +101,9 @@ namespace pd
 		// forall i, D_{ii}
 		float* d_diagonals;
 
-		// sum of D_{ss} forall s adjacent to i
-		//float* d_diagonal_adj_sums; // use only in order = 2
-		//float* d_diagonal_adj_sums_2; // use only in order = 3
-
 		float* d_b;
 
 		int order{ 0 };
-		// sizeof(d_x) == sizeof(d_next_x) == order
-		//float* d_x;
 		float* d_x[A_JACOBI_MAX_ORDER];
 		float* d_next_x[A_JACOBI_MAX_ORDER];
 	};

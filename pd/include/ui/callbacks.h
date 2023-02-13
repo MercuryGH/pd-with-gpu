@@ -269,9 +269,9 @@ namespace ui
 			return false;
 		}
 	};
-	double pre_draw_handler::last_elapse_time; // a must-be static variable
-	double pre_draw_handler::last_local_step_time; // a must-be static variable
-	double pre_draw_handler::last_global_step_time; // a must-be static variable
+	double pre_draw_handler::last_elapse_time; 
+	double pre_draw_handler::last_local_step_time; 
+	double pre_draw_handler::last_global_step_time; 
 }
 
 

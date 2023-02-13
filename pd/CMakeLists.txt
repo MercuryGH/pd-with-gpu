@@ -14,6 +14,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(_libigl)
 
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON) # allow device function in different .cu files
+
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
 if (CUDA_ENABLE)
     include_directories("E:\\CUDA\\v11.6\\include")
@@ -24,6 +26,7 @@ else()
 endif()
 
 #add_executable(pd ${srcs})
+target_compile_options(pd PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
 target_compile_features(pd PRIVATE cxx_std_17)
 
 target_include_directories(pd PUBLIC include)

@@ -14,8 +14,8 @@ namespace pd
 		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
 		void clear() override;
 
-		__global__ friend void itr_shfl_down(float* next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col);
-		__global__ friend void itr_normal(float* next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col);
+		__global__ friend void itr_shfl_down(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col);
+		__global__ friend void itr_normal(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col);
 
 	private:
 		int n{ 0 };
