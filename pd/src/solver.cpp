@@ -6,12 +6,13 @@
 namespace pd {
 	Solver::Solver()
 	{
-		solvers[0] = new CholeskyDirect();
-		solvers[1] = new ParallelJacobi();
-		solvers[2] = new AJacobi(1);
-		solvers[3] = new AJacobi(2);
-		solvers[4] = new AJacobi(3);
-		linear_sys_solver = solvers[0];
+		solvers[0] = std::make_unique<CholeskyDirect>();
+		solvers[1] = std::make_unique<ParallelJacobi>();
+		solvers[2] = std::make_unique<AJacobi>(1);
+		solvers[3] = std::make_unique<AJacobi>(2);
+		solvers[4] = std::make_unique<AJacobi>(3);
+		//linear_sys_solver = &solvers[0];
+		linear_sys_solver = solvers.begin();
 	}
 
 	void Solver::precompute_A()
@@ -79,31 +80,39 @@ namespace pd {
 
 	void Solver::precompute()
 	{
+		timer.start();
+
 		precompute_A();
-		linear_sys_solver->set_A(A, model->constraints);
+		(*linear_sys_solver)->set_A(A, model->constraints);
+
+		timer.stop();
+		last_precomputation_time = timer.elapsed_milliseconds();
 	}
 
 	void Solver::set_solver(ui::LinearSysSolver sel)
 	{
 		int idx = static_cast<int>(sel);
-		linear_sys_solver = solvers[idx];
+		linear_sys_solver = solvers.begin() + idx;
 	}
 
 	void Solver::clear_solver()
 	{
-		if (linear_sys_solver != nullptr)
+		if (solvers.size() != 0) // not init
 		{
-			linear_sys_solver->clear();
+			(*linear_sys_solver)->clear();
 		}
 		if (use_gpu_for_local_step)
 		{
-			gpu_local_solver->free_local_gpu_memory_entry(model->constraints.size());
+			if (gpu_local_solver != nullptr)
+			{
+				gpu_local_solver->free_local_gpu_memory_entry(model->constraints.size());
+			}
 		}
 	}
 
 	void Solver::step(const Eigen::MatrixXd& f_ext, int n_itr, int itr_solver_n_itr)
 	{
-		this->linear_sys_solver->set_n_itr(itr_solver_n_itr);
+		(*linear_sys_solver)->set_n_itr(itr_solver_n_itr);
 
 		const float dtsqr = dt * dt;
 		const float dt_inv = 1.0f / dt;
@@ -184,7 +193,7 @@ namespace pd {
 
 			timer.start();
 
-			q_nplus1 = linear_sys_solver->solve(b);
+			q_nplus1 = (*linear_sys_solver)->solve(b);
 
 			timer.stop();
 			last_global_step_time += timer.elapsed_milliseconds();

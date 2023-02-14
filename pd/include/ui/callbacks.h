@@ -192,6 +192,7 @@ namespace ui
 			f_ext->col(1).array() -= GRAVITY;
 		}
 
+		solver->use_gpu_for_local_step = solver_params->use_gpu_for_local_step;
 		if (solver->algo_changed == true)
 		{
 			solver->clear_solver();
@@ -228,6 +229,7 @@ namespace ui
 		static double last_elapse_time;
 		static double last_local_step_time;
 		static double last_global_step_time;
+		static double last_precomputation_time;
 
 		bool operator()(igl::opengl::glfw::Viewer& viewer)
 		{
@@ -265,6 +267,7 @@ namespace ui
 			last_elapse_time = timer.elapsed_milliseconds();
 			last_global_step_time = solver->last_global_step_time;
 			last_local_step_time = solver->last_local_step_time;
+			last_precomputation_time = solver->last_precomputation_time;
 
 			return false;
 		}
@@ -272,6 +275,7 @@ namespace ui
 	double pre_draw_handler::last_elapse_time; 
 	double pre_draw_handler::last_local_step_time; 
 	double pre_draw_handler::last_global_step_time; 
+	double pre_draw_handler::last_precomputation_time;
 }
 
 

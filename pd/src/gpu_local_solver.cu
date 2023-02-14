@@ -13,12 +13,17 @@ namespace pd
 
 	void GpuLocalSolver::free_local_gpu_memory_entry(int n_constraints)
 	{
-		free_constraints<<<1, n_constraints>>>(d_local_constraints);
-		
-		checkCudaErrors(cudaFree(d_local_constraints));
-		checkCudaErrors(cudaFree(d_local_cnt));
-		checkCudaErrors(cudaFree(d_b));
-		checkCudaErrors(cudaFree(d_q_nplus1));
+		if (is_allocated)
+		{
+			free_constraints << <1, n_constraints >> > (d_local_constraints);
+
+			checkCudaErrors(cudaFree(d_local_constraints));
+			checkCudaErrors(cudaFree(d_local_cnt));
+			checkCudaErrors(cudaFree(d_b));
+			checkCudaErrors(cudaFree(d_q_nplus1));
+
+			is_allocated = false;
+		}
 	}
 
 	void GpuLocalSolver::gpu_local_step_solver_malloc(int n)
@@ -53,6 +58,7 @@ namespace pd
 				assert(false);
 			}
 		}
+		is_allocated = true;
 	}
 
 	void GpuLocalSolver::gpu_local_step_entry(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b, int n_constraints)

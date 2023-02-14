@@ -15,7 +15,10 @@ namespace pd
 		void gpu_object_creation(const Constraints& constraints);
 		void gpu_local_step_entry(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b, int n_constraints);
 
+
 	private:
+		bool is_allocated{ false };
+
 		// dev mem
 		Constraint** d_local_constraints; // array of constraints*
 		int* d_local_cnt; // GPU counter for objects

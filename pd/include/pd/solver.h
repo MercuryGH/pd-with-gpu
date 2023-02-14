@@ -51,9 +51,10 @@ namespace pd
 		util::CpuTimer timer;
 		double last_local_step_time;
 		double last_global_step_time;
+		double last_precomputation_time;
 
 		// if use gpu for local step, we need to create virtual function table on the gpu
-		bool use_gpu_for_local_step{ false };
+		bool use_gpu_for_local_step{ true };
 		std::unique_ptr<GpuLocalSolver> gpu_local_solver{ nullptr };
 
 	private:
@@ -64,9 +65,9 @@ namespace pd
 		DeformableMesh* model;
 		Eigen::SparseMatrix<float> A;
 
-		LinearSystemSolver* linear_sys_solver;
 		constexpr static int N_SOLVERS = 5;
-		std::array<LinearSystemSolver*, N_SOLVERS> solvers;
+		std::array<std::unique_ptr<LinearSystemSolver>, N_SOLVERS> solvers;
+		std::array<std::unique_ptr<LinearSystemSolver>, N_SOLVERS>::iterator linear_sys_solver;
 
 		// local step
 		void local_step_cpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b);

@@ -176,13 +176,12 @@ int main(int argc, char* argv[])
 
 		if (ImGui::CollapsingHeader("Simulating Control"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
-			ImGui::Text("Solver: %s", solver.dirty ? "not ready" : "ready");
+			ImGui::Text("Solver is %s", solver.dirty ? "not ready" : "ready");
 			ImGui::InputFloat("Timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f");
-			ImGui::InputInt("Solver PD #Itr", &solver_params.n_solver_pd_iterations);
-			if (ImGui::Button("Simulate 1 Step") && viewer.core().is_animating == false)
-			{
-				ui::tick(viewer, &model, &physics_params, &solver_params, &solver, &f_ext);
-			}
+
+			ImGui::Separator();
+
+			ImGui::Checkbox("Use GPU for local step", &solver_params.use_gpu_for_local_step);
 
 			ImGui::Separator();
 
@@ -226,6 +225,15 @@ int main(int argc, char* argv[])
 				ImGui::Text("Time for local step: %lf ms", frame_callback.last_local_step_time);
 
 				// update every 1 seconds
+			}
+			ImGui::Text("Time for precomputation: %lf ms", frame_callback.last_precomputation_time);
+
+			ImGui::Separator();
+
+			ImGui::InputInt("Solver PD #Itr", &solver_params.n_solver_pd_iterations);
+			if (ImGui::Button("Simulate 1 Step") && viewer.core().is_animating == false)
+			{
+				ui::tick(viewer, &model, &physics_params, &solver_params, &solver, &f_ext);
 			}
 
 			ImGui::Checkbox("Auto Simulate!", &viewer.core().is_animating);
