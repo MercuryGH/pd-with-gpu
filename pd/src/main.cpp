@@ -1,4 +1,5 @@
 #include <array>
+#include <filesystem>
 #include <pd/constraint.h>
 #include <pd/deformable_mesh.h>
 #include <pd/solver.h>
@@ -91,6 +92,30 @@ int main(int argc, char* argv[])
 					reset_model(V, F, F);
 				}
 				
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode(".obj file"))
+			{
+				if (ImGui::Button("Load .obj file"))
+				{
+					std::string file_name = igl::file_dialog_open();
+					std::filesystem::path obj_file{ file_name };
+
+					if (std::filesystem::exists(obj_file) && std::filesystem::is_regular_file(obj_file))
+					{
+						Eigen::MatrixXd V;
+						Eigen::MatrixXi F;
+						if (igl::read_triangle_mesh(file_name, V, F))
+						{
+							reset_model(V, F, F);
+						}
+						else
+						{
+							printf("Load .obj file failed!\n");
+						}
+					}
+				}
+
 				ImGui::TreePop();
 			}
 		}

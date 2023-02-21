@@ -1,10 +1,10 @@
 #pragma once
 
+#include <pd/deformable_mesh.h>
+#include <pd/solver.h>
 #include <ui/user_control.h>
 #include <ui/physics_params.h>
 #include <ui/solver_params.h>
-
-//#include <GLFW/glfw3.h>
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/unproject_onto_mesh.h>
 #include <util/cpu_timer.h>

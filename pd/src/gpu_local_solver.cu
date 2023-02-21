@@ -4,18 +4,24 @@
 namespace pd
 {
 	__global__ void free_constraints(
-		Constraint** __restrict__ d_local_constraints)
+		Constraint** __restrict__ d_local_constraints, int n_constraints)
 	{
-		int idx = threadIdx.x;
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-		delete d_local_constraints[idx];
+		if (idx < n_constraints)
+		{
+			delete d_local_constraints[idx];
+		}
 	}
 
-	void GpuLocalSolver::free_local_gpu_memory_entry(int n_constraints)
+	void GpuLocalSolver::free_local_gpu_memory_entry()
 	{
 		if (is_allocated)
 		{
-			free_constraints << <1, n_constraints >> > (d_local_constraints);
+			const int n_blocks = n_constraints / WARP_SIZE + (n_constraints % WARP_SIZE == 0 ? 0 : 1);
+			free_constraints <<< n_blocks, WARP_SIZE >> > (d_local_constraints, n_constraints);
+
+			checkCudaErrors(cudaDeviceSynchronize());
 
 			checkCudaErrors(cudaFree(d_local_constraints));
 			checkCudaErrors(cudaFree(d_local_cnt));
@@ -32,11 +38,12 @@ namespace pd
 		checkCudaErrors(cudaMalloc((void**)&d_q_nplus1, sizeof(float) * n));
 	}
 
-	void GpuLocalSolver::gpu_object_creation(const Constraints& constraints)
+	void GpuLocalSolver::gpu_object_creation_serial(const Constraints& constraints)
 	{
 		// initialize memory on gpu
 		//d_local_constraints = new Constraint * [n];
 		//d_local_cnt = new int(0);
+		this->n_constraints = constraints.size();
 		checkCudaErrors(cudaMalloc((void**)&d_local_constraints, sizeof(Constraint*) * constraints.size()));
 		checkCudaErrors(cudaMalloc((void**)&d_local_cnt, sizeof(int*)));
 		cudaMemset(d_local_cnt, 0, sizeof(int));
@@ -58,10 +65,146 @@ namespace pd
 				assert(false);
 			}
 		}
+
 		is_allocated = true;
 	}
 
-	void GpuLocalSolver::gpu_local_step_entry(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b, int n_constraints)
+	void GpuLocalSolver::gpu_object_creation_parallel(const Constraints& constraints)
+	{
+		// initialize memory on gpu
+		//d_local_constraints = new Constraint * [n];
+		//d_local_cnt = new int(0);
+		this->n_constraints = constraints.size();
+		checkCudaErrors(cudaMalloc((void**)&d_local_constraints, sizeof(Constraint*) * constraints.size()));
+		checkCudaErrors(cudaMalloc((void**)&d_local_cnt, sizeof(int*)));
+		cudaMemset(d_local_cnt, 0, sizeof(int));
+
+		std::vector<float> t1_pcs;
+		std::vector<int> t2_pcs;
+		std::vector<int> t3_pcs;
+		std::vector<float> t4_pcs;
+		std::vector<float> t5_pcs;
+		std::vector<float> t6_pcs;
+
+		std::vector<float> t1_elcs;
+		std::vector<int> t2_elcs;
+		std::vector<int> t3_elcs;
+		std::vector<int> t4_elcs;
+		std::vector<float> t5_elcs;
+
+		// copy all constraints (serial code)
+		for (const auto& constraint : constraints)
+		{
+			if (auto p = dynamic_cast<const PositionalConstraint*>(constraint.get()))
+			{
+				t1_pcs.push_back(p->wi);
+				t2_pcs.push_back(p->vi);
+				t3_pcs.push_back(p->n);
+				t4_pcs.push_back(p->x0);
+				t5_pcs.push_back(p->y0);
+				t6_pcs.push_back(p->z0);
+			}
+			else if (auto p = dynamic_cast<const EdgeLengthConstraint*>(constraint.get()))
+			{
+				t1_elcs.push_back(p->wi);
+				t2_elcs.push_back(p->vi);
+				t3_elcs.push_back(p->vj);
+				t4_elcs.push_back(p->n);
+				t5_elcs.push_back(p->rest_length);
+			}
+			else
+			{
+				printf("Type Error while creating object on the GPU!\n");
+				assert(false);
+			}
+		}
+
+		// dev mem
+		int n1 = t1_pcs.size();
+		float* wi_pcs;
+		int* vi_pcs;
+		int* n_pcs;
+		float* x0_pcs;
+		float* y0_pcs;
+		float* z0_pcs;
+
+		int n2 = t1_elcs.size();
+		float* wi_elcs;
+		int* vi_elcs;
+		int* vj_elcs;
+		int* n_elcs;
+		float* rest_length_elcs;
+
+		// copy dev mem
+		checkCudaErrors(cudaMalloc((void**)&wi_pcs, sizeof(float) * n1));
+		checkCudaErrors(cudaMalloc((void**)&vi_pcs, sizeof(int) * n1));
+		checkCudaErrors(cudaMalloc((void**)&n_pcs, sizeof(int) * n1));
+		checkCudaErrors(cudaMalloc((void**)&x0_pcs, sizeof(float) * n1));
+		checkCudaErrors(cudaMalloc((void**)&y0_pcs, sizeof(float) * n1));
+		checkCudaErrors(cudaMalloc((void**)&z0_pcs, sizeof(float) * n1));
+
+		checkCudaErrors(cudaMalloc((void**)&wi_elcs, sizeof(float) * n2));
+		checkCudaErrors(cudaMalloc((void**)&vi_elcs, sizeof(int) * n2));
+		checkCudaErrors(cudaMalloc((void**)&vj_elcs, sizeof(int) * n2));
+		checkCudaErrors(cudaMalloc((void**)&n_elcs, sizeof(int) * n2));
+		checkCudaErrors(cudaMalloc((void**)&rest_length_elcs, sizeof(float) * n2));
+
+		checkCudaErrors(cudaMemcpy(wi_pcs, t1_pcs.data(), sizeof(float) * n1, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(vi_pcs, t2_pcs.data(), sizeof(int) * n1, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(n_pcs, t3_pcs.data(), sizeof(int) * n1, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(x0_pcs, t4_pcs.data(), sizeof(float) * n1, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(y0_pcs, t5_pcs.data(), sizeof(float) * n1, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(z0_pcs, t6_pcs.data(), sizeof(float) * n1, cudaMemcpyHostToDevice));
+
+		checkCudaErrors(cudaMemcpy(wi_elcs, t1_elcs.data(), sizeof(float) * n2, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(vi_elcs, t2_elcs.data(), sizeof(int) * n2, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(vj_elcs, t3_elcs.data(), sizeof(int) * n2, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(n_elcs, t4_elcs.data(), sizeof(int) * n2, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(rest_length_elcs, t5_elcs.data(), sizeof(float) * n2, cudaMemcpyHostToDevice));
+
+		// Note: when the b in <<<a, b>>> is too large, cuda will refuse to call the kernel function
+		// but leaving no warning or error!
+		const int n_blocks = n_constraints / WARP_SIZE + (n_constraints % WARP_SIZE == 0 ? 0 : 1);
+		create_local_gpu_constraints << <n_blocks, WARP_SIZE >> > (
+			n1, 
+			wi_pcs,
+			vi_pcs,
+			n_pcs,
+			x0_pcs,
+			y0_pcs,
+			z0_pcs,
+
+			n2,
+			wi_elcs,
+			vi_elcs,
+			vj_elcs,
+			n_elcs,
+			rest_length_elcs,
+
+			d_local_cnt,
+			d_local_constraints
+		);
+
+		checkCudaErrors(cudaDeviceSynchronize());
+
+		// free
+		checkCudaErrors(cudaFree(wi_pcs));
+		checkCudaErrors(cudaFree(vi_pcs));
+		checkCudaErrors(cudaFree(n_pcs));
+		checkCudaErrors(cudaFree(x0_pcs));
+		checkCudaErrors(cudaFree(y0_pcs));
+		checkCudaErrors(cudaFree(z0_pcs));
+
+		checkCudaErrors(cudaFree(wi_elcs));
+		checkCudaErrors(cudaFree(vi_elcs));
+		checkCudaErrors(cudaFree(vj_elcs));
+		checkCudaErrors(cudaFree(n_elcs));
+		checkCudaErrors(cudaFree(rest_length_elcs));
+
+		is_allocated = true;
+	}
+
+	void GpuLocalSolver::gpu_local_step_entry(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b)
 	{
 		const int n = b.size();
 		checkCudaErrors(cudaMemcpy(d_q_nplus1, q_nplus1.data(), sizeof(float) * n, cudaMemcpyHostToDevice));
@@ -72,6 +215,41 @@ namespace pd
 
 		checkCudaErrors(cudaMemcpy(b.data(), d_b, sizeof(float) * n, cudaMemcpyDeviceToHost));
 	}
+
+	__global__ void create_local_gpu_constraints(
+		int n1,
+		float* __restrict__ wi_pcs,
+		int* __restrict__ vi_pcs,
+		int* __restrict__ n_pcs,
+		float* __restrict__ x0_pcs,
+		float* __restrict__ y0_pcs,
+		float* __restrict__ z0_pcs,
+
+		int n2,
+		float* __restrict__ wi_elcs,
+		int* __restrict__ vi_elcs,
+		int* __restrict__ vj_elcs,
+		int* __restrict__ n_elcs,
+		float* __restrict__ rest_length_elcs,
+
+		int* __restrict__ d_local_cnt,
+		Constraint** __restrict__ d_local_constraints)
+	{
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (idx < n1)
+		{
+			d_local_constraints[idx] = new PositionalConstraint(wi_pcs[idx], vi_pcs[idx], n_pcs[idx], x0_pcs[idx], y0_pcs[idx], z0_pcs[idx]);
+			//atomicAdd(d_local_cnt, *d_local_cnt + 1);
+		}
+		else if (idx < n1 + n2)
+		{
+			idx -= n1;
+			d_local_constraints[idx + n1] = new EdgeLengthConstraint(wi_elcs[idx], vi_elcs[idx], vj_elcs[idx], n_elcs[idx], rest_length_elcs[idx]);
+			//atomicAdd(d_local_cnt, *d_local_cnt + 1);
+		}
+	}
+
 
 	__global__ void create_local_gpu_positional_constraint(
 		float wi, int vi, int n, float x0, float y0, float z0,
@@ -94,9 +272,14 @@ namespace pd
 		Constraint** __restrict__ d_local_constraints, int* __restrict__ d_local_cnt, int n_constraints)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
-		//int n_constraints = *d_local_cnt;
-
-		assert(*d_local_cnt == n_constraints);
+		//if (idx == 0)
+		//{
+		//	printf("%d %d\n", *d_local_cnt, n_constraints);
+		//}
+		// possible memory access error when idx is large. Can debug it using NSight later
+		//if (idx > 42500)
+		//	return;
+		//assert(*d_local_cnt == n_constraints);
 
 		if (idx < n_constraints)
 		{
@@ -105,4 +288,12 @@ namespace pd
 			constraint->project_i_wiSiTAiTBipi(d_b, d_q_nplus1);
 		}
 	}
+
+	__global__ void test_kernel()
+	{
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
+		
+		printf("idx = %d\n", idx);
+	}
+
 }

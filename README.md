@@ -17,3 +17,5 @@ PD testing.
 
 值得注意的是，libigl ver >= 2.4.0 的 cmake 构建方式与之前的版本有很大不同，官方文档和样例工程 libigl-example-project 可能并没有全面更新，需要参考 https://github.com/libigl/libigl/releases/tag/v2.4.0 获取实际构建方式。
 
+constraints 数目过多时，预计算local step GPU 会崩溃。最大数目为42000 constraints 
+

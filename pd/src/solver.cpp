@@ -53,7 +53,8 @@ namespace pd {
 				gpu_local_solver = std::make_unique<GpuLocalSolver>();
 			}
 			gpu_local_solver->gpu_local_step_solver_malloc(3 * n);
-			gpu_local_solver->gpu_object_creation(model->constraints);
+			//gpu_local_solver->gpu_object_creation_serial(model->constraints);
+			gpu_local_solver->gpu_object_creation_parallel(model->constraints);
 		}
 
 		//std::vector<int> v_adj;
@@ -105,7 +106,7 @@ namespace pd {
 		{
 			if (gpu_local_solver != nullptr)
 			{
-				gpu_local_solver->free_local_gpu_memory_entry(model->constraints.size());
+				gpu_local_solver->free_local_gpu_memory_entry();
 			}
 		}
 	}
@@ -243,6 +244,6 @@ namespace pd {
 
 	void Solver::local_step_gpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b)
 	{
-		gpu_local_solver->gpu_local_step_entry(q_nplus1, b, model->constraints.size());
+		gpu_local_solver->gpu_local_step_entry(q_nplus1, b);
 	}
 }
