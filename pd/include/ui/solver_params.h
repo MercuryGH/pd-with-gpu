@@ -15,7 +15,7 @@ namespace ui
 	{
 		float dt{ 0.0166667f };
 		int n_solver_pd_iterations{ 10 };
-		int n_itr_solver_iterations{ 250 };
+		int n_itr_solver_iterations{ 2 };
 
 		bool use_gpu_for_local_step{ true };
 

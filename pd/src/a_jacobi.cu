@@ -108,6 +108,10 @@ namespace pd
 				B[i][j] = -get_B_ij(i, j);
 			}
 			D[i] = 1.0f / get_D_ii(i);
+			if (std::abs(D[i]) < 1e-5f)
+			{
+				printf("Warning: i = %d, D[i] = %f\n", i, D[i]);
+			}
 		}
 
 		// --- Compute d_diagonals
@@ -391,8 +395,8 @@ namespace pd
 				break;
 			}
 		}
-		//if (true)
-			//std::cout << "err checker[33] = " << err_checker[33] << "\n" << "ret[33] = " << ret[33] << "\n";
+		if (true)
+			std::cout << "err checker[32] = " << err_checker[32] << "\n" << "ret[32] = " << ret[32] << "\n";
 
 		return ret;
 	}
@@ -432,9 +436,16 @@ namespace pd
 
 			float D_ii_inv = d_diagonals[idx];
 
-			next_x[3 * idx] = sum_0 * D_ii_inv + b[3 * idx] * D_ii_inv;
-			next_x[3 * idx + 1] = sum_1 * D_ii_inv + b[3 * idx + 1] * D_ii_inv;
-			next_x[3 * idx + 2] = sum_2 * D_ii_inv + b[3 * idx + 2] * D_ii_inv;
+			if (idx <= 20)
+			{
+				printf("In GPU: idx = %d, %f %f %f\n", idx, sum_2, D_ii_inv, b[3 * idx + 2]);
+				// TODO: Fix the bug that D_ii_inv suddenly becomes zero 
+				// (maybe a memory access UB in previous GPU code)
+			}
+
+			next_x[3 * idx] = (sum_0 + b[3 * idx]) * D_ii_inv;
+			next_x[3 * idx + 1] = (sum_1 + b[3 * idx + 1]) * D_ii_inv;
+			next_x[3 * idx + 2] = (sum_2 + b[3 * idx + 2]) * D_ii_inv;
 		}
 	}
 

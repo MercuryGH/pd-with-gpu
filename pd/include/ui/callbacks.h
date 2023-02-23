@@ -253,15 +253,20 @@ namespace ui
 			}
 
 			// Visualize fixed point
-			const Eigen::RowVector3d COLOR{ 1., 0., 0. };
+			const Eigen::RowVector3d RED_COLOR{ 1., 0., 0. };
+			const Eigen::RowVector3d YELLOW_COLOR{ 0.6, 1., 0. };
+
 			viewer.data().clear_points();
 			for (int i = 0; i < model->positions().rows(); i++)
 			{
 				if (model->is_vertex_fixed(i))
 				{
-					viewer.data().add_points(model->positions().row(i), COLOR);
+					viewer.data().add_points(model->positions().row(i), RED_COLOR);
 				}
 			}
+
+			// debug draw
+			viewer.data().add_points(model->positions().row(10), YELLOW_COLOR);
 
 			timer.stop();
 			last_elapse_time = timer.elapsed_milliseconds();

@@ -17,7 +17,7 @@ namespace pd
 	public:
 		DeformableMesh() = default;
 		/*
-		DeformableMesh(Positions p, Faces f, Elements e, Masses m) :
+		DeformableMesh() :
 			p0(p),
 			p(p),
 			f(f),
@@ -29,7 +29,7 @@ namespace pd
 			v.setZero(); // init velocity to 0
 		}
 		*/
-		DeformableMesh(Positions p, Faces f, Elements e) :
+		DeformableMesh(const Positions &p, const Faces &f, const Elements &e) :
 			p0(p),
 			p(p),
 			f(f),

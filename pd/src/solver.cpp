@@ -217,12 +217,28 @@ namespace pd {
 			return ret;
 		};
 
-		const Eigen::MatrixXd result = unflatten(q_nplus1).cast<double>();
+		const bool clamp = true; // clamp bottom (y = -1)
+		
+		Eigen::MatrixXd result = unflatten(q_nplus1).cast<double>();
 		//{
 		//	std::cout << "Test\n";
 		//	std::cout << result.block(30, 0, 9, 1) << "\n";
 		//}
-		model->update_positions_and_velocities(result, (result - model->positions()) * static_cast<double>(dt_inv));
+		Eigen::MatrixXd velocity = (result - model->positions()) * static_cast<double>(dt_inv);
+		if (clamp)
+		{
+			constexpr double BOTTOM_Y = -1;
+			for (int i = 0; i < n; i++)
+			{
+				if (result.coeff(i, 1) < BOTTOM_Y)
+				{
+					result.coeffRef(i, 1) = BOTTOM_Y;
+					velocity.coeffRef(i, 1) = 0;
+				}
+			}
+		}
+
+		model->update_positions_and_velocities(result, velocity);
 	}
 
 	void Solver::local_step_cpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b)

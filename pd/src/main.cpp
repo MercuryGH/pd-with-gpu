@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 	ui::pre_draw_handler frame_callback{ &solver, &model, &physics_params, &f_ext, &solver_params };
 	viewer.callback_pre_draw = frame_callback; // frame routine
 
-	const auto reset_model = [&](Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXi& E)
+	const auto reset_model = [&](Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXi& E)
 	{
 		// rescale the vertices to make all models look equal in size
 		Eigen::RowVector3d v_mean = V.colwise().mean();

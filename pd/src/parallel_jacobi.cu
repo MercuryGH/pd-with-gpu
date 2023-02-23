@@ -101,8 +101,8 @@ namespace pd
 				break;
 			}
 		}
-		//if (true)
-			//std::cout << "err checker[33] = " << err_checker[33] << "\n" << "ret[33] = " << ret[33] << "\n";
+		if (true)
+			std::cout << "err checker[32] = " << err_checker[32] << "\n" << "ret[32] = " << ret[32] << "\n";
 
 		return ret;
 	}
