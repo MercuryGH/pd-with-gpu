@@ -5,7 +5,7 @@
 
 namespace util
 {
-	int util::select_best_device(int& n_devs)
+	int select_best_device(int& n_devs)
 	{
 		cudaGetDeviceCount(&n_devs);
 
@@ -30,7 +30,7 @@ namespace util
 		return best_dev_idx;
 	}
 
-	void util::test_device(int dev_id)
+	void test_device(int dev_id)
 	{
 		cudaDeviceProp dev_prop;
 		cudaGetDeviceProperties(&dev_prop, dev_id);

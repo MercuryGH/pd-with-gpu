@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pd/constraint.h>
+#include <memory>
 
 #include <vector>
 #include <Eigen/Core>

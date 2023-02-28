@@ -6,6 +6,266 @@
 
 namespace pd
 {
+	__global__ void itr_order_1(
+		float* __restrict__ next_x,
+		const float* __restrict__ x,
+		float** __restrict__ d_1_ring_neighbors,
+		int** __restrict__ d_1_ring_neighbor_indices,
+		const int* __restrict__ d_1_ring_neighbor_sizes,
+		const float* __restrict__ d_diagonals,
+		const float* __restrict__ b,
+		int n  // #Vertex, parallelism is n but not 3n
+	)
+	{
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (idx < n)
+		{
+			const float* B_ijs = d_1_ring_neighbors[idx];
+			const int* js = d_1_ring_neighbor_indices[idx];
+
+			float sum_0 = 0.0f;
+			float sum_1 = 0.0f;
+			float sum_2 = 0.0f;
+
+			int j_cnt = d_1_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt; k++)
+			{
+				float B_ij = B_ijs[k];
+				int j = js[k];
+
+				sum_0 += B_ij * x[3 * j];
+				sum_1 += B_ij * x[3 * j + 1];
+				sum_2 += B_ij * x[3 * j + 2];
+			}
+
+			float D_ii_inv = d_diagonals[idx];
+
+			if (idx <= 20)
+			{
+				printf("In GPU: idx = %d, %f %f %f\n", idx, sum_2, D_ii_inv, b[3 * idx + 2]);
+				// TODO: Fix the bug that D_ii_inv suddenly becomes zero 
+				// (maybe a memory access UB in previous GPU code)
+			}
+
+			next_x[3 * idx] = (sum_0 + b[3 * idx]) * D_ii_inv;
+			next_x[3 * idx + 1] = (sum_1 + b[3 * idx + 1]) * D_ii_inv;
+			next_x[3 * idx + 2] = (sum_2 + b[3 * idx + 2]) * D_ii_inv;
+		}
+	}
+
+	__global__ void itr_order_2(
+		float* __restrict__ next_x_1,
+		float* __restrict__ next_x_2,
+		const float* __restrict__ x_1,
+		const float* __restrict__ x_2,
+
+		float** __restrict__ d_1_ring_neighbors,
+		int** __restrict__ d_1_ring_neighbor_indices,
+		const int* __restrict__ d_1_ring_neighbor_sizes,
+
+		float** __restrict__ d_2_ring_neighbors,
+		int** __restrict__ d_2_ring_neighbor_indices,
+		const int* __restrict__ d_2_ring_neighbor_sizes,
+
+		const float* __restrict__ d_diagonals, // D_ii
+
+		const float* __restrict__ b,
+		int n  // #Vertex
+	)
+	{
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (idx < n)
+		{
+			const float* B_issjs = d_2_ring_neighbors[idx];
+			const int* js = d_2_ring_neighbor_indices[idx];
+
+			float sum_0_1 = 0.0f;
+			float sum_1_1 = 0.0f;
+			float sum_2_1 = 0.0f;
+
+			float sum_0_2 = 0.0f;
+			float sum_1_2 = 0.0f;
+			float sum_2_2 = 0.0f;
+
+			int j_cnt = d_2_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt; k++)
+			{
+				float B_issj = B_issjs[k];
+				int j = js[k];
+
+				sum_0_1 += B_issj * x_1[3 * j];
+				sum_1_1 += B_issj * x_1[3 * j + 1];
+				sum_2_1 += B_issj * x_1[3 * j + 2];
+
+				sum_0_2 += B_issj * x_2[3 * j];
+				sum_1_2 += B_issj * x_2[3 * j + 1];
+				sum_2_2 += B_issj * x_2[3 * j + 2];
+			}
+
+			// b_terms:
+			const float* B_ijs_b = d_1_ring_neighbors[idx];
+			const int* js_b = d_1_ring_neighbor_indices[idx];
+
+			float b_term_0 = 0.0f;
+			float b_term_1 = 0.0f;
+			float b_term_2 = 0.0f;
+
+			int j_cnt_b = d_1_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt_b; k++)
+			{
+				float B_ij = B_ijs_b[k];
+				int j = js_b[k];
+
+				b_term_0 += B_ij * b[3 * j];
+				b_term_1 += B_ij * b[3 * j + 1];
+				b_term_2 += B_ij * b[3 * j + 2];
+			}
+
+			float D_ii_inv = d_diagonals[idx];
+
+			// may contains floating point precision problem
+			b_term_0 = (b[3 * idx] + b_term_0) * D_ii_inv;
+			b_term_1 = (b[3 * idx + 1] + b_term_1) * D_ii_inv;
+			b_term_2 = (b[3 * idx + 2] + b_term_2) * D_ii_inv;
+
+			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + b_term_0;
+			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + b_term_1;
+			next_x_1[3 * idx + 2] = sum_2_1 * D_ii_inv + b_term_2;
+			//if (idx == 1)
+				//printf("%f %f %f\n", next_x_1[3 * idx], next_x_1[3 * idx + 1], next_x_1[3 * idx + 2]);
+
+			next_x_2[3 * idx] = sum_0_2 * D_ii_inv + b_term_0;
+			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv + b_term_1;
+			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv + b_term_2;
+		}
+	}
+
+	__global__ void itr_order_3(
+		float* __restrict__ next_x_1,
+		float* __restrict__ next_x_2,
+		float* __restrict__ next_x_3,
+		const float* __restrict__ x_1,
+		const float* __restrict__ x_2,
+		const float* __restrict__ x_3,
+
+		float** __restrict__ d_1_ring_neighbors,
+		int** __restrict__ d_1_ring_neighbor_indices,
+		const int* __restrict__ d_1_ring_neighbor_sizes,
+
+		float** __restrict__ d_2_ring_neighbors,
+		int** __restrict__ d_2_ring_neighbor_indices,
+		const int* __restrict__ d_2_ring_neighbor_sizes,
+
+		float** __restrict__ d_3_ring_neighbors,
+		int** __restrict__ d_3_ring_neighbor_indices,
+		const int* __restrict__ d_3_ring_neighbor_sizes,
+
+		const float* __restrict__ d_diagonals, // D_ii
+		const float* __restrict__ b,
+		int n  // #Vertex
+	)
+	{
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (idx < n)
+		{
+			const float* B_ittssjs = d_3_ring_neighbors[idx];
+			const int* js = d_3_ring_neighbor_indices[idx];
+
+			float sum_0_1 = 0.0f;
+			float sum_1_1 = 0.0f;
+			float sum_2_1 = 0.0f;
+
+			float sum_0_2 = 0.0f;
+			float sum_1_2 = 0.0f;
+			float sum_2_2 = 0.0f;
+
+			float sum_0_3 = 0.0f;
+			float sum_1_3 = 0.0f;
+			float sum_2_3 = 0.0f;
+
+			int j_cnt = d_3_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt; k++)
+			{
+				float B_ittssj = B_ittssjs[k];
+				int j = js[k];
+
+				sum_0_1 += B_ittssj * x_1[3 * j];
+				sum_1_1 += B_ittssj * x_1[3 * j + 1];
+				sum_2_1 += B_ittssj * x_1[3 * j + 2];
+
+				sum_0_2 += B_ittssj * x_2[3 * j];
+				sum_1_2 += B_ittssj * x_2[3 * j + 1];
+				sum_2_2 += B_ittssj * x_2[3 * j + 2];
+
+				sum_0_3 += B_ittssj * x_3[3 * j];
+				sum_1_3 += B_ittssj * x_3[3 * j + 1];
+				sum_2_3 += B_ittssj * x_3[3 * j + 2];
+			}
+
+			// b_terms_1:
+			const float* B_ijs_b = d_1_ring_neighbors[idx];
+			const int* js_b_1 = d_1_ring_neighbor_indices[idx];
+
+			float b_term_0_1 = 0.0f;
+			float b_term_1_1 = 0.0f;
+			float b_term_2_1 = 0.0f;
+
+			int j_cnt_b_1 = d_1_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt_b_1; k++)
+			{
+				float B_ij = B_ijs_b[k];
+				int j = js_b_1[k];
+
+				b_term_0_1 += B_ij * b[3 * j];
+				b_term_1_1 += B_ij * b[3 * j + 1];
+				b_term_2_1 += B_ij * b[3 * j + 2];
+			}
+
+			// b_terms_2:
+			const float* B_issjs_b = d_2_ring_neighbors[idx];
+			const int* js_b_2 = d_2_ring_neighbor_indices[idx];
+
+			float b_term_0_2 = 0.0f;
+			float b_term_1_2 = 0.0f;
+			float b_term_2_2 = 0.0f;
+
+			int j_cnt_b_2 = d_2_ring_neighbor_sizes[idx];
+			for (int k = 0; k < j_cnt_b_2; k++)
+			{
+				float B_issj = B_issjs_b[k];
+				int j = js_b_2[k];
+
+				b_term_0_2 += B_issj * b[3 * j];
+				b_term_1_2 += B_issj * b[3 * j + 1];
+				b_term_2_2 += B_issj * b[3 * j + 2];
+			}
+
+			float D_ii_inv = d_diagonals[idx];
+
+			// may contains floating point precision problem
+			b_term_0_1 = (b[3 * idx] + b_term_0_1 + b_term_0_2) * D_ii_inv;
+			b_term_1_1 = (b[3 * idx + 1] + b_term_1_1 + b_term_1_2) * D_ii_inv;
+			b_term_2_1 = (b[3 * idx + 2] + b_term_2_1 + b_term_2_2) * D_ii_inv;
+
+			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + b_term_0_1;
+			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + b_term_1_1;
+			next_x_1[3 * idx + 2] = sum_2_1 * D_ii_inv + b_term_2_1;
+			//if (idx == 1)
+				//printf("%f %f %f\n", next_x_1[3 * idx], next_x_1[3 * idx + 1], next_x_1[3 * idx + 2]);
+
+			next_x_2[3 * idx] = sum_0_2 * D_ii_inv + b_term_0_1;
+			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv + b_term_1_1;
+			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv + b_term_2_1;
+
+			next_x_3[3 * idx] = sum_0_3 * D_ii_inv + b_term_0_1;
+			next_x_3[3 * idx + 1] = sum_1_3 * D_ii_inv + b_term_1_1;
+			next_x_3[3 * idx + 2] = sum_2_3 * D_ii_inv + b_term_2_1;
+		}
+	}
+
 	void AJacobi::clear()
 	{
 		if (is_allocated)
@@ -401,263 +661,4 @@ namespace pd
 		return ret;
 	}
 
-	__global__ void itr_order_1(
-		float* __restrict__ next_x,
-		const float* __restrict__ x,
-		float** __restrict__ d_1_ring_neighbors,
-		int** __restrict__ d_1_ring_neighbor_indices,
-		const int* __restrict__ d_1_ring_neighbor_sizes,
-		const float* __restrict__ d_diagonals,
-		const float* __restrict__ b,
-		int n  // #Vertex, parallelism is n but not 3n
-	)
-	{
-		int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (idx < n)
-		{
-			const float* B_ijs = d_1_ring_neighbors[idx];
-			const int* js = d_1_ring_neighbor_indices[idx];
-
-			float sum_0 = 0.0f;
-			float sum_1 = 0.0f;
-			float sum_2 = 0.0f;
-
-			int j_cnt = d_1_ring_neighbor_sizes[idx];
-			for (int k = 0; k < j_cnt; k++)
-			{
-				float B_ij = B_ijs[k];
-				int j = js[k];
-
-				sum_0 += B_ij * x[3 * j];
-				sum_1 += B_ij * x[3 * j + 1];
-				sum_2 += B_ij * x[3 * j + 2];
-			}
-
-			float D_ii_inv = d_diagonals[idx];
-
-			if (idx <= 20)
-			{
-				printf("In GPU: idx = %d, %f %f %f\n", idx, sum_2, D_ii_inv, b[3 * idx + 2]);
-				// TODO: Fix the bug that D_ii_inv suddenly becomes zero 
-				// (maybe a memory access UB in previous GPU code)
-			}
-
-			next_x[3 * idx] = (sum_0 + b[3 * idx]) * D_ii_inv;
-			next_x[3 * idx + 1] = (sum_1 + b[3 * idx + 1]) * D_ii_inv;
-			next_x[3 * idx + 2] = (sum_2 + b[3 * idx + 2]) * D_ii_inv;
-		}
-	}
-
-	__global__ void itr_order_2(
-		float* __restrict__ next_x_1,
-		float* __restrict__ next_x_2,
-		const float* __restrict__ x_1,
-		const float* __restrict__ x_2,
-
-		float** __restrict__ d_1_ring_neighbors,
-		int** __restrict__ d_1_ring_neighbor_indices,
-		const int* __restrict__ d_1_ring_neighbor_sizes,
-
-		float** __restrict__ d_2_ring_neighbors,
-		int** __restrict__ d_2_ring_neighbor_indices,
-		const int* __restrict__ d_2_ring_neighbor_sizes,
-
-		const float* __restrict__ d_diagonals, // D_ii
-
-		const float* __restrict__ b,
-		int n  // #Vertex
-	)
-	{
-		int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (idx < n)
-		{
-			const float* B_issjs = d_2_ring_neighbors[idx];
-			const int* js = d_2_ring_neighbor_indices[idx];
-
-			float sum_0_1 = 0.0f;
-			float sum_1_1 = 0.0f;
-			float sum_2_1 = 0.0f;
-
-			float sum_0_2 = 0.0f;
-			float sum_1_2 = 0.0f;
-			float sum_2_2 = 0.0f;
-
-			int j_cnt = d_2_ring_neighbor_sizes[idx];
-			for (int k = 0; k < j_cnt; k++)
-			{
-				float B_issj = B_issjs[k];
-				int j = js[k];
-
-				sum_0_1 += B_issj * x_1[3 * j];
-				sum_1_1 += B_issj * x_1[3 * j + 1];
-				sum_2_1 += B_issj * x_1[3 * j + 2];
-
-				sum_0_2 += B_issj * x_2[3 * j];
-				sum_1_2 += B_issj * x_2[3 * j + 1];
-				sum_2_2 += B_issj * x_2[3 * j + 2];
-			}
-
-			// b_terms:
-			const float* B_ijs_b = d_1_ring_neighbors[idx];
-			const int* js_b = d_1_ring_neighbor_indices[idx];
-
-			float b_term_0 = 0.0f;
-			float b_term_1 = 0.0f;
-			float b_term_2 = 0.0f;
-
-			int j_cnt_b = d_1_ring_neighbor_sizes[idx];
-			for (int k = 0; k < j_cnt_b; k++)
-			{
-				float B_ij = B_ijs_b[k];
-				int j = js_b[k];
-
-				b_term_0 += B_ij * b[3 * j];
-				b_term_1 += B_ij * b[3 * j + 1];
-				b_term_2 += B_ij * b[3 * j + 2];
-			}
-
-			float D_ii_inv = d_diagonals[idx];
-
-			// may contains floating point precision problem
-			b_term_0 = (b[3 * idx] + b_term_0) * D_ii_inv;
-			b_term_1 = (b[3 * idx + 1] + b_term_1) * D_ii_inv;
-			b_term_2 = (b[3 * idx + 2] + b_term_2) * D_ii_inv;
-
-			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + b_term_0;
-			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + b_term_1;
-			next_x_1[3 * idx + 2] = sum_2_1 * D_ii_inv + b_term_2;
-			//if (idx == 1)
-				//printf("%f %f %f\n", next_x_1[3 * idx], next_x_1[3 * idx + 1], next_x_1[3 * idx + 2]);
-
-			next_x_2[3 * idx] = sum_0_2 * D_ii_inv + b_term_0;
-			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv + b_term_1;
-			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv + b_term_2;
-		}
-	}
-
-	__global__ void itr_order_3(
-		float* __restrict__ next_x_1,
-		float* __restrict__ next_x_2,
-		float* __restrict__ next_x_3,
-		const float* __restrict__ x_1,
-		const float* __restrict__ x_2,
-		const float* __restrict__ x_3,
-
-		float** __restrict__ d_1_ring_neighbors,
-		int** __restrict__ d_1_ring_neighbor_indices,
-		const int* __restrict__ d_1_ring_neighbor_sizes,
-
-		float** __restrict__ d_2_ring_neighbors,
-		int** __restrict__ d_2_ring_neighbor_indices,
-		const int* __restrict__ d_2_ring_neighbor_sizes,
-
-		float** __restrict__ d_3_ring_neighbors,
-		int** __restrict__ d_3_ring_neighbor_indices,
-		const int* __restrict__ d_3_ring_neighbor_sizes,
-
-		const float* __restrict__ d_diagonals, // D_ii
-		const float* __restrict__ b,
-		int n  // #Vertex
-	)
-	{
-		int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (idx < n)
-		{
-			const float* B_ittssjs = d_3_ring_neighbors[idx];
-			const int* js = d_3_ring_neighbor_indices[idx];
-
-			float sum_0_1 = 0.0f;
-			float sum_1_1 = 0.0f;
-			float sum_2_1 = 0.0f;
-
-			float sum_0_2 = 0.0f;
-			float sum_1_2 = 0.0f;
-			float sum_2_2 = 0.0f;
-
-			float sum_0_3 = 0.0f;
-			float sum_1_3 = 0.0f;
-			float sum_2_3 = 0.0f;
-
-			int j_cnt = d_3_ring_neighbor_sizes[idx];
-			for (int k = 0; k < j_cnt; k++)
-			{
-				float B_ittssj = B_ittssjs[k];
-				int j = js[k];
-
-				sum_0_1 += B_ittssj * x_1[3 * j];
-				sum_1_1 += B_ittssj * x_1[3 * j + 1];
-				sum_2_1 += B_ittssj * x_1[3 * j + 2];
-
-				sum_0_2 += B_ittssj * x_2[3 * j];
-				sum_1_2 += B_ittssj * x_2[3 * j + 1];
-				sum_2_2 += B_ittssj * x_2[3 * j + 2];
-
-				sum_0_3 += B_ittssj * x_3[3 * j];
-				sum_1_3 += B_ittssj * x_3[3 * j + 1];
-				sum_2_3 += B_ittssj * x_3[3 * j + 2];
-			}
-
-			// b_terms_1:
-			const float* B_ijs_b = d_1_ring_neighbors[idx];
-			const int* js_b_1 = d_1_ring_neighbor_indices[idx];
-
-			float b_term_0_1 = 0.0f;
-			float b_term_1_1 = 0.0f;
-			float b_term_2_1 = 0.0f;
-
-			int j_cnt_b_1 = d_1_ring_neighbor_sizes[idx];
-			for (int k = 0; k < j_cnt_b_1; k++)
-			{
-				float B_ij = B_ijs_b[k];
-				int j = js_b_1[k];
-
-				b_term_0_1 += B_ij * b[3 * j];
-				b_term_1_1 += B_ij * b[3 * j + 1];
-				b_term_2_1 += B_ij * b[3 * j + 2];
-			}
-
-			// b_terms_2:
-			const float* B_issjs_b = d_2_ring_neighbors[idx];
-			const int* js_b_2 = d_2_ring_neighbor_indices[idx];
-
-			float b_term_0_2 = 0.0f;
-			float b_term_1_2 = 0.0f;
-			float b_term_2_2 = 0.0f;
-
-			int j_cnt_b_2 = d_2_ring_neighbor_sizes[idx];
-			for (int k = 0; k < j_cnt_b_2; k++)
-			{
-				float B_issj = B_issjs_b[k];
-				int j = js_b_2[k];
-
-				b_term_0_2 += B_issj * b[3 * j];
-				b_term_1_2 += B_issj * b[3 * j + 1];
-				b_term_2_2 += B_issj * b[3 * j + 2];
-			}
-
-			float D_ii_inv = d_diagonals[idx];
-
-			// may contains floating point precision problem
-			b_term_0_1 = (b[3 * idx] + b_term_0_1 + b_term_0_2) * D_ii_inv;
-			b_term_1_1 = (b[3 * idx + 1] + b_term_1_1 + b_term_1_2) * D_ii_inv;
-			b_term_2_1 = (b[3 * idx + 2] + b_term_2_1 + b_term_2_2) * D_ii_inv;
-
-			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + b_term_0_1;
-			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + b_term_1_1;
-			next_x_1[3 * idx + 2] = sum_2_1 * D_ii_inv + b_term_2_1;
-			//if (idx == 1)
-				//printf("%f %f %f\n", next_x_1[3 * idx], next_x_1[3 * idx + 1], next_x_1[3 * idx + 2]);
-
-			next_x_2[3 * idx] = sum_0_2 * D_ii_inv + b_term_0_1;
-			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv + b_term_1_1;
-			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv + b_term_2_1;
-
-			next_x_3[3 * idx] = sum_0_3 * D_ii_inv + b_term_0_1;
-			next_x_3[3 * idx + 1] = sum_1_3 * D_ii_inv + b_term_1_1;
-			next_x_3[3 * idx + 2] = sum_2_3 * D_ii_inv + b_term_2_1;
-		}
-	}
 }

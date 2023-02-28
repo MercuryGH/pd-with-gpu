@@ -18,7 +18,7 @@ set(CMAKE_CUDA_SEPARABLE_COMPILATION ON) # allow device function in different .c
 
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
 if (CUDA_ENABLE)
-    include_directories("E:\\CUDA\\v11.6\\include")
+    include_directories("/opt/cuda/include")
     file(GLOB_RECURSE cuda_srcs src/*.cu)
     add_executable(pd ${cuda_srcs} ${srcs})
 else()

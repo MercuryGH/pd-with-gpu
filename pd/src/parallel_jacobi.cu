@@ -5,6 +5,50 @@
 
 namespace pd
 {
+	__global__ void itr_shfl_down(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
+	{
+		int col_start = threadIdx.x; // indicates i-th thread in a warp, 0 <= i <= 31
+		int row = blockIdx.x;
+		int offset = row * n_col;
+		float sum = 0.0f;
+
+		if (row < n_row)
+		{
+			for (int i = col_start; i < n_col; i += blockDim.x) // blockDim.x == 32 == WARP_SIZE
+			{
+				sum += A[offset + i] * x[i];
+			}
+
+			sum += __shfl_down_sync(__activemask(), sum, 16);
+			sum += __shfl_down_sync(__activemask(), sum, 8);
+			sum += __shfl_down_sync(__activemask(), sum, 4);
+			sum += __shfl_down_sync(__activemask(), sum, 2);
+			sum += __shfl_down_sync(__activemask(), sum, 1);
+			if (threadIdx.x == 0)
+			{
+				// let the first thread of a warp write next_x
+				next_x[row] = (b[row] - (sum - A[offset + row] * x[row])) / A[offset + row];
+			}
+		}
+	}
+
+	__global__ void itr_normal(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
+	{
+		int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (idx < n_row)
+		{
+			float sum = 0.0f;
+			int row_offset = idx * n_col;
+			for (int j = 0; j < n_col; j++)
+			{
+				sum += A[row_offset + j] * x[j];
+			}
+			sum -= A[row_offset + idx] * x[idx];
+			next_x[idx] = (b[idx] - sum) / A[row_offset + idx];
+		}
+	}
+
 	void ParallelJacobi::clear()
 	{
 		if (is_allocated)
@@ -105,49 +149,5 @@ namespace pd
 			std::cout << "err checker[32] = " << err_checker[32] << "\n" << "ret[32] = " << ret[32] << "\n";
 
 		return ret;
-	}
-
-	__global__ void itr_shfl_down(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
-	{
-		int col_start = threadIdx.x; // indicates i-th thread in a warp, 0 <= i <= 31
-		int row = blockIdx.x;
-		int offset = row * n_col;
-		float sum = 0.0f;
-
-		if (row < n_row)
-		{
-			for (int i = col_start; i < n_col; i += blockDim.x) // blockDim.x == 32 == WARP_SIZE
-			{
-				sum += A[offset + i] * x[i];
-			}
-
-			sum += __shfl_down_sync(__activemask(), sum, 16);
-			sum += __shfl_down_sync(__activemask(), sum, 8);
-			sum += __shfl_down_sync(__activemask(), sum, 4);
-			sum += __shfl_down_sync(__activemask(), sum, 2);
-			sum += __shfl_down_sync(__activemask(), sum, 1);
-			if (threadIdx.x == 0)
-			{
-				// let the first thread of a warp write next_x
-				next_x[row] = (b[row] - (sum - A[offset + row] * x[row])) / A[offset + row];
-			}
-		}
-	}
-
-	__global__ void itr_normal(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
-	{
-		int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (idx < n_row)
-		{
-			float sum = 0.0f;
-			int row_offset = idx * n_col;
-			for (int j = 0; j < n_col; j++)
-			{
-				sum += A[row_offset + j] * x[j];
-			}
-			sum -= A[row_offset + idx] * x[idx];
-			next_x[idx] = (b[idx] - sum) / A[row_offset + idx];
-		}
 	}
 }
