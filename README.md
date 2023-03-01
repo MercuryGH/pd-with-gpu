@@ -20,8 +20,57 @@ PD testing.
 ## 当前存在的Bugs
 
 * constraints 数目过多时，预计算local step GPU 会崩溃。最大数目为42000 constraints。可用120*120和130*130布料测试。
+> 原因： https://stackoverflow.com/questions/70024184/cuda-complex-object-initialization-within-device-problem-with-cudadevicesetlimi
 
-* bunny_s模型中A-Jacobi算法出现错误，部分顶点的迭代值强制收敛到0，可能是GPU memory access UB导致的。
+* bunny_s, 50*50布料 等模型中A-Jacobi算法出现错误，部分顶点的迭代值强制收敛到0，可能是GPU memory access UB导致的。
+> 是的。具体的原因是调用kernel时 n_vertex 参数传入错误导致了边角料问题。该问题在边角料很多的时候会导致memory access UB error，但不多时不会导致error，只会在计算上出现错误。
+
+## CMake 指定编译生成类型
+
+```
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake .. -DCMAKE_BUILD_TYPE=Release
+```
+
+## CUDA 概念
+
+一个 kernel 对应一个 grid，kernel 是 CPU 的占位符，grid 在 GPU 上是函数的实际运行时。kernel 编号不一定与 grid 编号相同。
+
+kernel calling format: `<<<#Blocks in a grid, #Threads in a block>>>`
+
+blocks in a grid 和 threads in a block 在逻辑上都可以是三维的，但在实际上不一定。
+
+#Blocks in a grid 和 #Threads in a block 的最大值都可以在 deviceQuery 中看到，类似这样：
+
+```
+Max dimension size of a thread block (x,y,z): (1024, 1024, 64)
+Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)
+```
+
+sm: streaming multiprocessor，GPU大核。
+warp: 线程束
+lane: warp 里面的任意一个 thread
+
+## cuda-gdb 注意事项与常用指令
+
+* 单步操作会同时在一个 warp 上的所有 lane 上生效（特殊情况：`__syncthread`）
 
 
 
+```
+cuda-gdb ./pd/debug_pd
+
+b gpu_local_step
+b *0x00007fffc7284290
+
+```
+
+## Profiling
+
+100 * 100 或 90 * 90 布料，A-Jacobi-1 (Itr Solver #Itr = 700, PD #Itr = 2) 可以胜过 Direct
+
+当 n_vertex 较小时，两者基本没有差距，Direct略胜一筹。
+
+当 n_vertex 较大时，Direct虽然不快，但A-Jacobi由于需要收敛，所以迭代次数更多，实际更慢，因此Direct胜一筹。
+
+A-Jacobi-2 的 FPS 一直不如 A-Jacobi-1。

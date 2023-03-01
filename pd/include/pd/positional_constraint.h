@@ -27,6 +27,11 @@ namespace pd {
 
 		__host__ __device__ void project_i_wiSiTAiTBipi(float* __restrict__ b, const float* __restrict__ q) const override;
 
+		__host__ __device__ void print_name() const override
+		{
+			printf("PositionalConstraint\n");
+		}
+
 	public:
 		int vi;
 

@@ -20,6 +20,9 @@ namespace pd
 		int n_constraints{ 0 };
 		bool is_allocated{ false };
 
+		// host mem
+		Constraint** local_constraints; // aux
+
 		// dev mem
 		Constraint** d_local_constraints; // array of constraints*
 		int* d_local_cnt; // GPU counter for objects (use in serial creation only)

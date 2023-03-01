@@ -192,7 +192,12 @@ namespace ui
 			f_ext->col(1).array() -= GRAVITY;
 		}
 
-		solver->use_gpu_for_local_step = solver_params->use_gpu_for_local_step;
+		if (solver->use_gpu_for_local_step != solver_params->use_gpu_for_local_step)
+		{
+			solver->use_gpu_for_local_step = solver_params->use_gpu_for_local_step;
+			solver->dirty = true;
+		}
+
 		if (solver->algo_changed == true)
 		{
 			solver->clear_solver();
@@ -266,7 +271,7 @@ namespace ui
 			}
 
 			// debug draw
-			viewer.data().add_points(model->positions().row(10), YELLOW_COLOR);
+			// viewer.data().add_points(model->positions().row(10), YELLOW_COLOR);
 
 			timer.stop();
 			last_elapse_time = timer.elapsed_milliseconds();
@@ -277,10 +282,10 @@ namespace ui
 			return false;
 		}
 	};
-	double pre_draw_handler::last_elapse_time; 
-	double pre_draw_handler::last_local_step_time; 
-	double pre_draw_handler::last_global_step_time; 
-	double pre_draw_handler::last_precomputation_time;
+	double pre_draw_handler::last_elapse_time = 0; 
+	double pre_draw_handler::last_local_step_time = 0; 
+	double pre_draw_handler::last_global_step_time = 0; 
+	double pre_draw_handler::last_precomputation_time = 0;
 }
 
 

@@ -14,12 +14,12 @@ namespace pd
 		const int* __restrict__ d_1_ring_neighbor_sizes,
 		const float* __restrict__ d_diagonals,
 		const float* __restrict__ b,
-		int n  // #Vertex, parallelism is n but not 3n
+		int n_vertex  // #Vertex, parallelism is n but not 3n
 	)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-		if (idx < n)
+		if (idx < n_vertex)
 		{
 			const float* B_ijs = d_1_ring_neighbors[idx];
 			const int* js = d_1_ring_neighbor_indices[idx];
@@ -41,12 +41,12 @@ namespace pd
 
 			float D_ii_inv = d_diagonals[idx];
 
-			if (idx <= 20)
-			{
-				printf("In GPU: idx = %d, %f %f %f\n", idx, sum_2, D_ii_inv, b[3 * idx + 2]);
-				// TODO: Fix the bug that D_ii_inv suddenly becomes zero 
-				// (maybe a memory access UB in previous GPU code)
-			}
+			// if (idx <= 1)
+			// {
+			// 	printf("In GPU: idx = %d, %f %f %f\n", idx, sum_2, d_diagonals[idx], b[3 * idx + 2]);
+			// 	// TODO: Fix the bug that D_ii_inv suddenly becomes zero 
+			// 	// (maybe a memory access UB in previous GPU code)
+			// }
 
 			next_x[3 * idx] = (sum_0 + b[3 * idx]) * D_ii_inv;
 			next_x[3 * idx + 1] = (sum_1 + b[3 * idx + 1]) * D_ii_inv;
@@ -71,12 +71,12 @@ namespace pd
 		const float* __restrict__ d_diagonals, // D_ii
 
 		const float* __restrict__ b,
-		int n  // #Vertex
+		int n_vertex  // #Vertex
 	)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-		if (idx < n)
+		if (idx < n_vertex)
 		{
 			const float* B_issjs = d_2_ring_neighbors[idx];
 			const int* js = d_2_ring_neighbor_indices[idx];
@@ -164,12 +164,12 @@ namespace pd
 
 		const float* __restrict__ d_diagonals, // D_ii
 		const float* __restrict__ b,
-		int n  // #Vertex
+		int n_vertex  // #Vertex
 	)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-		if (idx < n)
+		if (idx < n_vertex)
 		{
 			const float* B_ittssjs = d_3_ring_neighbors[idx];
 			const int* js = d_3_ring_neighbor_indices[idx];
@@ -368,7 +368,7 @@ namespace pd
 				B[i][j] = -get_B_ij(i, j);
 			}
 			D[i] = 1.0f / get_D_ii(i);
-			if (std::abs(D[i]) < 1e-5f)
+			if (std::abs(D[i]) < 1e-6f)
 			{
 				printf("Warning: i = %d, D[i] = %f\n", i, D[i]);
 			}
@@ -516,6 +516,13 @@ namespace pd
 			const int n_blocks = n_vertex / WARP_SIZE + (n_vertex % WARP_SIZE == 0 ? 0 : 1);
 			for (int i = 0; i < n_itr; i++)
 			{
+				// TODO: remove it
+				// For debug purpose only:
+				// std::vector<float> tmp(n_vertex);
+				// checkCudaErrors(cudaMemcpy(tmp.data(), d_diagonals, sizeof(float) * n_vertex, cudaMemcpyDeviceToHost));
+				// printf("In CPU: idx = 0, %f\n", tmp[0]);
+				// printf("In CPU: idx = 1, %f\n", tmp[1]);
+				
 				if (i % 2 == 1)
 				{
 					itr_order_1 << <n_blocks, WARP_SIZE >> > (
@@ -526,7 +533,7 @@ namespace pd
 						d_k_ring_neighbor_sizes[0],
 						d_diagonals,
 						d_b,
-						n
+						n_vertex
 						);
 				}
 				else
@@ -539,7 +546,7 @@ namespace pd
 						d_k_ring_neighbor_sizes[0],
 						d_diagonals,
 						d_b,
-						n
+						n_vertex
 						);
 				}
 			}
@@ -564,7 +571,7 @@ namespace pd
 						d_k_ring_neighbor_sizes[1],
 						d_diagonals,
 						d_b,
-						n
+						n_vertex
 						);
 				}
 				else
@@ -582,7 +589,7 @@ namespace pd
 						d_k_ring_neighbor_sizes[1],
 						d_diagonals,
 						d_b,
-						n
+						n_vertex
 						);
 				}
 			}
@@ -612,7 +619,7 @@ namespace pd
 						d_k_ring_neighbor_sizes[2],
 						d_diagonals,
 						d_b,
-						n
+						n_vertex
 						);
 				}
 				else
@@ -635,7 +642,7 @@ namespace pd
 						d_k_ring_neighbor_sizes[2],
 						d_diagonals,
 						d_b,
-						n
+						n_vertex
 						);
 				}
 			}
@@ -655,8 +662,8 @@ namespace pd
 				break;
 			}
 		}
-		if (true)
-			std::cout << "err checker[32] = " << err_checker[32] << "\n" << "ret[32] = " << ret[32] << "\n";
+		// if (true)
+		// 	std::cout << "err checker[32] = " << err_checker[32] << "\n" << "ret[32] = " << ret[32] << "\n";
 
 		return ret;
 	}

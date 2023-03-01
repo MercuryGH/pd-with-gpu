@@ -23,7 +23,7 @@ namespace pd
 			const int* __restrict__ d_1_ring_neighbor_sizes,
 			const float* __restrict__ d_diagonals,
 			const float* __restrict__ b,
-			int n  // #Vertex, parallelism is n but not 3n
+			int n_vertex  // #Vertex, parallelism is n but not 3n
 		);
 
 		__global__ friend void itr_order_2(
@@ -39,7 +39,7 @@ namespace pd
 			const int* __restrict__ d_2_ring_neighbor_sizes,
 			const float* __restrict__ d_diagonals, // D_ii
 			const float* __restrict__ b,
-			int n  // #Vertex
+			int n_vertex  // #Vertex
 		);
 
 		__global__ friend void itr_order_3(
@@ -64,7 +64,7 @@ namespace pd
 
 			const float* __restrict__ d_diagonals, // D_ii
 			const float* __restrict__ b,
-			int n  // #Vertex
+			int n_vertex  // #Vertex
 		);
 
 		// not used at runtime

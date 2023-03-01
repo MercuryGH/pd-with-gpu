@@ -28,6 +28,8 @@ namespace pd {
 		// project_wi_SiT_AiT_Bi_pi
 		__host__ __device__ virtual void project_i_wiSiTAiTBipi(float* __restrict__ b, const float* __restrict__ q) const = 0;
 
+		__host__ __device__ virtual void print_name() const = 0;
+
 		int get_involved_vertices(int** vertices)
 		{
 			*vertices = this->vertices;
