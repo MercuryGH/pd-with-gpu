@@ -3,7 +3,7 @@
 
 namespace pd
 {
-	// Not being used
+	// call destructor for all device constraints
 	__global__ void free_constraints(
 		Constraint **__restrict__ d_local_constraints, int n_constraints)
 	{
@@ -11,7 +11,7 @@ namespace pd
 
 		if (idx < n_constraints)
 		{
-			delete d_local_constraints[idx];
+			delete[] d_local_constraints[idx]->vertices;
 		}
 	}
 
@@ -19,6 +19,11 @@ namespace pd
 	{
 		if (is_allocated)
 		{
+			const int n_blocks = n_constraints / WARP_SIZE + (n_constraints % WARP_SIZE == 0 ? 0 : 1);
+
+			if (n_constraints != 0)
+				free_constraints<<<n_blocks, WARP_SIZE>>>(d_local_constraints, n_constraints);
+
 			for (int i = 0; i < n_constraints; i++)
 			{
 				checkCudaErrors(cudaFree(local_constraints[i]));

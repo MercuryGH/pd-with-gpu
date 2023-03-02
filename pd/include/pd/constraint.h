@@ -36,6 +36,7 @@ namespace pd {
 			return n_vertices;
 		}
 
+        // Called by host but not actually called by device
 		__host__ __device__ virtual ~Constraint()
 		{
 			delete[] vertices;

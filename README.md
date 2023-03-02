@@ -67,7 +67,21 @@ b *0x00007fffc7284290
 
 ## Profiling
 
-100 * 100 或 90 * 90 布料，A-Jacobi-1 (Itr Solver #Itr = 700, PD #Itr = 2) 可以胜过 Direct
+### 测试环境
+
+* OS: Arch Linux x86_64
+
+* CPU: 12th Gen Intel(R) Core(TM) i7-12700
+
+* GPU: NVIDIA Corporation GA104 [GeForce RTX 3060 Ti Lite Hash Rate]
+
+* C++ Compiler: g++ version 12.2.1 20230201 (GCC)
+
+* CUDA Compiler: Cuda compilation tools, release 11.8 (nvcc 11.8)
+
+### 测试结果
+
+100 * 100、90 * 90 布料、bunny_l，A-Jacobi-1 (Itr Solver #Itr = 700, PD #Itr = 2) 可以胜过 Direct
 
 当 n_vertex 较小时，两者基本没有差距，Direct略胜一筹。
 
