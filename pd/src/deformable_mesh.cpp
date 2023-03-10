@@ -36,6 +36,8 @@ namespace pd
 		Eigen::MatrixXi edges;
 		igl::edges(e, edges);
 
+		n_edges = edges.rows();
+
 		for (int i = 0; i < edges.rows(); i++)
 		{
 			const auto edge = edges.row(i);

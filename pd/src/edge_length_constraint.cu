@@ -23,6 +23,8 @@ namespace pd {
 		Eigen::VectorXf ret;
 		ret.resize(6);
 
+		// printf("%d %d\n", vi, vj);
+
 		Eigen::Vector3f vi_pos = q.block(3 * vi, 0, 3, 1);
 		Eigen::Vector3f vj_pos = q.block(3 * vj, 0, 3, 1);
 		Eigen::Vector3f j2i = vj_pos - vi_pos;

@@ -62,7 +62,6 @@ namespace pd
 	}
 
 	// Make sure A is compressed
-	// Eigen::SparseMatrix can be converted to CUDA sparse matrix but it's quite tricky
 	void ParallelJacobi::set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints)
 	{
 		Eigen::MatrixXf _A = Eigen::MatrixXf(A);

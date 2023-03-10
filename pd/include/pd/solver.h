@@ -20,13 +20,23 @@ namespace pd
 	class Solver
 	{
 	public:
-		Solver();
-
-		void set_model(DeformableMesh* model)
+		Solver() = delete;
+		Solver(std::unordered_map<int, DeformableMesh>& models): models(models), dirty(true)
 		{
-			this->model = model;
-			this->dirty = true;
+			solvers[0] = std::make_unique<CholeskyDirect>();
+			solvers[1] = std::make_unique<ParallelJacobi>();
+			solvers[2] = std::make_unique<AJacobi>(1);
+			solvers[3] = std::make_unique<AJacobi>(2);
+			solvers[4] = std::make_unique<AJacobi>(3);
+			//linear_sys_solver = &solvers[0];
+			linear_sys_solver = solvers.begin();
 		}
+
+		// void set_model(DeformableMesh* model)
+		// {
+		// 	this->model = model;
+		// 	this->dirty = true;
+		// }
 
 		void set_dt(float dt)
 		{
@@ -37,7 +47,7 @@ namespace pd
 		// Precompute A products and A coefficients in A-Jacobi
 		void precompute_A();
 		void precompute();
-		void step(const Eigen::MatrixXd& f_ext, int n_itr, int itr_solver_n_itr);
+		void step(const std::unordered_map<int, Eigen::MatrixX3d>& f_exts, int n_itr, int itr_solver_n_itr);
 		void set_solver(ui::LinearSysSolver sel);
 		void clear_solver();
 
@@ -62,7 +72,7 @@ namespace pd
 		float dt;
 
 		// model
-		DeformableMesh* model;
+		std::unordered_map<int, DeformableMesh>& models;
 		Eigen::SparseMatrix<float> A;
 
 		constexpr static int N_SOLVERS = 5;

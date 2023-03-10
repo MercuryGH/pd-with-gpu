@@ -29,14 +29,15 @@ namespace pd
 			v.setZero(); // init velocity to 0
 		}
 		*/
-		DeformableMesh(const Positions &p, const Faces &f, const Elements &e) :
+		DeformableMesh(const Positions &p, const Faces &f, const Elements &e, int obj_id) :
 			p0(p),
 			p(p),
 			f(f),
 			e(e),
 			m(p.rows()),
 			v(p.rows(), p.cols()),
-			vertex_fixed(p.rows(), false)
+			vertex_fixed(p.rows(), false),
+			obj_id(obj_id)
 		{
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
@@ -70,15 +71,24 @@ namespace pd
 			this->v = v;
 		}
 
+		void set_positions(const Positions& p)
+		{
+			this->p = p;
+		}
+
+		int obj_id{ -1 };
+
 	    // methods
 		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wi, float mass_per_vertex);
 		void set_edge_length_constraint(float wi);
 		bool apply_mass_per_vertex(float mass_per_vertex);
+		int n_edges{ 0 };   // #Edges
 
 	private:
 		void add_positional_constraint(int vi, float wi, float mass_per_vertex);
 
 		constexpr static float FIXED_VERTEX_MASS = 1e10; // fixed point has +inf mass and cannot move
+
 
 		Positions p0;  // Rest positions
 		Positions p;   // Positions

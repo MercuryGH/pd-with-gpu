@@ -81,10 +81,19 @@ b *0x00007fffc7284290
 
 ### 测试结果
 
-100 * 100、90 * 90 布料、bunny_l，A-Jacobi-1 (Itr Solver #Itr = 700, PD #Itr = 2) 可以胜过 Direct
+100 * 100、90 * 90 布料、bunny_l，A-Jacobi-1, 2, 3 (Itr Solver #Itr = 700, PD #Itr = 2) 都可以胜过 Direct
 
-当 n_vertex 较小时，两者基本没有差距，Direct略胜一筹。
+#### 测试结果与顶点数的关系
+
+当 n_vertex 较小时，两者基本没有差距（Direct略胜一筹）。
 
 当 n_vertex 较大时，Direct虽然不快，但A-Jacobi由于需要收敛，所以迭代次数更多，实际更慢，因此Direct胜一筹。
 
-A-Jacobi-2 的 FPS 一直不如 A-Jacobi-1。
+（事实上都不一定）
+
+## 扩展计划
+
+### viewer扩展到多物体，Mesh扩展到Deformable Mesh和Static Mesh
+
+* 一个`viewer.data_list[idx]`中的对象绑定一个Imguizmo widget，运行时通过一个哈希表`<idx, Matrix>`更新其变换矩阵。
+

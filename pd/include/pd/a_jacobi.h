@@ -22,7 +22,7 @@ namespace pd
 			int** __restrict__ d_1_ring_neighbor_indices,
 			const int* __restrict__ d_1_ring_neighbor_sizes,
 			const float* __restrict__ d_diagonals,
-			const float* __restrict__ b,
+			const float* __restrict__ b_term,
 			int n_vertex  // #Vertex, parallelism is n but not 3n
 		);
 
@@ -31,14 +31,14 @@ namespace pd
 			float* __restrict__ next_x_2,
 			const float* __restrict__ x_1,
 			const float* __restrict__ x_2,
-			float** __restrict__ d_1_ring_neighbors,
-			int** __restrict__ d_1_ring_neighbor_indices,
-			const int* __restrict__ d_1_ring_neighbor_sizes,
+
 			float** __restrict__ d_2_ring_neighbors,
 			int** __restrict__ d_2_ring_neighbor_indices,
 			const int* __restrict__ d_2_ring_neighbor_sizes,
+
 			const float* __restrict__ d_diagonals, // D_ii
-			const float* __restrict__ b,
+
+			const float* __restrict__ b_term,
 			int n_vertex  // #Vertex
 		);
 
@@ -102,6 +102,7 @@ namespace pd
 		float* d_diagonals;
 
 		float* d_b;
+		float* d_b_term;
 
 		int order{ 0 };
 		float* d_x[A_JACOBI_MAX_ORDER];

@@ -30,20 +30,20 @@ namespace pd {
 
 		__host__ __device__ virtual void print_name() const = 0;
 
-		int get_involved_vertices(int** vertices)
-		{
-			*vertices = this->vertices;
-			return n_vertices;
-		}
-
         // Called by host but not actually called by device
 		__host__ __device__ virtual ~Constraint()
 		{
 			delete[] vertices;
 		}
 
+		int get_involved_vertices(int** vertices) const
+		{
+			*vertices = this->vertices;
+			return n_vertices;
+		}
+
 	public:
-		int n; // #vertex
+		int n; // #vertex in the model
 		float wi;
 
 		int n_vertices;
