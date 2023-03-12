@@ -23,7 +23,7 @@ namespace pd {
 
 		// For global solve linear system A precomputing (prefactoring)
 		// return: triplets indicate several entry value in linear system A
-		virtual std::vector<Eigen::Triplet<float>> get_A_wiSiTAiTAiSi() const = 0;
+		virtual std::vector<Eigen::Triplet<float>> get_A_wiSiTAiTAiSi(int n_vertex_offset) const = 0;
 
 		// project_wi_SiT_AiT_Bi_pi
 		__host__ __device__ virtual void project_i_wiSiTAiTBipi(float* __restrict__ b, const float* __restrict__ q) const = 0;

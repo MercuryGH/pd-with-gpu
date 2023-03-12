@@ -196,6 +196,32 @@ namespace ui
 		}
 	};
 
+	struct gizmo_handler
+	{
+		igl::opengl::glfw::Viewer& viewer;
+		std::unordered_map<int, pd::DeformableMesh>& models;
+		std::unordered_map<int, Eigen::Matrix4f>& obj_t_map;
+		ui::UserControl& user_control;
+
+		void operator()(const Eigen::Matrix4f& T)
+		{
+			if (models.empty())
+			{
+				return;
+			}
+
+			const Eigen::MatrixXd& V = models[user_control.cur_sel_mesh_id].positions();
+			const Eigen::Matrix4d TT = (T * obj_t_map[user_control.cur_sel_mesh_id].inverse()).cast<double>().transpose();
+			const Eigen::MatrixXd positions = (V.rowwise().homogeneous() * TT).rowwise().hnormalized();
+
+			models[user_control.cur_sel_mesh_id].set_positions(positions);
+
+			int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
+			viewer.data_list[idx].set_vertices(positions);
+			viewer.data_list[idx].compute_normals();
+		}
+	};
+
 	// Physical frame calculation
 	void tick(
 		igl::opengl::glfw::Viewer& viewer,
@@ -269,7 +295,6 @@ namespace ui
 
 		bool operator()(igl::opengl::glfw::Viewer& viewer)
 		{
-			pd::DeformableMesh& model = models.begin()->second;
 			if (models.empty() == true)
 			{
 				return false;

@@ -27,12 +27,12 @@ namespace pd {
 		return ret;
 	}
 
-	std::vector<Eigen::Triplet<float>> PositionalConstraint::get_A_wiSiTAiTAiSi() const
+	std::vector<Eigen::Triplet<float>> PositionalConstraint::get_A_wiSiTAiTAiSi(int n_vertex_offset) const
 	{
 		std::array<Eigen::Triplet<float>, 3u> triplets;
 		for (int i = 0; i < 3; i++)
 		{
-			triplets[i] = { 3 * vi + i, 3 * vi + i, wi };
+			triplets[i] = { 3 * n_vertex_offset + 3 * vi + i, 3 * n_vertex_offset + 3 * vi + i, wi };
 		}
 		return std::vector<Eigen::Triplet<float>>{ triplets.begin(), triplets.end() };
 	}

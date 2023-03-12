@@ -59,9 +59,9 @@ namespace pd
 
 		// timer variable
 		util::CpuTimer timer;
-		double last_local_step_time;
-		double last_global_step_time;
-		double last_precomputation_time;
+		double last_local_step_time{ 0 };
+		double last_global_step_time{ 0 };
+		double last_precomputation_time{ 0 };
 
 		// if use gpu for local step, we need to create virtual function table on the gpu
 		bool use_gpu_for_local_step{ true };

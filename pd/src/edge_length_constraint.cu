@@ -64,25 +64,25 @@ namespace pd {
 		return ret;
 	}
 
-	std::vector<Eigen::Triplet<float>> EdgeLengthConstraint::get_A_wiSiTAiTAiSi() const
+	std::vector<Eigen::Triplet<float>> EdgeLengthConstraint::get_A_wiSiTAiTAiSi(int n_vertex_offset) const
 	{
 		std::vector<Eigen::Triplet<float>> triplets(12);
 
 		for (int i = 0; i < 3; i++)
 		{
-			triplets.emplace_back(3 * vi + i, 3 * vi + i, 0.5 * wi);
+			triplets.emplace_back(3 * n_vertex_offset + 3 * vi + i, 3 * n_vertex_offset + 3 * vi + i, 0.5 * wi);
 		}
 		for (int i = 0; i < 3; i++)
 		{
-			triplets.emplace_back(3 * vj + i, 3 * vj + i, 0.5 * wi);
+			triplets.emplace_back(3 * n_vertex_offset + 3 * vj + i, 3 * n_vertex_offset + 3 * vj + i, 0.5 * wi);
 		}
 		for (int i = 0; i < 3; i++)
 		{
-			triplets.emplace_back(3 * vi + i, 3 * vj + i, -0.5 * wi);
+			triplets.emplace_back(3 * n_vertex_offset + 3 * vi + i, 3 * n_vertex_offset + 3 * vj + i, -0.5 * wi);
 		}
 		for (int i = 0; i < 3; i++)
 		{
-			triplets.emplace_back(3 * vj + i, 3 * vi + i, -0.5 * wi);
+			triplets.emplace_back(3 * n_vertex_offset + 3 * vj + i, 3 * n_vertex_offset + 3 * vi + i, -0.5 * wi);
 		}
 
 		return std::vector<Eigen::Triplet<float>>{ triplets.begin(), triplets.end() };

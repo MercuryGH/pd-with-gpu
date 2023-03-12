@@ -8,4 +8,6 @@ namespace util
 
 	// test if the device is available in the application
 	void test_device(int dev_id);
+
+	void print_cuda_info();
 }

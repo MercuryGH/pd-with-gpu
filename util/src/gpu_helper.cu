@@ -46,4 +46,12 @@ namespace util
 			printf("Using GPU device id = %d", dev_id);
 		}
 	}
+
+	void print_cuda_info()
+	{
+		int n_gpu_devs;
+		int best_dev_idx = select_best_device(n_gpu_devs);
+		printf("Available #dev = %d\n", n_gpu_devs);
+		test_device(best_dev_idx);
+	}
 }

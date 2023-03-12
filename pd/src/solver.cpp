@@ -26,6 +26,13 @@ namespace pd {
 		for (const auto& [id, model] : models)
 		{
 			int n = model.positions().rows();
+
+			for (const auto& constraint : model.constraints)
+			{
+				std::vector<Eigen::Triplet<float>> wiSiTAiTAiSi = constraint->get_A_wiSiTAiTAiSi(acc);
+				A_triplets.insert(A_triplets.end(), wiSiTAiTAiSi.begin(), wiSiTAiTAiSi.end());
+			}
+
 			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < 3; j++)
@@ -54,6 +61,9 @@ namespace pd {
 				gpu_local_solver->gpu_object_creation_parallel(model.constraints);  // TODO
 			}
 		}
+
+		//std::cout << A.row(1) << "\n";
+		//assert(false);
 
 		//std::vector<int> v_adj;
 		//for (int i = 0; i < n; i++)
@@ -192,8 +202,8 @@ namespace pd {
 		{
 			b.setZero();
 			b += global_solve_b_mass_term;
-			// if (k == 0)
-			// 	std::cout << "b = " << b << "\n";
+			//if (k == 0)
+				//std::cout << "b = " << b << "\n";
 
 			timer.start();
 
@@ -201,6 +211,10 @@ namespace pd {
 
 			timer.stop();
 			last_local_step_time += timer.elapsed_milliseconds();
+
+			//if (k == 0)
+				//std::cout << b << "\n";
+			//assert(false);
 
 			// if (k == 0)
 			// 	std::cout << "b = " << b << "\n";
@@ -214,8 +228,8 @@ namespace pd {
 			timer.stop();
 			last_global_step_time += timer.elapsed_milliseconds();
 
-			if (k == 0)
-				std::cout << "q_nplus1 = " << q_nplus1 << "\n";
+			//if (k == 0)
+				//std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}
 		//last_local_step_time /= n_itr;
 		//last_global_step_time /= n_itr;
@@ -293,7 +307,6 @@ namespace pd {
 			}
 			acc += n;
 		}
-		
 	}
 
 	void Solver::local_step_gpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b)

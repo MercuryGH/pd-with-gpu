@@ -23,7 +23,7 @@ namespace pd {
 
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
 		Eigen::VectorXf get_i_wiSiTAiTBipi(const Eigen::VectorXf& pi) const override;
-		std::vector<Eigen::Triplet<float>> get_A_wiSiTAiTAiSi() const override;
+		std::vector<Eigen::Triplet<float>> get_A_wiSiTAiTAiSi(int n_vertex_offset) const override;
 
 		__host__ __device__ void project_i_wiSiTAiTBipi(float* __restrict__ b, const float* __restrict__ q) const override;
 

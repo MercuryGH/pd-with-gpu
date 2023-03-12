@@ -4,6 +4,7 @@
 #include <pd/deformable_mesh.h>
 #include <pd/solver.h>
 
+#include <ui/obj_manager.h>
 #include <ui/physics_params.h>
 #include <ui/solver_params.h>
 #include <ui/user_control.h>
@@ -18,28 +19,6 @@
 
 #include <util/gpu_helper.h>
 
-static void print_cuda_info()
-{
-	int n_gpu_devs;
-	int best_dev_idx = util::select_best_device(n_gpu_devs);
-	printf("Available #dev = %d\n", n_gpu_devs);
-	util::test_device(best_dev_idx);
-}
-
-static void HelpMarker(const char* desc)
-{
-    ImGui::TextDisabled("(?)");
-	constexpr auto ImGuiHoveredFlags_DelayShort = 1 << 12;
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
-    {
-        ImGui::BeginTooltip();
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextUnformatted(desc);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
-}
-
 int main(int argc, char* argv[])
 {
 	igl::opengl::glfw::Viewer viewer;
@@ -50,121 +29,48 @@ int main(int argc, char* argv[])
 	menu_plugin.widgets.push_back(&main_menu);
 	igl::opengl::glfw::imgui::ImGuiMenu obj_menu;
 	menu_plugin.widgets.push_back(&obj_menu);
+	// Only 1 gizmo during simulation
+	igl::opengl::glfw::imgui::ImGuizmoWidget gizmo;
+	menu_plugin.widgets.push_back(&gizmo);
 
 	std::unordered_map<int, Eigen::Matrix4f> obj_t_map; // obj_id to its transformation matrix
-	std::unordered_map<int, int> obj_idx_map; // obj_id to idx in visualzed meshes list map
 
 	// pd simulatee
 	std::unordered_map<int, pd::DeformableMesh> models;
-	// pd::DeformableMesh model;
 	std::unordered_map<int, Eigen::MatrixX3d> f_exts;
-	// Eigen::MatrixX3d f_ext; // external force
 
-	// TODO: modify solver to execute all deformable mesh
 	pd::Solver solver(models);
 
 	ui::UserControl user_control;
 	ui::PhysicsParams physics_params;
 	ui::SolverParams solver_params;
 
+	static int total_n_constraints = 0;
+	ui::ObjManager obj_manager{ viewer, gizmo, obj_t_map, solver, models, f_exts, user_control, solver_params, total_n_constraints };
+
+	gizmo.callback = ui::gizmo_handler{ viewer, models, obj_t_map, user_control };
 	viewer.callback_mouse_down = ui::mouse_down_handler{ models, user_control };
 	viewer.callback_mouse_move = ui::mouse_move_handler{ models, user_control, physics_params, f_exts };
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
 	ui::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params };
 	viewer.callback_pre_draw = frame_callback; // frame routine
-
-	const auto rescale = [&](Eigen::MatrixXd& V)
+	viewer.callback_key_pressed = [&](igl::opengl::glfw::Viewer& viewer, int button, int modifier)
 	{
-		// rescale the vertices to make all models look equal in size
-		Eigen::RowVector3d v_mean = V.colwise().mean();
-		V.rowwise() -= v_mean;
-		V.array() /= (V.maxCoeff() - V.minCoeff());
+		return false;
 	};
 
-	static int total_n_constraints = 0;
-	const auto recalc_total_n_constraints = [&]()
+	const auto HelpMarker = [](const char* desc)
 	{
-		total_n_constraints = 0;
-		for (const auto& [_, model] : models)
+		ImGui::TextDisabled("(?)");
+		constexpr auto ImGuiHoveredFlags_DelayShort = 1 << 12;
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
 		{
-			total_n_constraints += model.n_constraints();
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(desc);
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
 		}
-	};
-
-	// Only 1 gizmo during simulation
-	igl::opengl::glfw::imgui::ImGuizmoWidget gizmo;
-	menu_plugin.widgets.push_back(&gizmo);
-	gizmo.callback = [&](const Eigen::Matrix4f& T)
-	{
-		// const Eigen::Matrix4d& T0 = 
-		// const Eigen::Matrix4d TT = (T * T0.inverse()).cast<double>().transpose();
-		// const Eigen::MatrixXd positions = (model.positions().rowwise().homogeneous() * TT).rowwise().hnormalized();
-		// model.set_positions(positions);
-		// viewer.data().set_vertices(positions);
-		// viewer.data().compute_normals();
-	};
-
-	// Bind the gizmo to a new mesh when needed.
-	const auto bind_gizmo = [&](int obj_id) 
-	{
-
-	};
-
-	const auto add_model = [&](Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXi& E)
-	{
-		rescale(V);
-
-		// create a new mesh
-		int obj_id = viewer.append_mesh();
-		models.emplace(obj_id, pd::DeformableMesh(V, F, E, obj_id));
-		pd::DeformableMesh& model = models[obj_id];
-
-		// reset f_ext 
-		f_exts[obj_id].resizeLike(model.positions()); // let external forces add to vertices in the new model
-		f_exts[obj_id].setZero();
-
-		// reset viewer
-		int idx = viewer.mesh_index(obj_id);
-		viewer.data_list[idx].set_mesh(model.positions(), model.faces());
-		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)0x66 / 0xff, (double)0xcc / 0xff, 1.0);
-		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
-		viewer.core().align_camera_center(model.positions());
-		viewer.data_list[idx].point_size = 10.f;
-
-		// if this is the only model, select it
-		if (models.size() == 1)
-		{
-			user_control.cur_sel_mesh_id = obj_id;
-		}
-	};
-
-	const auto remove_model = [&](int obj_id)
-	{
-
-	};
-
-	const auto reset_model = [&](int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXi& E)
-	{
-		// rescale the vertices to make all models look equal in size
-		rescale(V);
-
-		// reset to a new mesh
-		pd::DeformableMesh& model = models[obj_id];
-		model = pd::DeformableMesh(V, F, E, obj_id);
-
-		// reset f_ext 
-		f_exts[obj_id].resizeLike(model.positions()); // let external forces add to vertices in the new model
-		f_exts[obj_id].setZero();
-
-		// reset viewer
-		int idx = viewer.mesh_index(obj_id);
-		viewer.data_list[idx].clear();
-		viewer.data_list[idx].set_mesh(model.positions(), model.faces());
-		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)0x66 / 0xff, (double)0xcc / 0xff, 1.0);
-		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
-		viewer.core().align_camera_center(model.positions());
-
-		recalc_total_n_constraints();
 	};
 
 	obj_menu.callback_draw_viewer_window = [&]()
@@ -174,21 +80,20 @@ int main(int argc, char* argv[])
 
 		ImGui::Begin("Object Manager");
 
-		// static const char* cur_select_model_name = "";
 		static int cur_select_id = -1;
 		if (ImGui::BeginListBox("objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
 		{
 			for (const auto& [id, model] : models)
 			{
-				const char* model_name = (std::string("Mesh ") + std::to_string(id)).c_str();
+				const std::string model_name = std::string("Mesh ") + std::to_string(id);
 
 				const bool is_selected = (cur_select_id == id);
-				if (ImGui::Selectable(model_name, is_selected))
+				if (ImGui::Selectable(model_name.c_str(), is_selected))
 				{
 					cur_select_id = id;
 					user_control.cur_sel_mesh_id = id;
 
-					bind_gizmo(id);
+					obj_manager.bind_gizmo(id);
 				}
 				if (is_selected)
 				{
@@ -222,11 +127,11 @@ int main(int argc, char* argv[])
 					auto [V, F] = model::generate_cloth(w, h);
 					if (add_or_reset == OP_ADD)
 					{
-						add_model(V, F, F);
+						obj_manager.add_model(V, F, F);
 					}
 					if (add_or_reset == OP_RESET)
 					{
-						reset_model(user_control.cur_sel_mesh_id, V, F, F);
+						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F, F);
 					}
 				}
 				
@@ -248,11 +153,11 @@ int main(int argc, char* argv[])
 						{
 							if (add_or_reset == OP_ADD)
 							{
-								add_model(V, F, F);
+								obj_manager.add_model(V, F, F);
 							}
 							if (add_or_reset == OP_RESET)
 							{
-								reset_model(user_control.cur_sel_mesh_id, V, F, F);
+								obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F, F);
 							}
 						}
 						else
@@ -317,7 +222,7 @@ int main(int argc, char* argv[])
 					user_control.toggle_fixed_vertex_idxs.clear();
 				}
 
-				recalc_total_n_constraints();
+				obj_manager.recalc_total_n_constraints();
 			}
 			ImGui::Text("#Constraints = %d", total_n_constraints);
 		}
@@ -375,13 +280,11 @@ int main(int argc, char* argv[])
 		if (ImGui::CollapsingHeader("Simulating Control"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
 			ImGui::Text("Solver is %s", solver.dirty ? "not ready." : "ready.");
-			ImGui::InputFloat("timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f"); // TODO: verify time step
-
-			ImGui::Separator();
 
 			ImGui::Checkbox("Use GPU for local step", &solver_params.use_gpu_for_local_step);
-
-			ImGui::Separator();
+			ImGui::InputFloat("timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f"); // TODO: verify time step
+			ImGui::InputInt("solver #itr", &solver_params.n_itr_solver_iterations);
+			ImGui::InputInt("PD #itr", &solver_params.n_solver_pd_iterations);
 
 			// Solver Selector
 			const char* items[] = {"Direct", "Parallel Jacobi", "A-Jacobi-1", "A-Jacobi-2", "A-Jacobi-3" };
@@ -411,7 +314,6 @@ int main(int argc, char* argv[])
 				}
 				ImGui::EndCombo();
 			}
-			ImGui::InputInt("solver #itr", &solver_params.n_itr_solver_iterations);
 
 			ImGui::Separator();
 			// statistics
@@ -420,13 +322,12 @@ int main(int argc, char* argv[])
 				ImGui::Text("FPS = %lf", 1000.0 / frame_callback.last_elapse_time);
 				ImGui::Text("Last frame time elapsed: %lf ms", frame_callback.last_elapse_time);
 			}
+			//ImGui::Text("Time for 1 tick: %lf ms", frame_callback.last_elapse_time);
 			ImGui::Text("Time for global step: %lf ms", frame_callback.last_global_step_time);
 			ImGui::Text("Time for local step: %lf ms", frame_callback.last_local_step_time);
 			ImGui::Text("Time for precomputation: %lf ms", frame_callback.last_precomputation_time);
 
 			ImGui::Separator();
-
-			ImGui::InputInt("PD #itr", &solver_params.n_solver_pd_iterations);
 
 			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
