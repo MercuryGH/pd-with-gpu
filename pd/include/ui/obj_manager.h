@@ -16,9 +16,9 @@ namespace ui
 	{
 		igl::opengl::glfw::Viewer& viewer;
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo;
-		std::unordered_map<int, Eigen::Matrix4f>& obj_t_map;
 		pd::Solver& solver;
 		std::unordered_map<int, pd::DeformableMesh>& models;
+		std::unordered_map<int, Eigen::MatrixXd>& obj_init_pos_map;
 		std::unordered_map<int, Eigen::MatrixX3d>& f_exts;
 		ui::UserControl& user_control;
 		ui::SolverParams& solver_params;

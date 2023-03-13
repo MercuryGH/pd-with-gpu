@@ -11,9 +11,9 @@ namespace pd
 	{
 	public:
 		void free_local_gpu_memory_entry();
-		void gpu_local_step_solver_malloc(int n);
+		void gpu_local_step_solver_init(int n);
 		void gpu_object_creation_serial(const Constraints& constraints);
-		void gpu_object_creation_parallel(const Constraints& constraints);
+		void gpu_object_creation_parallel(const std::unordered_map<int, DeformableMesh>& models);
 		void gpu_local_step_entry(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b);
 
 	private:

@@ -4,6 +4,18 @@
 #include <pd/edge_length_constraint.h>
 
 namespace pd {
+
+	Solver::Solver(std::unordered_map<int, DeformableMesh>& models): models(models), dirty(true)
+	{
+		solvers[0] = std::make_unique<CholeskyDirect>();
+		solvers[1] = std::make_unique<ParallelJacobi>();
+		solvers[2] = std::make_unique<AJacobi>(1);
+		solvers[3] = std::make_unique<AJacobi>(2);
+		solvers[4] = std::make_unique<AJacobi>(3);
+		linear_sys_solver = solvers.begin();
+		gpu_local_solver = std::make_unique<GpuLocalSolver>();
+	}
+
 	void Solver::precompute_A()
 	{
 		const float dtsqr_inv = 1.0f / (dt * dt);
@@ -50,16 +62,10 @@ namespace pd {
 
 		if (use_gpu_for_local_step)
 		{
-			if (gpu_local_solver == nullptr)
-			{
-				gpu_local_solver = std::make_unique<GpuLocalSolver>();
-			}
-			gpu_local_solver->gpu_local_step_solver_malloc(3 * total_n);
+			gpu_local_solver->gpu_local_step_solver_init(3 * total_n);
 			//gpu_local_solver->gpu_object_creation_serial(model->constraints);
-			for (const auto& [id, model] : models)
-			{
-				gpu_local_solver->gpu_object_creation_parallel(model.constraints);  // TODO
-			}
+
+			gpu_local_solver->gpu_object_creation_parallel(models);  
 		}
 
 		//std::cout << A.row(1) << "\n";
@@ -93,8 +99,7 @@ namespace pd {
 
 		precompute_A();
 		// TODO: modify calculation of A-Jacobi (function sign is models but not constraints)
-		const pd::DeformableMesh& model = models.begin()->second;
-		(*linear_sys_solver)->set_A(A, model.constraints);
+		(*linear_sys_solver)->set_A(A, models);
 
 		timer.stop();
 		last_precomputation_time = timer.elapsed_milliseconds();
@@ -231,12 +236,6 @@ namespace pd {
 			//if (k == 0)
 				//std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}
-		//last_local_step_time /= n_itr;
-		//last_global_step_time /= n_itr;
-
-		// restore #model vectors before unflatten
-
-
 		// 3n * 1 vector to n * 3 matrix
 		const auto unflatten = [total_n](const Eigen::VectorXf& p) {
 			assert(total_n * 3 == p.rows());

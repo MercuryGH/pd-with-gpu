@@ -31,9 +31,11 @@ int main(int argc, char* argv[])
 	menu_plugin.widgets.push_back(&obj_menu);
 	// Only 1 gizmo during simulation
 	igl::opengl::glfw::imgui::ImGuizmoWidget gizmo;
+	gizmo.visible = false;
 	menu_plugin.widgets.push_back(&gizmo);
 
-	std::unordered_map<int, Eigen::Matrix4f> obj_t_map; // obj_id to its transformation matrix
+    // transformation aux
+	std::unordered_map<int, Eigen::MatrixXd> obj_init_pos_map; // obj_id to its initial position matrix
 
 	// pd simulatee
 	std::unordered_map<int, pd::DeformableMesh> models;
@@ -46,18 +48,16 @@ int main(int argc, char* argv[])
 	ui::SolverParams solver_params;
 
 	static int total_n_constraints = 0;
-	ui::ObjManager obj_manager{ viewer, gizmo, obj_t_map, solver, models, f_exts, user_control, solver_params, total_n_constraints };
+	ui::ObjManager obj_manager{ viewer, gizmo, solver, models, obj_init_pos_map, f_exts, user_control, solver_params, total_n_constraints };
 
-	gizmo.callback = ui::gizmo_handler{ viewer, models, obj_t_map, user_control };
+	gizmo.callback = ui::gizmo_handler{ viewer, models, obj_init_pos_map, user_control };
 	viewer.callback_mouse_down = ui::mouse_down_handler{ models, user_control };
 	viewer.callback_mouse_move = ui::mouse_move_handler{ models, user_control, physics_params, f_exts };
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
+	viewer.callback_key_pressed = ui::keypress_handler{ gizmo };
+
 	ui::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params };
 	viewer.callback_pre_draw = frame_callback; // frame routine
-	viewer.callback_key_pressed = [&](igl::opengl::glfw::Viewer& viewer, int button, int modifier)
-	{
-		return false;
-	};
 
 	const auto HelpMarker = [](const char* desc)
 	{
@@ -90,10 +90,14 @@ int main(int argc, char* argv[])
 				const bool is_selected = (cur_select_id == id);
 				if (ImGui::Selectable(model_name.c_str(), is_selected))
 				{
-					cur_select_id = id;
-					user_control.cur_sel_mesh_id = id;
+					// If selection changed
+					// if (cur_select_id != id)
+					// {
+						obj_manager.bind_gizmo(id);
+						user_control.cur_sel_mesh_id = id;
+					// }
 
-					obj_manager.bind_gizmo(id);
+					cur_select_id = id;
 				}
 				if (is_selected)
 				{
@@ -102,7 +106,15 @@ int main(int argc, char* argv[])
 			}
 			ImGui::EndListBox();
 		}
-		// viewer.data_list.erase()
+
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+		if (ImGui::Button("remove selected mesh") && models.size() > 1)
+		{
+		    obj_manager.remove_model(user_control.cur_sel_mesh_id);
+		}
+		ImGui::PopStyleColor(3);
 
 		ImGui::Separator();
 
@@ -165,7 +177,6 @@ int main(int argc, char* argv[])
 							printf("Load .obj file failed!\n");
 						}
 					}
-					ImGui::TreePop();
 				}
 
 				ImGui::TreePop();
@@ -193,7 +204,7 @@ int main(int argc, char* argv[])
 				{
 					vertices_to_be_toggled += std::to_string(vi) + " ";
 				}
-				ImGui::Text("For mesh %d, Vertex indices to be toggled: %s", user_control.cur_sel_mesh_id, vertices_to_be_toggled.c_str());
+				ImGui::TextWrapped("For mesh %d, Vertex indices to be toggled: %s", user_control.cur_sel_mesh_id, vertices_to_be_toggled.c_str());
 				// Pinned 
 				ImGui::InputFloat("wi", &physics_params.positional_constraint_wi, 10.f, 100.f, "%.1f");
 				ImGui::Checkbox("Enable", &enable_positional_constraint);
@@ -262,18 +273,26 @@ int main(int argc, char* argv[])
 		}
 		if (ImGui::CollapsingHeader("Visualization Setting"))
 		{
+			const int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
 			ImGui::Checkbox("Wireframe", [&]() { 
-					const int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
 					return viewer.data_list[idx].show_lines != 0; 
 				},
 				[&](bool value) {
-					const int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
 					viewer.data_list[idx].show_lines = value;
 				}
 			);
-			ImGui::InputFloat("Point Size", &viewer.data_list[user_control.cur_sel_mesh_id].point_size, 1.f, 10.f);
-			// ImGui::Text("#Vertex = %d", model.positions().rows());
-			// ImGui::Text("#Face = %d", model.faces().rows());
+			ImGui::InputFloat("Point Size", &viewer.data_list[idx].point_size, 1.f, 10.f);
+
+
+			int n_vertices, n_faces;
+			n_vertices = n_faces = 0;
+			for (const auto& [id, model] : models)
+			{
+				n_vertices += model.positions().rows();
+				n_faces += model.faces().rows();
+			}
+			ImGui::Text("#Vertex = %d", n_vertices);
+			ImGui::Text("#Face = %d", n_faces);
 			// ImGui::Text("#DOF = %d", model.positions().rows() * 3 - model.n_edges);
 		}
 
@@ -346,8 +365,7 @@ int main(int argc, char* argv[])
 		ImGui::End();
 	};
 
-	viewer.launch();
+	viewer.launch(true, false, "Projective Dynamics", 0, 0);
 
 	return 0;
 }
-

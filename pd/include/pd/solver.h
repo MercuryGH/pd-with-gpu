@@ -21,22 +21,7 @@ namespace pd
 	{
 	public:
 		Solver() = delete;
-		Solver(std::unordered_map<int, DeformableMesh>& models): models(models), dirty(true)
-		{
-			solvers[0] = std::make_unique<CholeskyDirect>();
-			solvers[1] = std::make_unique<ParallelJacobi>();
-			solvers[2] = std::make_unique<AJacobi>(1);
-			solvers[3] = std::make_unique<AJacobi>(2);
-			solvers[4] = std::make_unique<AJacobi>(3);
-			//linear_sys_solver = &solvers[0];
-			linear_sys_solver = solvers.begin();
-		}
-
-		// void set_model(DeformableMesh* model)
-		// {
-		// 	this->model = model;
-		// 	this->dirty = true;
-		// }
+		Solver(std::unordered_map<int, DeformableMesh>& models);
 
 		void set_dt(float dt)
 		{

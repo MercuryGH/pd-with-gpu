@@ -200,7 +200,7 @@ namespace ui
 	{
 		igl::opengl::glfw::Viewer& viewer;
 		std::unordered_map<int, pd::DeformableMesh>& models;
-		std::unordered_map<int, Eigen::Matrix4f>& obj_t_map;
+		std::unordered_map<int, Eigen::MatrixXd>& obj_init_pos_map;
 		ui::UserControl& user_control;
 
 		void operator()(const Eigen::Matrix4f& T)
@@ -210,8 +210,8 @@ namespace ui
 				return;
 			}
 
-			const Eigen::MatrixXd& V = models[user_control.cur_sel_mesh_id].positions();
-			const Eigen::Matrix4d TT = (T * obj_t_map[user_control.cur_sel_mesh_id].inverse()).cast<double>().transpose();
+			const Eigen::MatrixXd& V = obj_init_pos_map[user_control.cur_sel_mesh_id];
+			const Eigen::Matrix4d TT = T.cast<double>().transpose();
 			const Eigen::MatrixXd positions = (V.rowwise().homogeneous() * TT).rowwise().hnormalized();
 
 			models[user_control.cur_sel_mesh_id].set_positions(positions);
@@ -219,6 +219,23 @@ namespace ui
 			int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
 			viewer.data_list[idx].set_vertices(positions);
 			viewer.data_list[idx].compute_normals();
+		}
+	};
+
+	struct keypress_handler
+	{
+		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo;
+
+		bool operator()(igl::opengl::glfw::Viewer& viewer, int button, int modifier)
+		{
+			switch (button)
+			{
+				case ' ': gizmo.visible = !gizmo.visible; return true;
+				case 'W': case 'w': gizmo.operation = ImGuizmo::TRANSLATE; return true;
+				case 'E': case 'e': gizmo.operation = ImGuizmo::ROTATE;    return true;
+				case 'R': case 'r': gizmo.operation = ImGuizmo::SCALE;     return true;
+			}
+			return false;
 		}
 	};
 
@@ -271,9 +288,11 @@ namespace ui
 		for (const auto& [id, model] : models)
 		{
 			f_exts[id].setZero();
+
 			// If #V or #F is not changed, no need to call clear()
-			// viewer.data_list[id].clear();
-			viewer.data_list[id].set_mesh(model.positions(), model.faces());
+			// viewer.data_list[idx].clear();
+			int idx = viewer.mesh_index(id);
+			viewer.data_list[idx].set_mesh(model.positions(), model.faces());
 		}
 	}
 

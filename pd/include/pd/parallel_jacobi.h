@@ -10,7 +10,7 @@ namespace pd
 	public:
 		ParallelJacobi() : LinearSystemSolver(1000) {}
 
-		void set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints) override;
+		void set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models) override;
 		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
 		void clear() override;
 

@@ -41,8 +41,9 @@ namespace pd
 		}
 	}
 
-	void GpuLocalSolver::gpu_local_step_solver_malloc(int n)
+	void GpuLocalSolver::gpu_local_step_solver_init(int n)
 	{
+		this->n_constraints = 0;
 		checkCudaErrors(cudaMalloc((void **)&d_b, sizeof(float) * n));
 		checkCudaErrors(cudaMalloc((void **)&d_q_nplus1, sizeof(float) * n));
 	}
@@ -52,7 +53,7 @@ namespace pd
 		// initialize memory on gpu
 		// d_local_constraints = new Constraint * [n];
 		// d_local_cnt = new int(0);
-		this->n_constraints = constraints.size();
+		this->n_constraints += constraints.size();
 		checkCudaErrors(cudaMalloc((void **)&d_local_constraints, sizeof(Constraint *) * constraints.size()));
 		checkCudaErrors(cudaMalloc((void **)&d_local_cnt, sizeof(int *)));
 		cudaMemset(d_local_cnt, 0, sizeof(int));
@@ -78,16 +79,8 @@ namespace pd
 		is_allocated = true;
 	}
 
-	void GpuLocalSolver::gpu_object_creation_parallel(const Constraints &constraints)
+	void GpuLocalSolver::gpu_object_creation_parallel(const std::unordered_map<int, DeformableMesh>& models)
 	{
-		// initialize memory on gpu
-		// d_local_constraints = new Constraint * [n];
-		// d_local_cnt = new int(0);
-		this->n_constraints = constraints.size();
-		checkCudaErrors(cudaMalloc((void **)&d_local_constraints, sizeof(Constraint *) * constraints.size()));
-		checkCudaErrors(cudaMalloc((void **)&d_local_cnt, sizeof(int *)));
-		cudaMemset(d_local_cnt, 0, sizeof(int));
-
 		std::vector<float> t1_pcs;
 		std::vector<int> t2_pcs;
 		std::vector<int> t3_pcs;
@@ -101,32 +94,48 @@ namespace pd
 		std::vector<int> t4_elcs;
 		std::vector<float> t5_elcs;
 
-		// copy all constraints (serial code)
-		for (const auto &constraint : constraints)
+		// copy all constraints (serial code but fast)
+		int acc = 0;
+		for (const auto& [id, model] : models)
 		{
-			if (auto p = dynamic_cast<const PositionalConstraint *>(constraint.get()))
+			const Constraints& constraints = model.get_all_constraints();
+			int n = model.positions().rows();
+			this->n_constraints += constraints.size();
+
+			for (const auto& constraint : constraints)
 			{
-				t1_pcs.push_back(p->wi);
-				t2_pcs.push_back(p->vi);
-				t3_pcs.push_back(p->n);
-				t4_pcs.push_back(p->x0);
-				t5_pcs.push_back(p->y0);
-				t6_pcs.push_back(p->z0);
+				if (auto p = dynamic_cast<const PositionalConstraint *>(constraint.get()))
+				{
+					t1_pcs.push_back(p->wi);
+					t2_pcs.push_back(acc + p->vi);
+					t3_pcs.push_back(p->n);
+					t4_pcs.push_back(p->x0);
+					t5_pcs.push_back(p->y0);
+					t6_pcs.push_back(p->z0);
+				}
+				else if (auto p = dynamic_cast<const EdgeLengthConstraint *>(constraint.get()))
+				{
+					t1_elcs.push_back(p->wi);
+					t2_elcs.push_back(acc + p->vi);
+					t3_elcs.push_back(acc + p->vj);
+					t4_elcs.push_back(p->n);
+					t5_elcs.push_back(p->rest_length);
+				}
+				else
+				{
+					printf("Type Error while creating object on the GPU!\n");
+					assert(false);
+				}
 			}
-			else if (auto p = dynamic_cast<const EdgeLengthConstraint *>(constraint.get()))
-			{
-				t1_elcs.push_back(p->wi);
-				t2_elcs.push_back(p->vi);
-				t3_elcs.push_back(p->vj);
-				t4_elcs.push_back(p->n);
-				t5_elcs.push_back(p->rest_length);
-			}
-			else
-			{
-				printf("Type Error while creating object on the GPU!\n");
-				assert(false);
-			}
+			acc += n;
 		}
+
+		// initialize memory on gpu
+		// d_local_constraints = new Constraint * [n];
+		// d_local_cnt = new int(0);
+		checkCudaErrors(cudaMalloc((void **)&d_local_constraints, sizeof(Constraint *) * n_constraints));
+		checkCudaErrors(cudaMalloc((void **)&d_local_cnt, sizeof(int *)));
+		cudaMemset(d_local_cnt, 0, sizeof(int));
 
 		// dev mem
 		int n1 = t1_pcs.size();
@@ -364,5 +373,4 @@ namespace pd
 
 		printf("idx = %d\n", idx);
 	}
-
 }

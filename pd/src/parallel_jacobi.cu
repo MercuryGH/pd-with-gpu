@@ -62,15 +62,11 @@ namespace pd
 	}
 
 	// Make sure A is compressed
-	void ParallelJacobi::set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints)
+	void ParallelJacobi::set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models)
 	{
 		Eigen::MatrixXf _A = Eigen::MatrixXf(A);
 		n = _A.rows(); // n = 3 * #Vertex
-		//std::cout << "n = " << n << "\n";
-		//for (int i = 0; i < _A.rows(); i++)
-		//{
-		//	std::cout << _A.coeff(i, i) << "\n";
-		//}
+
 		checkCudaErrors(cudaMalloc((void**)&d_A, sizeof(float) * _A.size()));
 		checkCudaErrors(cudaMalloc((void**)&d_b, sizeof(float) * n));
 		checkCudaErrors(cudaMalloc((void**)&d_x, sizeof(float) * n));

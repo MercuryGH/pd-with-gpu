@@ -2,7 +2,7 @@
 
 namespace pd
 {
-	void CholeskyDirect::set_A(const Eigen::SparseMatrix<float>& A, const Constraints& constraints)
+	void CholeskyDirect::set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models)
 	{
 		A_cholesky_decomp.compute(A);
 	}

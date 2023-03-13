@@ -346,7 +346,7 @@ namespace pd
 
 	// Eigen::SparseMatrix can be converted to CUDA sparse matrix but it's quite tricky.
 	// Instead we construct sparse matrix using adjacent table by ourselves
-	void AJacobi::set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints)
+	void AJacobi::set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models)
 	{
 		n = A.rows();
 		assert((n / 3) * 3 == n);
@@ -364,12 +364,12 @@ namespace pd
 			checkCudaErrors(cudaMalloc((void**)&d_next_x[i], sizeof(float) * n));
 		}
 		// set precomputation values
-		precompute_A_jacobi(A, constraints);
+		precompute_A_jacobi(A, models);
 
 		is_allocated = true;
 	}
 
-	void AJacobi::precompute_A_jacobi(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints)
+	void AJacobi::precompute_A_jacobi(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models)
 	{
 		// fill the member
 		const int n_vertex = n / 3;
@@ -385,21 +385,31 @@ namespace pd
 		};
 
 		std::vector<std::pair<int, int>> edges;
-		for (const auto& constraint : constraints)
-		{
-			int* vertices = nullptr;
-			const int n_vertices = constraint->get_involved_vertices(&vertices);
-			if (n_vertices == 2) // edge length constraint
-			{
-				int vi = vertices[0];
-				int vj = vertices[1];
 
-				edges.emplace_back(vi, vj);
+		int acc = 0;
+		for (const auto& [id, model] : models)
+		{
+			int n = model.positions().rows();
+			const Constraints& constraints = model.get_all_constraints();
+			
+			for (const auto& constraint : constraints)
+			{
+				int* vertices = nullptr;
+				const int n_vertices = constraint->get_involved_vertices(&vertices);
+				if (n_vertices == 2) // edge length constraint
+				{
+					int vi = vertices[0];
+					int vj = vertices[1];
+
+					edges.emplace_back(acc + vi, acc + vj);
+				}
 			}
+
+			acc += n;
 		}
 		util::AdjListGraph adj_list_graph(edges, n_vertex);
-
 		const std::vector<std::unordered_set<int>>& adj_list = adj_list_graph.get_adj_list();
+
 		D.resize(n_vertex);
 		B.resize(n_vertex);
 
@@ -564,13 +574,6 @@ namespace pd
 
 			for (int i = 0; i < n_itr; i++)
 			{
-				// TODO: remove it
-				// For debug purpose only:
-				// std::vector<float> tmp(n_vertex);
-				// checkCudaErrors(cudaMemcpy(tmp.data(), d_diagonals, sizeof(float) * n_vertex, cudaMemcpyDeviceToHost));
-				// printf("In CPU: idx = 0, %f\n", tmp[0]);
-				// printf("In CPU: idx = 1, %f\n", tmp[1]);
-				
 				if (i % 2 == 1)
 				{
 					itr_order_1 << <n_blocks, WARP_SIZE >> > (

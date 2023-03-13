@@ -10,7 +10,7 @@ namespace pd
 	{
 	public:
 		AJacobi(int order): order(order) {}
-		void set_A(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints) override;
+		void set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models) override;
 
 		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
 		void clear() override;
@@ -74,7 +74,7 @@ namespace pd
 		}
 
 	private:
-		void precompute_A_jacobi(const Eigen::SparseMatrix<float>& A, const pd::Constraints& constraints);
+		void precompute_A_jacobi(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models);
 
 		int n{ 0 };
 		// A is an n * n with 3 * 3 block matrix

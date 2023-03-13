@@ -53,7 +53,7 @@ namespace pd
 		bool empty() const { return p.rows() == 0; }
 		const Positions& positions() const { return p; }
 		const Faces& faces() const { return f; }
-		size_t n_constraints() const { return constraints.size(); }
+		const Constraints& get_all_constraints() const { return constraints; }
 		bool is_vertex_fixed(int vi) const { return vertex_fixed[vi]; };
 
 		// setters

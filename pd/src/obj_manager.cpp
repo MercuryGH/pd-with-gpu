@@ -7,7 +7,7 @@ namespace ui
 		total_n_constraints = 0;
 		for (const auto& [_, model] : models)
 		{
-			total_n_constraints += model.n_constraints();
+			total_n_constraints += model.get_all_constraints().size();
 		}
 	}
 
@@ -28,6 +28,8 @@ namespace ui
 		models.emplace(obj_id, pd::DeformableMesh(V, F, E, obj_id));
 		pd::DeformableMesh& model = models[obj_id];
 
+		obj_init_pos_map[obj_id] = V;
+
 		// reset f_ext 
 		f_exts[obj_id].resizeLike(model.positions()); // let external forces add to vertices in the new model
 		f_exts[obj_id].setZero();
@@ -47,6 +49,7 @@ namespace ui
 		if (models.size() == 1)
 		{
 			user_control.cur_sel_mesh_id = obj_id;
+			gizmo.visible = true;
 			bind_gizmo(obj_id);
 		}
 	}
@@ -59,6 +62,8 @@ namespace ui
 		// reset to a new mesh
 		pd::DeformableMesh& model = models[obj_id];
 		model = pd::DeformableMesh(V, F, E, obj_id);
+
+		obj_init_pos_map[obj_id] = V;
 
 		// reset f_ext 
 		f_exts[obj_id].resizeLike(model.positions()); // let external forces add to vertices in the new model
@@ -80,7 +85,25 @@ namespace ui
 
 	void ObjManager::remove_model(int obj_id)
 	{
+		int idx = viewer.mesh_index(obj_id);
+		if (viewer.erase_mesh(idx) == false)
+		{
+			printf("Error: Cannot remove the last mesh!\n");
+			return;
+		}
 
+		obj_init_pos_map.erase(obj_id);
+		models.erase(obj_id);
+		f_exts.erase(obj_id);
+
+		// reset solver
+		solver.dirty = true;
+
+		recalc_total_n_constraints();
+
+		// select the first mesh
+		user_control.cur_sel_mesh_id = models.begin()->first;
+		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
 
 	void ObjManager::bind_gizmo(int obj_id)
@@ -89,7 +112,5 @@ namespace ui
 
 		gizmo.T.block(0, 3, 3, 1) =
 			0.5 * (V.colwise().maxCoeff() + V.colwise().minCoeff()).transpose().cast<float>();
-
-		obj_t_map[obj_id] = gizmo.T;
 	}
 }
