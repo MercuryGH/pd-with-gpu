@@ -90,12 +90,8 @@ int main(int argc, char* argv[])
 				const bool is_selected = (cur_select_id == id);
 				if (ImGui::Selectable(model_name.c_str(), is_selected))
 				{
-					// If selection changed
-					// if (cur_select_id != id)
-					// {
-						obj_manager.bind_gizmo(id);
-						user_control.cur_sel_mesh_id = id;
-					// }
+					obj_manager.bind_gizmo(id);
+					user_control.cur_sel_mesh_id = id;
 
 					cur_select_id = id;
 				}
@@ -115,6 +111,25 @@ int main(int argc, char* argv[])
 		    obj_manager.remove_model(user_control.cur_sel_mesh_id);
 		}
 		ImGui::PopStyleColor(3);
+
+		ImGui::Separator();
+
+		static bool enable_floor = false;
+		ImGui::Checkbox("enable floor", 
+			[&]() { 
+				return enable_floor;
+			},
+			[&](bool value) {
+				enable_floor = value;
+				if (enable_floor)
+				{
+
+				}
+				else 
+				{
+				}
+			}
+		);
 
 		ImGui::Separator();
 
@@ -301,7 +316,7 @@ int main(int argc, char* argv[])
 			ImGui::Text("Solver is %s", solver.dirty ? "not ready." : "ready.");
 
 			ImGui::Checkbox("Use GPU for local step", &solver_params.use_gpu_for_local_step);
-			ImGui::InputFloat("timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f"); // TODO: verify time step
+			ImGui::InputFloat("timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
 			ImGui::InputInt("solver #itr", &solver_params.n_itr_solver_iterations);
 			ImGui::InputInt("PD #itr", &solver_params.n_solver_pd_iterations);
 

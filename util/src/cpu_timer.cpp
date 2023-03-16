@@ -30,12 +30,4 @@ namespace util
 	double CpuTimer::elapsed_seconds() {
 		return elapsed_milliseconds() / 1000.0;
 	}
-
-	//double CpuTimer::last_elpased_milliseconds() {
-	//	return last_duration;
-	//}
-
-	//double CpuTimer::last_elpased_seconds() {
-	//	return last_duration / 1000.0;
-	//}
 }

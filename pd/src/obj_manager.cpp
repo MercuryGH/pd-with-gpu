@@ -106,6 +106,16 @@ namespace ui
 		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
 
+	template<typename T>
+	void ObjManager::add_static_model(const T& model)
+	{
+	}
+
+	template<typename T>
+	void ObjManager::remove_static_model(const T& model)
+	{
+	}
+
 	void ObjManager::bind_gizmo(int obj_id)
 	{
 		const Eigen::MatrixXd& V = models[obj_id].positions();

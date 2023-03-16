@@ -31,6 +31,12 @@ namespace ui
 		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXi& E);
 		void remove_model(int obj_id);
 
+		template<typename T>
+		void add_static_model(const T& model);
+
+		template<typename T>
+		void remove_static_model(const T& model);
+
 		// Bind the gizmo to a new mesh when needed.
 		void bind_gizmo(int obj_id);
 	};
