@@ -11,4 +11,14 @@ namespace primitive
     {
 
     }
+
+    Eigen::Vector3f Sphere::center() const 
+    {
+        return center_point;
+    }
+
+    void Sphere::set_center(Eigen::Vector3f center)
+    {
+        center_point = center;
+    }
 }

@@ -5,7 +5,13 @@
 
 namespace pd {
 
-	Solver::Solver(std::unordered_map<int, DeformableMesh>& models): models(models), dirty(true)
+	Solver::Solver(
+		std::unordered_map<int, DeformableMesh>& models, 
+		std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders
+	):
+	models(models), 
+	rigid_colliders(rigid_colliders),
+	dirty(true)
 	{
 		solvers[0] = std::make_unique<CholeskyDirect>();
 		solvers[1] = std::make_unique<ParallelJacobi>();

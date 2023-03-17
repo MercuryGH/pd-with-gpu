@@ -75,9 +75,13 @@ b *0x00007fffc7284290
 
 * GPU: NVIDIA Corporation GA104 [GeForce RTX 3060 Ti Lite Hash Rate]
 
-* C++ Compiler: g++ version 12.2.1 20230201 (GCC)
+<!-- * C++ Compiler: g++ version 12.2.1 20230201 (GCC) gcc版本高于cuda时，可能会让cmake cuda无法完成编译 -->
 
-* CUDA Compiler: Cuda compilation tools, release 11.8 (nvcc 11.8)
+* CUDA Compiler: Cuda compilation tools, release ??.? (会随Arch Linux pacman更新，要小心)
+
+### 坑点
+
+不同版本的CUDA有不同的编译器版本上限，例如cuda 11.1就不支持gcc 12+，所以要么升级cuda，要么降级gcc。
 
 ### 测试结果
 

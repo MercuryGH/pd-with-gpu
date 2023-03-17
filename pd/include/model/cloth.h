@@ -32,16 +32,16 @@ namespace model {
 			}
 		}
 
-		Eigen::MatrixXd VCloth(cloth_pos.size(), 3);
-		Eigen::MatrixXi FCloth(cloth_faces.size(), 3);
+		Eigen::MatrixXd V(cloth_pos.size(), 3);
+		Eigen::MatrixXi F(cloth_faces.size(), 3);
 		for (auto i = 0; i < cloth_pos.size(); i++)
 		{
-			VCloth.row(i) = cloth_pos[i];
+			V.row(i) = cloth_pos[i];
 		}
 		for (auto i = 0; i < cloth_faces.size(); i++)
 		{
-			FCloth.row(i) = cloth_faces[i];
+			F.row(i) = cloth_faces[i];
 		}
-		return { VCloth, FCloth };
+		return { V, F };
 	}
 }

@@ -2,9 +2,13 @@
 
 #include <pd/deformable_mesh.h>
 #include <pd/solver.h>
+
+#include <primitive/primitive.h>
+
 #include <ui/user_control.h>
 #include <ui/physics_params.h>
 #include <ui/solver_params.h>
+
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/unproject_onto_mesh.h>
 #include <util/cpu_timer.h>
@@ -200,23 +204,37 @@ namespace ui
 	{
 		igl::opengl::glfw::Viewer& viewer;
 		std::unordered_map<int, pd::DeformableMesh>& models;
+		std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders;
 		std::unordered_map<int, Eigen::MatrixXd>& obj_init_pos_map;
 		ui::UserControl& user_control;
 
 		void operator()(const Eigen::Matrix4f& T)
 		{
-			if (models.empty())
+			if (models.empty() && rigid_colliders.empty())
 			{
 				return;
 			}
 
-			const Eigen::MatrixXd& V = obj_init_pos_map[user_control.cur_sel_mesh_id];
+			const int obj_id = user_control.cur_sel_mesh_id;
+			const Eigen::MatrixXd& V = obj_init_pos_map[obj_id];
 			const Eigen::Matrix4d TT = T.cast<double>().transpose();
 			const Eigen::MatrixXd positions = (V.rowwise().homogeneous() * TT).rowwise().hnormalized();
 
-			models[user_control.cur_sel_mesh_id].set_positions(positions);
+			if (models.find(obj_id) != models.end())
+			{
+				models[obj_id].set_positions(positions);
+			}
+			else if (rigid_colliders.find(obj_id) != rigid_colliders.end())
+			{
+				Eigen::Vector3f center = 0.5 * (positions.colwise().maxCoeff() + positions.colwise().minCoeff()).transpose().cast<float>();
+				rigid_colliders[obj_id]->set_center(center);
+			}
+			else
+			{
+				printf("Error: cannot find obj with id %d!\n", obj_id);
+			}
 
-			int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
+			int idx = viewer.mesh_index(obj_id);
 			viewer.data_list[idx].set_vertices(positions);
 			viewer.data_list[idx].compute_normals();
 		}

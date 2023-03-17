@@ -6,6 +6,8 @@
 #include <Eigen/SparseCore>
 #include <pd/deformable_mesh.h>
 
+#include <primitive/primitive.h>
+
 #include <pd/linear_sys_solver.h>
 #include <pd/cholesky_direct.h>
 #include <pd/parallel_jacobi.h>
@@ -21,7 +23,10 @@ namespace pd
 	{
 	public:
 		Solver() = delete;
-		Solver(std::unordered_map<int, DeformableMesh>& models);
+		Solver(
+			std::unordered_map<int, DeformableMesh>& models, 
+			std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders
+		);
 
 		void set_dt(float dt)
 		{
@@ -58,6 +63,7 @@ namespace pd
 
 		// model
 		std::unordered_map<int, DeformableMesh>& models;
+		std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders;
 		Eigen::SparseMatrix<float> A;
 
 		constexpr static int N_SOLVERS = 5;

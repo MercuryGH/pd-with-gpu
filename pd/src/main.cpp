@@ -12,6 +12,9 @@
 
 #include <model/cloth.h>
 
+#include <primitive/primitive.h>
+#include <primitive/floor.h>
+
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
@@ -32,6 +35,7 @@ int main(int argc, char* argv[])
 	// Only 1 gizmo during simulation
 	igl::opengl::glfw::imgui::ImGuizmoWidget gizmo;
 	gizmo.visible = false;
+	gizmo.operation = ImGuizmo::OPERATION::TRANSLATE;
 	menu_plugin.widgets.push_back(&gizmo);
 
     // transformation aux
@@ -41,16 +45,19 @@ int main(int argc, char* argv[])
 	std::unordered_map<int, pd::DeformableMesh> models;
 	std::unordered_map<int, Eigen::MatrixX3d> f_exts;
 
-	pd::Solver solver(models);
+	// rigid body colliders
+	std::unordered_map<int, std::unique_ptr<primitive::Primitive>> rigid_colliders;
+
+	pd::Solver solver(models, rigid_colliders);
 
 	ui::UserControl user_control;
 	ui::PhysicsParams physics_params;
 	ui::SolverParams solver_params;
 
 	static int total_n_constraints = 0;
-	ui::ObjManager obj_manager{ viewer, gizmo, solver, models, obj_init_pos_map, f_exts, user_control, solver_params, total_n_constraints };
+	ui::ObjManager obj_manager{ viewer, gizmo, solver, models, rigid_colliders, obj_init_pos_map, f_exts, user_control, solver_params, total_n_constraints };
 
-	gizmo.callback = ui::gizmo_handler{ viewer, models, obj_init_pos_map, user_control };
+	gizmo.callback = ui::gizmo_handler{ viewer, models, rigid_colliders, obj_init_pos_map, user_control };
 	viewer.callback_mouse_down = ui::mouse_down_handler{ models, user_control };
 	viewer.callback_mouse_move = ui::mouse_move_handler{ models, user_control, physics_params, f_exts };
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
@@ -81,11 +88,32 @@ int main(int argc, char* argv[])
 		ImGui::Begin("Object Manager");
 
 		static int cur_select_id = -1;
-		if (ImGui::BeginListBox("objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
+		if (ImGui::BeginListBox("deformable objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
 		{
 			for (const auto& [id, model] : models)
 			{
 				const std::string model_name = std::string("Mesh ") + std::to_string(id);
+
+				const bool is_selected = (cur_select_id == id);
+				if (ImGui::Selectable(model_name.c_str(), is_selected))
+				{
+					obj_manager.bind_gizmo(id);
+					user_control.cur_sel_mesh_id = id;
+
+					cur_select_id = id;
+				}
+				if (is_selected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndListBox();
+		}
+		if (ImGui::BeginListBox("rigid collider objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
+		{
+			for (const auto& [id, collider] : colliders)
+			{
+				const std::string model_name = std::string("Collider ") + std::to_string(id);
 
 				const bool is_selected = (cur_select_id == id);
 				if (ImGui::Selectable(model_name.c_str(), is_selected))
@@ -111,25 +139,6 @@ int main(int argc, char* argv[])
 		    obj_manager.remove_model(user_control.cur_sel_mesh_id);
 		}
 		ImGui::PopStyleColor(3);
-
-		ImGui::Separator();
-
-		static bool enable_floor = false;
-		ImGui::Checkbox("enable floor", 
-			[&]() { 
-				return enable_floor;
-			},
-			[&](bool value) {
-				enable_floor = value;
-				if (enable_floor)
-				{
-
-				}
-				else 
-				{
-				}
-			}
-		);
 
 		ImGui::Separator();
 
@@ -197,6 +206,59 @@ int main(int argc, char* argv[])
 				ImGui::TreePop();
 			}
 		}
+
+		if (ImGui::CollapsingHeader("Static Object Generator", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::SetNextItemOpen(true); // Helpful for testing, can be removed later
+			if (ImGui::TreeNode("Floor"))
+			{
+				static float y = -1;
+				ImGui::InputFloat("y", &y);
+
+				if (ImGui::Button("Generate"))
+				{
+					obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(y));
+				}
+
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("Sphere"))
+			{
+				static float center_radius[4] = { 0.2f, 0.2f, 0.2f, 0.1f };
+            	ImGui::InputFloat3("input float3", center_radius);
+				ImGui::InputFloat("radius", &center_radius[3]);
+
+				if (ImGui::Button("Generate"))
+				{
+					obj_manager.add_rigid_collider(std::make_unique<primitive::Sphere>(
+						Eigen::Vector3f(center_radius),
+						center_radius[3]
+					));
+				}
+
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("Cube"))
+			{
+				static float center[3] = { 0.2f, 0.2f, 0.2f };
+				static float xyz[3] = { 0.2f, 0.2f, 0.2f };
+            	ImGui::InputFloat3("input float3", center);
+            	ImGui::InputFloat3("input float3", xyz);
+
+				if (ImGui::Button("Generate"))
+				{
+					obj_manager.add_rigid_collider(std::make_unique<primitive::Cube>(
+						Eigen::Vector3f(center),
+						Eigen::Vector3f(xyz)
+					));
+				}
+
+				ImGui::TreePop();
+			}
+		}
+
 		if (ImGui::CollapsingHeader("Constraint Setting", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			static bool enable_edge_length_constraint = false;
@@ -226,7 +288,7 @@ int main(int argc, char* argv[])
 				ImGui::TreePop();
 			}
 
-			if (ImGui::Button("Apply Constraints") && models.empty() == false)
+			if (ImGui::Button("Apply Constraints") && models.find(user_control.cur_sel_mesh_id) != models.end())
 			{
 				pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
 
@@ -321,7 +383,7 @@ int main(int argc, char* argv[])
 			ImGui::InputInt("PD #itr", &solver_params.n_solver_pd_iterations);
 
 			// Solver Selector
-			const char* items[] = {"Direct", "Parallel Jacobi", "A-Jacobi-1", "A-Jacobi-2", "A-Jacobi-3" };
+			const char* items[] = { "Direct", "Parallel Jacobi", "A-Jacobi-1", "A-Jacobi-2", "A-Jacobi-3" };
 			static const char* cur_select_item = "Direct";
 			if (ImGui::BeginCombo("cur solver", cur_select_item))
 			{

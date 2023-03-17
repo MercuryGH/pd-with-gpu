@@ -423,9 +423,7 @@ namespace pd
 			}
 			D[i] = 1.0f / get_D_ii(i);
 			// if (std::abs(D[i]) < 1e-6f)
-			// {
 			// 	printf("Warning: i = %d, D[i] = %f\n", i, D[i]);
-			// }
 		}
 
 		// --- Compute d_diagonals

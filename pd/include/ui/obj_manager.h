@@ -7,6 +7,11 @@
 #include <ui/physics_params.h>
 #include <ui/solver_params.h>
 
+#include <primitive/primitive.h>
+#include <primitive/block.h>
+#include <primitive/sphere.h>
+#include <primitive/floor.h>
+
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
 
@@ -18,6 +23,8 @@ namespace ui
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo;
 		pd::Solver& solver;
 		std::unordered_map<int, pd::DeformableMesh>& models;
+		std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders;
+
 		std::unordered_map<int, Eigen::MatrixXd>& obj_init_pos_map;
 		std::unordered_map<int, Eigen::MatrixX3d>& f_exts;
 		ui::UserControl& user_control;
@@ -31,11 +38,8 @@ namespace ui
 		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXi& E);
 		void remove_model(int obj_id);
 
-		template<typename T>
-		void add_static_model(const T& model);
-
-		template<typename T>
-		void remove_static_model(const T& model);
+		void add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive);
+		void remove_rigid_collider(int id);
 
 		// Bind the gizmo to a new mesh when needed.
 		void bind_gizmo(int obj_id);

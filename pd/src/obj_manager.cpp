@@ -85,12 +85,13 @@ namespace ui
 
 	void ObjManager::remove_model(int obj_id)
 	{
-		int idx = viewer.mesh_index(obj_id);
-		if (viewer.erase_mesh(idx) == false)
+		if (models.size() <= 1)
 		{
 			printf("Error: Cannot remove the last mesh!\n");
 			return;
 		}
+		int idx = viewer.mesh_index(obj_id);
+		viewer.erase_mesh(idx);
 
 		obj_init_pos_map.erase(obj_id);
 		models.erase(obj_id);
@@ -106,21 +107,67 @@ namespace ui
 		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
 
-	template<typename T>
-	void ObjManager::add_static_model(const T& model)
+	void ObjManager::add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive)
 	{
+		Eigen::MatrixXd V;
+		Eigen::MatrixXi F;
+		primitive->generate_visualized_model(V, F);
+
+		// create a new mesh
+		int obj_id = viewer.append_mesh();
+		rigid_colliders.emplace(obj_id, std::move(primitive));
+		obj_init_pos_map[obj_id] = V;
+
+		// reset viewer
+		int idx = viewer.mesh_index(obj_id);
+		viewer.data_list[idx].clear();
+		viewer.data_list[idx].set_mesh(V, F);
+		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)0xcc / 0xff, (double)0x66 / 0xff, 1.0);
+		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
+		viewer.core().align_camera_center(V);
+
+		// if this is the only model, select it
+		if (models.size() == 1)
+		{
+			user_control.cur_sel_mesh_id = obj_id;
+			gizmo.visible = true;
+			bind_gizmo(obj_id);
+		}
 	}
 
-	template<typename T>
-	void ObjManager::remove_static_model(const T& model)
+	void ObjManager::remove_rigid_collider(int id)
 	{
+		int idx = viewer.mesh_index(obj_id);
+		viewer.erase_mesh(idx);
+
+		obj_init_pos_map.erase(obj_id);
+		rigid_colliders.erase(obj_id);
+
+		// select the first model
+		user_control.cur_sel_mesh_id = models.begin()->first;
+		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
 
 	void ObjManager::bind_gizmo(int obj_id)
 	{
-		const Eigen::MatrixXd& V = models[obj_id].positions();
+		if (models.find(obj_id) != models.end())
+		{
+			const Eigen::MatrixXd& V = models[obj_id].positions();
 
-		gizmo.T.block(0, 3, 3, 1) =
-			0.5 * (V.colwise().maxCoeff() + V.colwise().minCoeff()).transpose().cast<float>();
+			gizmo.T.block(0, 3, 3, 1) =
+				0.5 * (V.colwise().maxCoeff() + V.colwise().minCoeff()).transpose().cast<float>();
+		}
+		else if (rigid_colliders.find(obj_id) != rigid_colliders.end())
+		{
+			// Note: only translation is available for rigid colliders.
+			// For floor, only vertical translation is allowed.
+			const Eigen::Vector3f center = rigid_colliders[obj_id]->center();
+			gizmo.T.block(0, 3, 3, 1) = center;
+		}
+		else
+		{
+			printf("Error: Cannot find mesh with id = %d!\n", obj_id);
+			return;
+		}
 	}
 }
