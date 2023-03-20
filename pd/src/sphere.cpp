@@ -64,30 +64,3 @@ namespace primitive
         center_point = center;
     }
 }
-
-    // creates small spheres to visualize P on the overlay of the mesh
-    // Input:
-    //  P:      #P by 3 coordinates of the centers of spheres
-    //  N:      #P by 3 normals (the south-north pole direction of the spheres).
-    //  r: radii of the spheres
-    //  sphereColors:      #P by 3 - RBG colors per sphere
-    //  res:    the resolution of the sphere discretization
-    // extendMesh if to extend the V,T,TC, or to overwrite them
-    // Output:
-    //  V:    #V by 3 sphere mesh coordinates
-    //  T     #T by 3 sphere mesh triangles
-    //  C:    #T by 3 vertex-based colors
-    IGL_INLINE bool point_spheres(const Eigen::MatrixXd &P,
-                                  const Eigen::MatrixXd &normals,
-                                  const double &r,
-                                  const Eigen::MatrixXd &sphereColors,
-                                  const int res,
-                                  Eigen::MatrixXd &V,
-                                  Eigen::MatrixXi &T,
-                                  Eigen::MatrixXd &C)
-    {
-
-
-
-        return true;
-    }
