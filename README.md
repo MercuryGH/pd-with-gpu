@@ -101,3 +101,16 @@ b *0x00007fffc7284290
 
 * 一个`viewer.data_list[idx]`中的对象绑定一个Imguizmo widget，运行时通过一个哈希表`<idx, Matrix>`更新其变换矩阵。
 
+## Random Error
+
+GL_INVALID_VALUE，call stack 为
+```
+#7  0x00007ffff7a6854a in fprintf () from /usr/lib/libc.so.6
+#8  0x00005555555b3837 in igl::opengl::report_gl_error(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) ()
+#9  0x00005555555b389e in igl::opengl::report_gl_error() ()
+#10 0x00005555555b396b in igl::opengl::destroy_shader_program(unsigned int) ()
+#11 0x00005555555b6005 in igl::opengl::MeshGL::free()::{lambda(unsigned int&)#1}::operator()(unsigned int&) const ()
+#12 0x00005555555b604f in igl::opengl::MeshGL::free() ()
+#13 0x00005555557228bd in igl::opengl::glfw::Viewer::erase_mesh(unsigned long) ()
+```
+有概率在remove mesh时触发，表现为stdout中输出`invalid value`，对应用似乎无影响。

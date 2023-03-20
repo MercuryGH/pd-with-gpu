@@ -43,6 +43,20 @@ namespace pd
 			v.setZero(); // init velocity to 0
 		}
 
+		DeformableMesh(const Positions &p, const Elements &e, int obj_id) :
+			p0(p),
+			p(p),
+			f(e),
+			e(e),
+			m(p.rows()),
+			v(p.rows(), p.cols()),
+			vertex_fixed(p.rows(), false),
+			obj_id(obj_id)
+		{
+			m.setOnes(); // Init messes to equally distributed
+			v.setZero(); // init velocity to 0
+		}
+
 		// Debug only
 		void dimension_check() const 
 		{

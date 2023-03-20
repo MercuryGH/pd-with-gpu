@@ -10,7 +10,7 @@
 #include <ui/user_control.h>
 #include <ui/callbacks.h>
 
-#include <model/cloth.h>
+#include <model/model_generator.h>
 
 #include <primitive/primitive.h>
 #include <primitive/floor.h>
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 		}
 		if (ImGui::BeginListBox("rigid collider objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
 		{
-			for (const auto& [id, collider] : colliders)
+			for (const auto& [id, collider] : rigid_colliders)
 			{
 				const std::string model_name = std::string("Collider ") + std::to_string(id);
 
@@ -134,9 +134,20 @@ int main(int argc, char* argv[])
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-		if (ImGui::Button("remove selected mesh") && models.size() > 1)
+		if (ImGui::Button("remove selected mesh"))
 		{
-		    obj_manager.remove_model(user_control.cur_sel_mesh_id);
+			if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id))
+			{
+		   		obj_manager.remove_model(user_control.cur_sel_mesh_id);
+			}
+			else if (obj_manager.is_rigid_collider(user_control.cur_sel_mesh_id))
+			{
+				obj_manager.remove_rigid_collider(user_control.cur_sel_mesh_id);
+			}
+			else 
+			{
+				printf("Error: Invalid mesh to remove\n!");
+			}
 		}
 		ImGui::PopStyleColor(3);
 
@@ -160,14 +171,14 @@ int main(int argc, char* argv[])
 				ImGui::InputInt("height", &h);
 				if (ImGui::Button("Generate"))
 				{
-					auto [V, F] = model::generate_cloth(w, h);
+					auto [V, F] = generator::generate_cloth(w, h);
 					if (add_or_reset == OP_ADD)
 					{
-						obj_manager.add_model(V, F, F);
+						obj_manager.add_model(V, F);
 					}
 					if (add_or_reset == OP_RESET)
 					{
-						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F, F);
+						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F);
 					}
 				}
 				
@@ -189,11 +200,11 @@ int main(int argc, char* argv[])
 						{
 							if (add_or_reset == OP_ADD)
 							{
-								obj_manager.add_model(V, F, F);
+								obj_manager.add_model(V, F);
 							}
 							if (add_or_reset == OP_RESET)
 							{
-								obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F, F);
+								obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F);
 							}
 						}
 						else
@@ -240,7 +251,7 @@ int main(int argc, char* argv[])
 				ImGui::TreePop();
 			}
 
-			if (ImGui::TreeNode("Cube"))
+			if (ImGui::TreeNode("Block"))
 			{
 				static float center[3] = { 0.2f, 0.2f, 0.2f };
 				static float xyz[3] = { 0.2f, 0.2f, 0.2f };
@@ -249,9 +260,9 @@ int main(int argc, char* argv[])
 
 				if (ImGui::Button("Generate"))
 				{
-					obj_manager.add_rigid_collider(std::make_unique<primitive::Cube>(
+					obj_manager.add_rigid_collider(std::make_unique<primitive::Block>(
 						Eigen::Vector3f(center),
-						Eigen::Vector3f(xyz)
+						xyz[0], xyz[1], xyz[2]
 					));
 				}
 
@@ -288,7 +299,7 @@ int main(int argc, char* argv[])
 				ImGui::TreePop();
 			}
 
-			if (ImGui::Button("Apply Constraints") && models.find(user_control.cur_sel_mesh_id) != models.end())
+			if (ImGui::Button("Apply Constraints") && obj_manager.is_deformable_model(user_control.cur_sel_mesh_id))
 			{
 				pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
 

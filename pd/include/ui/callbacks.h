@@ -310,7 +310,7 @@ namespace ui
 			// If #V or #F is not changed, no need to call clear()
 			// viewer.data_list[idx].clear();
 			int idx = viewer.mesh_index(id);
-			viewer.data_list[idx].set_mesh(model.positions(), model.faces());
+			viewer.data_list[idx].set_vertices(model.positions());
 		}
 	}
 
