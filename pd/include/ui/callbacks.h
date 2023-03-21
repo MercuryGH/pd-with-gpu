@@ -217,17 +217,21 @@ namespace ui
 
 			const int obj_id = user_control.cur_sel_mesh_id;
 			const Eigen::MatrixXd& V = obj_init_pos_map[obj_id];
+
 			const Eigen::Matrix4d TT = T.cast<double>().transpose();
 			const Eigen::MatrixXd positions = (V.rowwise().homogeneous() * TT).rowwise().hnormalized();
+			// const Eigen::MatrixXd positions = (TT).rowwise().hnormalized();
 
 			if (models.find(obj_id) != models.end())
 			{
+				// TODO: apply lazy update (not necessary indeed)
 				models[obj_id].set_positions(positions);
 			}
 			else if (rigid_colliders.find(obj_id) != rigid_colliders.end())
 			{
 				Eigen::Vector3f center = 0.5 * (positions.colwise().maxCoeff() + positions.colwise().minCoeff()).transpose().cast<float>();
 				rigid_colliders[obj_id]->set_center(center);
+				// std::cout << center << "\n";
 			}
 			else
 			{

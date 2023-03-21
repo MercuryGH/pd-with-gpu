@@ -42,7 +42,7 @@ namespace pd {
 		return ret;
 	}
 
-	Eigen::VectorXf EdgeLengthConstraint::get_i_wiSiTAiTBipi(const Eigen::VectorXf& pi) const
+	Eigen::VectorXf EdgeLengthConstraint::get_c_AcTAchpc(const Eigen::VectorXf& pi) const
 	{
 		assert(pi.rows() == 6);
 		Eigen::VectorXf ret;
@@ -64,7 +64,7 @@ namespace pd {
 		return ret;
 	}
 
-	std::vector<Eigen::Triplet<float>> EdgeLengthConstraint::get_A_wiSiTAiTAiSi(int n_vertex_offset) const
+	std::vector<Eigen::Triplet<float>> EdgeLengthConstraint::get_c_AcTAc(int n_vertex_offset) const
 	{
 		std::vector<Eigen::Triplet<float>> triplets(12);
 
@@ -88,7 +88,7 @@ namespace pd {
 		return std::vector<Eigen::Triplet<float>>{ triplets.begin(), triplets.end() };
 	}
 
-	__host__ __device__ void EdgeLengthConstraint::project_i_wiSiTAiTBipi(float* __restrict__ b, const float* __restrict__ q) const
+	__host__ __device__ void EdgeLengthConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
 	{
 		// #vertex offset is already included
 		Eigen::Vector3f vi_pos{ q[3 * vi], q[3 * vi + 1], q[3 * vi + 2] };

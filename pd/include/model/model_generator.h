@@ -6,6 +6,11 @@
 namespace generator {
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cloth(int n_rows, int n_cols)
 	{
+		if (n_rows < 1 || n_cols < 1)
+		{
+			printf("Error: Invalid arguments!");
+		}
+
 		std::vector<Eigen::RowVector3d> cloth_pos;
 		std::vector<Eigen::RowVector3i> cloth_faces;
 
@@ -45,12 +50,16 @@ namespace generator {
 		return { V, F };
 	}
 
-	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_bar(int x, int y, int z)
+	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> generate_bar(int x, int y, int z)
 	{
+		if (x < 1 || y < 1 || z < 1)
+		{
+			printf("Error: Invalid arguments!");
+		}
 		// x, y, z <-> width, height, depth
 		const auto base3_vertex_id = [x, y, z](int i, int j, int k) 
 		{
-			return i * y * z + j * z + k;
+			return i * y * z + j * z + 	k;
 		};
 		Eigen::MatrixXd V(x * y * z, 3);
 
@@ -69,8 +78,7 @@ namespace generator {
 		const auto tet_cnt = (x - 1) * (y - 1) * (z - 1) * 5;
 
 		// tetrahedron face, not triangle
-		Eigen::MatrixXi T;
-		T.resize(tet_cnt, 4);
+		Eigen::MatrixXi T(tet_cnt, 4);
 		for (int i = 0; i < x - 1; i++)
 		{
 			for (int j = 0; j < y - 1; j++)
@@ -117,6 +125,15 @@ namespace generator {
 			}
 		}
 
-		return { V, T };
+		// extract boundary facets for rendering only.
+		// the simultaion process does not require the facet data
+		Eigen::MatrixXi boundary_facets; 
+    	igl::boundary_facets(T, boundary_facets); 
+
+		// inverse face based
+		T = T.rowwise().reverse().eval(); 
+    	boundary_facets = boundary_facets.rowwise().reverse().eval();
+
+		return { V, T, boundary_facets };
 	}
 }

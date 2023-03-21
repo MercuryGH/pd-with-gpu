@@ -17,7 +17,8 @@ namespace primitive
     public:
         Primitive(PrimitiveType type): type(type) {}
 
-        virtual void collision_handle(Eigen::Vector3f& pos) const = 0;
+        // returns true if there is a collision 
+        virtual bool collision_handle(Eigen::Vector3f& pos) const = 0;
 
         virtual void generate_visualized_model(Eigen::MatrixXd& V, Eigen::MatrixXi& F) const = 0;
 

@@ -2,12 +2,14 @@
 
 namespace primitive
 {
-    void Floor::collision_handle(Eigen::Vector3f& pos) const 
+    bool Floor::collision_handle(Eigen::Vector3f& pos) const 
     {
         if (pos.y() < center_point.y())
         {
             pos.y() = center_point.y();
+			return true;
         }
+		return false;
     }
 
     void Floor::generate_visualized_model(Eigen::MatrixXd& V, Eigen::MatrixXi& F) const
@@ -24,7 +26,8 @@ namespace primitive
 			{
 				const double x_offset = static_cast<double>(i - n_rows / 2);
 				const double z_offset = static_cast<double>(j - n_cols / 2);
-				pos.emplace_back(x_offset, center_point.y(), z_offset);
+				// generate model first, then apply offset.
+				pos.emplace_back(x_offset, 0, z_offset);
 
 				if (i == n_rows - 1 || j == n_cols - 1)
 				{

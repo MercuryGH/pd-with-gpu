@@ -390,19 +390,15 @@ namespace pd
 		for (const auto& [id, model] : models)
 		{
 			int n = model.positions().rows();
-			const Constraints& constraints = model.get_all_constraints();
-			
-			for (const auto& constraint : constraints)
-			{
-				int* vertices = nullptr;
-				const int n_vertices = constraint->get_involved_vertices(&vertices);
-				if (n_vertices == 2) // edge length constraint
-				{
-					int vi = vertices[0];
-					int vj = vertices[1];
+			const Eigen::MatrixXi model_edges = model.get_edges();
 
-					edges.emplace_back(acc + vi, acc + vj);
-				}
+			for (int i = 0; i < model_edges.rows(); i++)
+			{
+				const auto edge = model_edges.row(i);
+				const auto vi = edge(0);
+				const auto vj = edge(1);
+				
+				edges.emplace_back(acc + vi, acc + vj);
 			}
 
 			acc += n;

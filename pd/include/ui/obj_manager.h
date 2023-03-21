@@ -42,8 +42,19 @@ namespace ui
 			return rigid_colliders.find(obj_id) != rigid_colliders.end();
 		}
 
-		void add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& E);
-		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& E);
+	private:
+		void add_simulation_model_info(int obj_id);
+		void reset_simulation_model_info(int obj_id);
+
+	public:	
+	    // add triangle mesh model
+		void add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+		// add tetrahedron mesh model
+		void add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);
+
+		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);
+
 		void remove_model(int obj_id);
 
 		void add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive);

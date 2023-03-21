@@ -1,7 +1,4 @@
-#include <igl/edges.h>
-
 #include <pd/deformable_mesh.h>
-
 #include <pd/positional_constraint.h>
 #include <pd/edge_length_constraint.h>
 
@@ -33,10 +30,7 @@ namespace pd
 
 	void DeformableMesh::set_edge_length_constraint(float wi)
 	{
-		Eigen::MatrixXi edges;
-		igl::edges(e, edges);
-
-		n_edges = edges.rows();
+		Eigen::MatrixXi edges = get_edges();
 
 		for (int i = 0; i < edges.rows(); i++)
 		{
@@ -76,5 +70,24 @@ namespace pd
 		}
 		
 		return need_modify;
+	}
+
+	void DeformableMesh::resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit) const
+	{
+		static int collision_cnt = 0;
+		for (int i = 0; i < q_explicit.rows(); i++)
+		{
+			Eigen::Vector3f pos = q_explicit.row(i).transpose();
+			for (const auto& [id, collider] : rigid_colliders)
+			{
+				bool flag = collider->collision_handle(pos);
+				if (flag == true)
+				{
+					collision_cnt++;
+					printf("Detect collision! %d\n", collision_cnt);
+				}
+			}
+			q_explicit.row(i) = pos.transpose();
+		}
 	}
 }

@@ -16,7 +16,7 @@ namespace pd {
 		return Eigen::Vector3f(x0, y0, z0);
 	}
 
-	Eigen::VectorXf PositionalConstraint::get_i_wiSiTAiTBipi(const Eigen::VectorXf& pi) const
+	Eigen::VectorXf PositionalConstraint::get_c_AcTAchpc(const Eigen::VectorXf& pi) const
 	{
 		Eigen::VectorXf ret;
 		ret.resize(3 * n);
@@ -27,7 +27,7 @@ namespace pd {
 		return ret;
 	}
 
-	std::vector<Eigen::Triplet<float>> PositionalConstraint::get_A_wiSiTAiTAiSi(int n_vertex_offset) const
+	std::vector<Eigen::Triplet<float>> PositionalConstraint::get_c_AcTAc(int n_vertex_offset) const
 	{
 		std::array<Eigen::Triplet<float>, 3u> triplets;
 		for (int i = 0; i < 3; i++)
@@ -37,7 +37,7 @@ namespace pd {
 		return std::vector<Eigen::Triplet<float>>{ triplets.begin(), triplets.end() };
 	}
 
-	__host__ __device__ void PositionalConstraint::project_i_wiSiTAiTBipi(float* __restrict__ b, const float* __restrict__ q) const
+	__host__ __device__ void PositionalConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
 	{
 #ifdef __CUDA_ARCH__
 		atomicAdd(&b[3 * vi], wi * x0);

@@ -2,12 +2,16 @@
 
 #include <iostream>
 #include <vector>
-#include <unordered_set>
-#include <Eigen/Core>
 #include <numeric>
-#include <pd/constraint.h>
+#include <unordered_set>
 
+#include <igl/edges.h>
+#include <Eigen/Core>
+
+#include <primitive/primitive.h>
+#include <pd/constraint.h>
 #include <pd/types.h>
+
 
 namespace pd
 {
@@ -29,11 +33,13 @@ namespace pd
 			v.setZero(); // init velocity to 0
 		}
 		*/
-		DeformableMesh(const Positions &p, const Faces &f, const Elements &e, int obj_id) :
+
+		// construct from tetrahedron elements
+		DeformableMesh(const Positions &p, const Elements &t, const Faces &boundary_facets, int obj_id) :
 			p0(p),
 			p(p),
-			f(f),
-			e(e),
+			e(t),
+			boundary_facets(boundary_facets),
 			m(p.rows()),
 			v(p.rows(), p.cols()),
 			vertex_fixed(p.rows(), false),
@@ -43,11 +49,12 @@ namespace pd
 			v.setZero(); // init velocity to 0
 		}
 
-		DeformableMesh(const Positions &p, const Elements &e, int obj_id) :
+		// construct from triangle elements
+		DeformableMesh(const Positions &p, const Elements &f, int obj_id) :
 			p0(p),
 			p(p),
-			f(e),
-			e(e),
+			e(f),
+			boundary_facets(f),
 			m(p.rows()),
 			v(p.rows(), p.cols()),
 			vertex_fixed(p.rows(), false),
@@ -66,9 +73,10 @@ namespace pd
 		// getters
 		bool empty() const { return p.rows() == 0; }
 		const Positions& positions() const { return p; }
-		const Faces& faces() const { return f; }
+		const Faces& faces() const { return boundary_facets; }
 		const Constraints& get_all_constraints() const { return constraints; }
 		bool is_vertex_fixed(int vi) const { return vertex_fixed[vi]; };
+		Eigen::MatrixXi get_edges() const { Eigen::MatrixXi edges; igl::edges(e, edges); return edges; }
 
 		// setters
 		void reset_constraints()
@@ -98,6 +106,8 @@ namespace pd
 		bool apply_mass_per_vertex(float mass_per_vertex);
 		int n_edges{ 0 };   // #Edges
 
+		void resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit) const;
+
 	private:
 		void add_positional_constraint(int vi, float wi, float mass_per_vertex);
 
@@ -106,13 +116,16 @@ namespace pd
 
 		Positions p0;  // Rest positions
 		Positions p;   // Positions
-		Faces f;
-		Elements e;    // Indicates the model is of 
-		// triangle elements (=faces) or tetrahedra elements (currently not used in this proj)
+		Faces boundary_facets; // for rendering only
+
+		// Indicates the model is of 
+		// triangle elements (=faces) or tetrahedra elements.
 		// Dimensions may differ between different elements.
-		// Note: we need to restore the edges information from the elements matrix
+		// We need to restore the edges information from the elements matrix.
+		Elements e; 
+
 		Masses m;      // Per-vertex mass
-		Velocities v;
+		Velocities v;  // Per-vertex velocity
 		Constraints constraints; // Vector of constraints
 		std::vector<bool> vertex_fixed; // Indicates if a vertex is fixed
 	};

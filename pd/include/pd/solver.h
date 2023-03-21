@@ -63,7 +63,7 @@ namespace pd
 
 		// model
 		std::unordered_map<int, DeformableMesh>& models;
-		std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders;
+		const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders;
 		Eigen::SparseMatrix<float> A;
 
 		constexpr static int N_SOLVERS = 5;

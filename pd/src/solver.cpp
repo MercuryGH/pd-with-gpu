@@ -47,7 +47,7 @@ namespace pd {
 
 			for (const auto& constraint : model.constraints)
 			{
-				std::vector<Eigen::Triplet<float>> wiSiTAiTAiSi = constraint->get_A_wiSiTAiTAiSi(acc);
+				std::vector<Eigen::Triplet<float>> wiSiTAiTAiSi = constraint->get_c_AcTAc(acc);
 				A_triplets.insert(A_triplets.end(), wiSiTAiTAiSi.begin(), wiSiTAiTAiSi.end());
 			}
 
@@ -155,9 +155,12 @@ namespace pd {
 
 			// auto fails
 			const Eigen::MatrixX3d a = f_exts.at(id).array().colwise() / (model.m).array(); // M^{-1} f_{ext}
-			const Eigen::MatrixX3f q_explicit = (q + dt * v + dtsqr * a).cast<Float>(); // n * 3 matrix
+			Eigen::MatrixX3f q_explicit = (q + dt * v + dtsqr * a).cast<Float>(); // n * 3 matrix
 
 			const int n = model.positions().rows();
+
+			// resolve collision
+			model.resolve_collision(rigid_colliders, q_explicit);
 
 			const auto flatten = [n](const Eigen::MatrixXf& q) {
 				assert(q.cols() == 3);
@@ -296,7 +299,7 @@ namespace pd {
 			const int n = model.positions().rows();
 			for (const auto& constraint : model.constraints)
 			{
-				//constraint->project_i_wiSiTAiTBipi(b.data(), q_nplus1.data(), b.size());
+				//constraint->project_c_AcTAchpc(b.data(), q_nplus1.data(), b.size());
 				//continue;
 
 				const Eigen::VectorXf& cur_model_q_n_plus1 = q_nplus1.block(3 * acc, 0, 3 * n, 1);
@@ -305,10 +308,10 @@ namespace pd {
 				const Eigen::VectorXf pi = constraint->local_solve(cur_model_q_n_plus1);
 
 				//std::cout << pi << "\n";
-				//const auto test = constraint->get_i_wiSiTAiTBipi(pi);
+				//const auto test = constraint->get_c_AcTAchpc(pi);
 				//std::cout << "test(0) = " << test(0) << "\n";
 
-				b.block(3 * acc, 0, 3 * n, 1) += constraint->get_i_wiSiTAiTBipi(pi);
+				b.block(3 * acc, 0, 3 * n, 1) += constraint->get_c_AcTAchpc(pi);
 			}
 			acc += n;
 		}

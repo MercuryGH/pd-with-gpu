@@ -19,16 +19,33 @@ namespace ui
 		V.array() /= (V.maxCoeff() - V.minCoeff());
 	}
 
-	void ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& E)
+	void ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 	{
 		rescale(V);
 
 		// create a new mesh
 		int obj_id = viewer.append_mesh();
-		models.emplace(obj_id, pd::DeformableMesh(V, E, obj_id));
-		pd::DeformableMesh& model = models[obj_id];
+		models.emplace(obj_id, pd::DeformableMesh(V, F, obj_id));
 
-		obj_init_pos_map[obj_id] = V;
+		add_simulation_model_info(obj_id);
+	}
+
+	void ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
+	{
+		rescale(V);
+
+		// create a new mesh
+		int obj_id = viewer.append_mesh();
+		models.emplace(obj_id, pd::DeformableMesh(V, T, boundray_facets, obj_id));
+
+		add_simulation_model_info(obj_id);
+	}
+
+	void ObjManager::add_simulation_model_info(int obj_id)
+	{
+		const pd::DeformableMesh& model = models[obj_id];
+
+		obj_init_pos_map[obj_id] = model.positions();
 
 		// reset f_ext 
 		f_exts[obj_id].resizeLike(model.positions()); // let external forces add to vertices in the new model
@@ -54,16 +71,10 @@ namespace ui
 		}
 	}
 
-	void ObjManager::reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& E)
+	void ObjManager::reset_simulation_model_info(int obj_id)
 	{
-		// rescale the vertices to make all models look equal in size
-		rescale(V);
-
-		// reset to a new mesh
-		pd::DeformableMesh& model = models[obj_id];
-		model = pd::DeformableMesh(V, E, obj_id);
-
-		obj_init_pos_map[obj_id] = V;
+		const pd::DeformableMesh& model = models[obj_id];
+		obj_init_pos_map[obj_id] = model.positions();
 
 		// reset f_ext 
 		f_exts[obj_id].resizeLike(model.positions()); // let external forces add to vertices in the new model
@@ -81,6 +92,30 @@ namespace ui
 		solver.dirty = true;
 
 		recalc_total_n_constraints();
+	}
+
+	void ObjManager::reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+	{
+		// rescale the vertices to make all models look equal in size
+		rescale(V);
+
+		// reset to a new mesh
+		pd::DeformableMesh& model = models[obj_id];
+		model = pd::DeformableMesh(V, F, obj_id);
+
+		reset_simulation_model_info(obj_id);
+	}
+
+	void ObjManager::reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
+	{
+		// rescale the vertices to make all models look equal in size
+		rescale(V);
+
+		// reset to a new mesh
+		pd::DeformableMesh& model = models[obj_id];
+		model = pd::DeformableMesh(V, T, boundray_facets, obj_id);
+
+		reset_simulation_model_info(obj_id);
 	}
 
 	void ObjManager::remove_model(int obj_id)
@@ -118,11 +153,17 @@ namespace ui
 		rigid_colliders.emplace(obj_id, std::move(primitive));
 		obj_init_pos_map[obj_id] = V;
 
+		// apply offset
+		for (int i = 0; i < V.rows(); i++)
+		{
+			V.row(i) += rigid_colliders[obj_id]->center().transpose().cast<double>();
+		}
+
 		// reset viewer
 		int idx = viewer.mesh_index(obj_id);
 		viewer.data_list[idx].clear();
 		viewer.data_list[idx].set_mesh(V, F);
-		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)0xcc / 0xff, (double)0xcc / 0xff, 1);
+		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d(125, 220, 117);
 		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
 		viewer.data_list[idx].show_lines = 0;
 

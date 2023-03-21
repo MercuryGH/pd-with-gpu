@@ -184,6 +184,29 @@ int main(int argc, char* argv[])
 				
 				ImGui::TreePop();
 			}
+			if (ImGui::TreeNode("Bar"))
+			{
+				static int w = 5;
+				static int h = 5;
+				static int d = 5;
+				ImGui::InputInt("width", &w);
+				ImGui::InputInt("height", &h);
+				ImGui::InputInt("depth", &d);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, T, boundary_facets] = generator::generate_bar(w, h, d);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, T, boundary_facets);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, T, boundary_facets);
+					}
+				}
+				
+				ImGui::TreePop();
+			}
 			if (ImGui::TreeNode(".obj File"))
 			{
 				if (ImGui::Button("Load .obj file"))
@@ -236,8 +259,8 @@ int main(int argc, char* argv[])
 
 			if (ImGui::TreeNode("Sphere"))
 			{
-				static float center_radius[4] = { 0.2f, 0.2f, 0.2f, 0.1f };
-            	ImGui::InputFloat3("input float3", center_radius);
+				static float center_radius[4] = { 0.2f, 0.2f, 0.2f, 0.2f };
+            	ImGui::InputFloat3("center", center_radius);
 				ImGui::InputFloat("radius", &center_radius[3]);
 
 				if (ImGui::Button("Generate"))
@@ -255,14 +278,14 @@ int main(int argc, char* argv[])
 			{
 				static float center[3] = { 0.2f, 0.2f, 0.2f };
 				static float xyz[3] = { 0.2f, 0.2f, 0.2f };
-            	ImGui::InputFloat3("input float3", center);
-            	ImGui::InputFloat3("input float3", xyz);
+            	ImGui::InputFloat3("center", center);
+            	ImGui::InputFloat3("xyz", xyz);
 
 				if (ImGui::Button("Generate"))
 				{
 					obj_manager.add_rigid_collider(std::make_unique<primitive::Block>(
 						Eigen::Vector3f(center),
-						xyz[0], xyz[1], xyz[2]
+						Eigen::Vector3f(xyz)
 					));
 				}
 
@@ -359,7 +382,7 @@ int main(int argc, char* argv[])
 
 			ImGui::InputFloat("dragging force", &physics_params.external_force_val, 1.f, 10.f, "%.3f");
 		}
-		if (ImGui::CollapsingHeader("Visualization Setting"))
+		if (ImGui::CollapsingHeader("Visualization Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
 			const int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
 			ImGui::Checkbox("Wireframe", [&]() { 

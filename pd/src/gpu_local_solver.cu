@@ -363,7 +363,7 @@ namespace pd
 		{
 			Constraint *constraint = d_local_constraints[idx];
 
-			constraint->project_i_wiSiTAiTBipi(d_b, d_q_nplus1);
+			constraint->project_c_AcTAchpc(d_b, d_q_nplus1);
 		}
 	}
 
