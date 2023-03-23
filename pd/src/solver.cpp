@@ -305,13 +305,13 @@ namespace pd {
 				const Eigen::VectorXf& cur_model_q_n_plus1 = q_nplus1.block(3 * acc, 0, 3 * n, 1);
 				assert(cur_model_q_n_plus1.size() == 3 * n);
 
-				const Eigen::VectorXf pi = constraint->local_solve(cur_model_q_n_plus1);
+				const Eigen::VectorXf pc = constraint->local_solve(cur_model_q_n_plus1);
 
 				//std::cout << pi << "\n";
-				//const auto test = constraint->get_c_AcTAchpc(pi);
+				//const auto test = constraint->get_c_AcTAchpc(pc);
 				//std::cout << "test(0) = " << test(0) << "\n";
 
-				b.block(3 * acc, 0, 3 * n, 1) += constraint->get_c_AcTAchpc(pi);
+				b.block(3 * acc, 0, 3 * n, 1) += constraint->get_c_AcTAchpc(pc);
 			}
 			acc += n;
 		}

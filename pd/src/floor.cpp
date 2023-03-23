@@ -4,9 +4,10 @@ namespace primitive
 {
     bool Floor::collision_handle(Eigen::Vector3f& pos) const 
     {
-        if (pos.y() < center_point.y())
+		constexpr static float EPS = 0.01;
+        if (pos.y() < center_point.y() + EPS)
         {
-            pos.y() = center_point.y();
+            pos.y() = center_point.y() + EPS;
 			return true;
         }
 		return false;

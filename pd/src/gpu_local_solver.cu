@@ -63,11 +63,11 @@ namespace pd
 		{
 			if (auto p = dynamic_cast<const PositionalConstraint *>(constraint.get()))
 			{
-				create_local_gpu_positional_constraint<<<1, 1>>>(p->wi, p->vi, p->n, p->x0, p->y0, p->z0, d_local_constraints, d_local_cnt);
+				create_local_gpu_positional_constraint<<<1, 1>>>(p->wc, p->vi, p->n, p->x0, p->y0, p->z0, d_local_constraints, d_local_cnt);
 			}
 			else if (auto p = dynamic_cast<const EdgeLengthConstraint *>(constraint.get()))
 			{
-				create_local_gpu_edge_length_constraint<<<1, 1>>>(p->wi, p->vi, p->vj, p->n, p->rest_length, d_local_constraints, d_local_cnt);
+				create_local_gpu_edge_length_constraint<<<1, 1>>>(p->wc, p->vi, p->vj, p->n, p->rest_length, d_local_constraints, d_local_cnt);
 			}
 			else
 			{
@@ -106,7 +106,7 @@ namespace pd
 			{
 				if (auto p = dynamic_cast<const PositionalConstraint *>(constraint.get()))
 				{
-					t1_pcs.push_back(p->wi);
+					t1_pcs.push_back(p->wc);
 					t2_pcs.push_back(acc + p->vi);
 					t3_pcs.push_back(p->n);
 					t4_pcs.push_back(p->x0);
@@ -115,7 +115,7 @@ namespace pd
 				}
 				else if (auto p = dynamic_cast<const EdgeLengthConstraint *>(constraint.get()))
 				{
-					t1_elcs.push_back(p->wi);
+					t1_elcs.push_back(p->wc);
 					t2_elcs.push_back(acc + p->vi);
 					t3_elcs.push_back(acc + p->vj);
 					t4_elcs.push_back(p->n);
@@ -299,7 +299,7 @@ namespace pd
 			PositionalConstraint *pc = (PositionalConstraint *)d_local_constraints[idx];
 			// assert(pc != nullptr);
 			fix_vtable_pointer<PositionalConstraint>(pc);
-			pc->wi = wi_pcs[idx];
+			pc->wc = wi_pcs[idx];
 			pc->n = n_pcs[idx];
 			pc->vi = vi_pcs[idx];
 			pc->x0 = x0_pcs[idx];
@@ -317,7 +317,7 @@ namespace pd
 			// assert(elc != nullptr);
 			fix_vtable_pointer<EdgeLengthConstraint>(elc);
 
-			elc->wi = wi_elcs[idx];
+			elc->wc = wi_elcs[idx];
 			elc->n = n_elcs[idx];
 			elc->vi = vi_elcs[idx];
 			elc->vj = vj_elcs[idx];

@@ -77,6 +77,7 @@ namespace pd
 		const Constraints& get_all_constraints() const { return constraints; }
 		bool is_vertex_fixed(int vi) const { return vertex_fixed[vi]; };
 		Eigen::MatrixXi get_edges() const { Eigen::MatrixXi edges; igl::edges(e, edges); return edges; }
+		const Eigen::VectorXd& get_masses() const { return m; }
 
 		// setters
 		void reset_constraints()
@@ -101,7 +102,7 @@ namespace pd
 		int obj_id{ -1 };
 
 	    // methods
-		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wi, float mass_per_vertex);
+		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wi);
 		void set_edge_length_constraint(float wi);
 		bool apply_mass_per_vertex(float mass_per_vertex);
 		int n_edges{ 0 };   // #Edges
@@ -109,10 +110,7 @@ namespace pd
 		void resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit) const;
 
 	private:
-		void add_positional_constraint(int vi, float wi, float mass_per_vertex);
-
-		constexpr static float FIXED_VERTEX_MASS = 1e10; // fixed point has +inf mass and cannot move
-
+		void add_positional_constraint(int vi, float wi);
 
 		Positions p0;  // Rest positions
 		Positions p;   // Positions

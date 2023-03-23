@@ -20,9 +20,11 @@ PD testing.
 ## 当前存在的Bugs
 
 * constraints 数目过多时，预计算local step GPU 会崩溃。最大数目为42000 constraints。可用120*120和130*130布料测试。
+
 > 原因： https://stackoverflow.com/questions/70024184/cuda-complex-object-initialization-within-device-problem-with-cudadevicesetlimi
 
 * bunny_s, 50*50布料 等模型中A-Jacobi算法出现错误，部分顶点的迭代值强制收敛到0，可能是GPU memory access UB导致的。
+
 > 是的。具体的原因是调用kernel时 n_vertex 参数传入错误导致了边角料问题。该问题在边角料很多的时候会导致memory access UB error，但不多时不会导致error，只会在计算上出现错误。
 
 ## CMake 指定编译生成类型
@@ -55,8 +57,6 @@ lane: warp 里面的任意一个 thread
 
 * 单步操作会同时在一个 warp 上的所有 lane 上生效（特殊情况：`__syncthread`）
 
-
-
 ```
 cuda-gdb ./pd/debug_pd
 
@@ -70,9 +70,7 @@ b *0x00007fffc7284290
 ### 测试环境
 
 * OS: Arch Linux x86_64
-
 * CPU: 12th Gen Intel(R) Core(TM) i7-12700
-
 * GPU: NVIDIA Corporation GA104 [GeForce RTX 3060 Ti Lite Hash Rate]
 
 <!-- * C++ Compiler: g++ version 12.2.1 20230201 (GCC) gcc版本高于cuda时，可能会让cmake cuda无法完成编译 -->
@@ -99,11 +97,12 @@ b *0x00007fffc7284290
 
 ### viewer扩展到多物体，Mesh扩展到Deformable Mesh和Static Mesh
 
-* 一个`viewer.data_list[idx]`中的对象绑定一个Imguizmo widget，运行时通过一个哈希表`<idx, Matrix>`更新其变换矩阵。
+* 一个 `viewer.data_list[idx]`中的对象绑定一个Imguizmo widget，运行时通过一个哈希表 `<idx, Matrix>`更新其变换矩阵。
 
 ## Random Error
 
 GL_INVALID_VALUE，call stack 为
+
 ```
 #7  0x00007ffff7a6854a in fprintf () from /usr/lib/libc.so.6
 #8  0x00005555555b3837 in igl::opengl::report_gl_error(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) ()
@@ -113,4 +112,13 @@ GL_INVALID_VALUE，call stack 为
 #12 0x00005555555b604f in igl::opengl::MeshGL::free() ()
 #13 0x00005555557228bd in igl::opengl::glfw::Viewer::erase_mesh(unsigned long) ()
 ```
-有概率在remove mesh时触发，表现为stdout中输出`invalid value`，对应用似乎无影响。
+
+有概率在remove mesh时触发，表现为stdout中输出 `invalid value`，对应用似乎无影响。
+
+## constriant建模
+
+布料使用全边弹簧（必要），全顶点bending（不必要）
+
+模拟旗子被撕裂：当风力过大时，移除edge spring constraint（又叫edge strain constraint）
+
+体积物体使用volumetric strain constraint，包括但不限于volumne preservation, strain constraint. 必须使用tetrahedral mesh.

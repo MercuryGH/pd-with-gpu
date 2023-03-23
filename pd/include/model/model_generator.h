@@ -19,8 +19,8 @@ namespace generator {
 			for (int j = 0; j < n_cols; j++)
 			{
 				const double x_offset = static_cast<double>(i);
-				const double y_offset = static_cast<double>(j);
-				cloth_pos.emplace_back(x_offset, y_offset, 0);
+				const double z_offset = static_cast<double>(j);
+				cloth_pos.emplace_back(x_offset, 1, z_offset);
 
 				if (i == n_rows - 1 || j == n_cols - 1)
 				{

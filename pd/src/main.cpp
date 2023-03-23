@@ -276,8 +276,8 @@ int main(int argc, char* argv[])
 
 			if (ImGui::TreeNode("Block"))
 			{
-				static float center[3] = { 0.2f, 0.2f, 0.2f };
-				static float xyz[3] = { 0.2f, 0.2f, 0.2f };
+				static float center[3] = { 0.5f, 0.5f, 0.5f };
+				static float xyz[3] = { 0.4f, 0.5f, 0.6f };
             	ImGui::InputFloat3("center", center);
             	ImGui::InputFloat3("xyz", xyz);
 
@@ -337,8 +337,7 @@ int main(int argc, char* argv[])
 				{
 					model.toggle_vertices_fixed(
 						user_control.toggle_fixed_vertex_idxs, 
-						physics_params.positional_constraint_wi, 
-						physics_params.mass_per_vertex
+						physics_params.positional_constraint_wi 
 					);
 					user_control.toggle_vertex_fix = false;
 					user_control.toggle_fixed_vertex_idxs.clear();
@@ -369,7 +368,7 @@ int main(int argc, char* argv[])
 			// physics params
 			ImGui::Checkbox("Enable Gravity", &physics_params.enable_gravity);
 
-			ImGui::InputFloat("mass per vertex", &physics_params.mass_per_vertex, 1, 10, "%.1f");
+			ImGui::InputFloat("mass per vertex", &physics_params.mass_per_vertex, 0.01f, 0.1f, "%.3f");
 		}
 		if (ImGui::CollapsingHeader("Picking Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
@@ -380,7 +379,7 @@ int main(int argc, char* argv[])
 				ImGui::Text("Vertex forced: %d", user_control.ext_forced_vertex_idx);
 			}
 
-			ImGui::InputFloat("dragging force", &physics_params.external_force_val, 1.f, 10.f, "%.3f");
+			ImGui::InputFloat("dragging force", &physics_params.external_force_val, 1.f, 10.f, "%.2f");
 		}
 		if (ImGui::CollapsingHeader("Visualization Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
@@ -475,6 +474,16 @@ int main(int argc, char* argv[])
 
 		ImGui::End();
 	};
+
+	// use only for testing
+	const auto pre_user_input_routine = [&]()
+	{
+		obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(-1));
+
+		auto [V, F] = generator::generate_cloth(20, 20);
+		obj_manager.add_model(V, F);
+	};
+	pre_user_input_routine();
 
 	viewer.launch(true, false, "Projective Dynamics", 0, 0);
 

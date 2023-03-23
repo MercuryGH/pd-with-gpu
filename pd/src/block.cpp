@@ -9,10 +9,13 @@ namespace primitive
             return cmp <= y && cmp <= z;
         };
 
+        constexpr static float EPS = 0.05f;
+        Eigen::Vector3f tmp_half_xyz = half_xyz + Eigen::Vector3f(EPS, EPS, EPS);
+
         // AABB detection
-        Eigen::Vector3f min_xyz_point = center_point - half_xyz;
+        Eigen::Vector3f min_xyz_point = center_point - tmp_half_xyz;
         Eigen::Vector3f relative_pos = pos - min_xyz_point;
-        Eigen::Vector3f xyz = half_xyz * 2.f;
+        Eigen::Vector3f xyz = tmp_half_xyz * 2.f;
 
         // check if point in AABB
         if (relative_pos.x() > 0 && relative_pos.x() < xyz.x())

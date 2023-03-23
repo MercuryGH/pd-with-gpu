@@ -22,7 +22,7 @@ namespace pd {
 		}
 
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
-		Eigen::VectorXf get_c_AcTAchpc(const Eigen::VectorXf& pi) const override;
+		Eigen::VectorXf get_c_AcTAchpc(const Eigen::VectorXf& pc) const override;
 		std::vector<Eigen::Triplet<float>> get_c_AcTAc(int n_vertex_offset) const override;
 
 		__host__ __device__ void project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const override;

@@ -4,24 +4,24 @@
 
 namespace pd
 {
-	void DeformableMesh::toggle_vertices_fixed(const std::unordered_set<int> &v, float wi, float mass_per_vertex)
+	void DeformableMesh::toggle_vertices_fixed(const std::unordered_set<int> &v, float wi)
 	{
 		for (const int vi : v)
 		{
+			if (vertex_fixed[vi] == false)
+			{
+				// m(vi) = FIXED_VERTEX_MASS;
+				add_positional_constraint(vi, wi);
+			}
 			vertex_fixed[vi] = !vertex_fixed[vi];
-			if (vertex_fixed[vi])
-			{
-				m(vi) = FIXED_VERTEX_MASS;
-				add_positional_constraint(vi, wi, mass_per_vertex);
-			}
-			else
-			{
-				m(vi) = mass_per_vertex;
-			}
+			// else
+			// {
+			// 	m(vi) = mass_per_vertex;
+			// }
 		}
 	}
 
-	void DeformableMesh::add_positional_constraint(int vi, float wi, float mass_per_vertex)
+	void DeformableMesh::add_positional_constraint(int vi, float wi)
 	{
 		constraints.emplace_back(std::make_unique<PositionalConstraint>(
 			wi, vi, p
