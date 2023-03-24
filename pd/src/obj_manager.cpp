@@ -98,6 +98,12 @@ namespace ui
 
 	void ObjManager::reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 	{
+		// check if obj_id corresponods to a deformable mesh
+		if (is_deformable_model(obj_id) == false)
+		{
+			return;
+		}
+
 		// rescale the vertices to make all models look equal in size
 		rescale(V);
 
@@ -110,6 +116,11 @@ namespace ui
 
 	void ObjManager::reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
 	{
+		// check if obj_id corresponods to a deformable mesh
+		if (is_deformable_model(obj_id) == false)
+		{
+			return;
+		}
 		// rescale the vertices to make all models look equal in size
 		rescale(V);
 

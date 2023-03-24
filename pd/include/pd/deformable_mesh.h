@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include <igl/edges.h>
+#include <igl/is_border_vertex.h>
 #include <Eigen/Core>
 
 #include <primitive/primitive.h>
@@ -28,7 +29,7 @@ namespace pd
 			e(e),
 			m(m),
 			v(p.rows(), p.cols()),
-			vertex_fixed(p.rows(), false)
+			fixed_vertices()
 		{
 			v.setZero(); // init velocity to 0
 		}
@@ -42,7 +43,7 @@ namespace pd
 			boundary_facets(boundary_facets),
 			m(p.rows()),
 			v(p.rows(), p.cols()),
-			vertex_fixed(p.rows(), false),
+			fixed_vertices(),
 			obj_id(obj_id)
 		{
 			m.setOnes(); // Init messes to equally distributed
@@ -57,7 +58,7 @@ namespace pd
 			boundary_facets(f),
 			m(p.rows()),
 			v(p.rows(), p.cols()),
-			vertex_fixed(p.rows(), false),
+			fixed_vertices(),
 			obj_id(obj_id)
 		{
 			m.setOnes(); // Init messes to equally distributed
@@ -75,17 +76,18 @@ namespace pd
 		const Positions& positions() const { return p; }
 		const Faces& faces() const { return boundary_facets; }
 		const Constraints& get_all_constraints() const { return constraints; }
-		bool is_vertex_fixed(int vi) const { return vertex_fixed[vi]; };
+		bool is_vertex_fixed(int vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
 		Eigen::MatrixXi get_edges() const { Eigen::MatrixXi edges; igl::edges(e, edges); return edges; }
 		const Eigen::VectorXd& get_masses() const { return m; }
+
+		// const 
 
 		// setters
 		void reset_constraints()
 		{
 			v.setZero();
 			constraints.clear();
-			for (int i = 0; i < vertex_fixed.size(); i++)
-				vertex_fixed[i] = false;
+			fixed_vertices.clear();
 		}
 
 		void update_positions_and_velocities(const Positions& p, const Velocities& v)
@@ -102,15 +104,17 @@ namespace pd
 		int obj_id{ -1 };
 
 	    // methods
-		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wi);
-		void set_edge_length_constraint(float wi);
+		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wc);
+		void set_edge_strain_constraints(float wc);
+
+		// TODO: use area weighted method to apply mass
 		bool apply_mass_per_vertex(float mass_per_vertex);
 		int n_edges{ 0 };   // #Edges
 
 		void resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit) const;
 
 	private:
-		void add_positional_constraint(int vi, float wi);
+		void add_positional_constraint(int vi, float wc);
 
 		Positions p0;  // Rest positions
 		Positions p;   // Positions
@@ -125,6 +129,7 @@ namespace pd
 		Masses m;      // Per-vertex mass
 		Velocities v;  // Per-vertex velocity
 		Constraints constraints; // Vector of constraints
-		std::vector<bool> vertex_fixed; // Indicates if a vertex is fixed
+
+		std::unordered_set<int> fixed_vertices; // store all fixed vertex
 	};
 }

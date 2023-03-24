@@ -4,21 +4,19 @@
 #include <array>
 #include <iostream>
 
-#include <pd/edge_length_constraint.h>
+#include <pd/edge_strain_constraint.h>
 
 namespace pd {
-	__host__ __device__ EdgeLengthConstraint::EdgeLengthConstraint(float wi, int vi, int vj, int n, float rest_length) :
-		Constraint(wi, n),
+	__host__ __device__ EdgeStrainConstraint::EdgeStrainConstraint(float wc, int vi, int vj, float rest_length) :
+		Constraint(wc, 2, new int[2] {vi, vj}),
 		vi(vi),
 		vj(vj),
 		rest_length(rest_length)
 	{
 		assert(vi != vj);
-		n_vertices = 2;
-		vertices = new int[n_vertices] {vi, vj};
 	}
 
-	Eigen::VectorXf EdgeLengthConstraint::local_solve(const Eigen::VectorXf& q) const
+	Eigen::VectorXf EdgeStrainConstraint::local_solve(const Eigen::VectorXf& q) const
 	{
 		Eigen::VectorXf ret;
 		ret.resize(3);
@@ -41,20 +39,7 @@ namespace pd {
 		return ret;
 	}
 
-	Eigen::VectorXf EdgeLengthConstraint::get_c_AcTAchpc(const Eigen::VectorXf& pc) const
-	{
-		assert(pc.rows() == 3);
-		Eigen::VectorXf ret;
-		ret.resize(3 * n);
-		ret.setZero();
-
-		ret.block(3 * vi, 0, 3, 1) = wc * pc;
-		ret.block(3 * vj, 0, 3, 1) = -wc * pc;
-
-		return ret;
-	}
-
-	std::vector<Eigen::Triplet<float>> EdgeLengthConstraint::get_c_AcTAc(int n_vertex_offset) const
+	std::vector<Eigen::Triplet<float>> EdgeStrainConstraint::get_c_AcTAc(int n_vertex_offset) const
 	{
 		std::vector<Eigen::Triplet<float>> triplets(12);
 
@@ -78,7 +63,7 @@ namespace pd {
 		return std::vector<Eigen::Triplet<float>>{ triplets.begin(), triplets.end() };
 	}
 
-	__host__ __device__ void EdgeLengthConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
+	__host__ __device__ void EdgeStrainConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
 	{
 		// #vertex offset is already included
 		Eigen::Vector3f vi_pos{ q[3 * vi], q[3 * vi + 1], q[3 * vi + 2] };

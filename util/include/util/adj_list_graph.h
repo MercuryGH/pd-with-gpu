@@ -22,8 +22,17 @@ namespace util
 
         const std::vector<std::unordered_set<int>>& get_adj_list() { return adj_list; };
 
+        std::vector<int> get_vertex_1_ring_neighbors(int vi)
+        {
+            std::vector<int> neighbor_indices;
+            for (const auto vj : adj_list[vi])
+            {
+                neighbor_indices.push_back(vj);
+            }
+            return neighbor_indices;
+        };
+
     private:
         std::vector<std::unordered_set<int>> adj_list;
-
     };
 }

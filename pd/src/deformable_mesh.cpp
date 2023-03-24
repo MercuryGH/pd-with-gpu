@@ -1,34 +1,33 @@
 #include <pd/deformable_mesh.h>
 #include <pd/positional_constraint.h>
-#include <pd/edge_length_constraint.h>
+#include <pd/edge_strain_constraint.h>
 
 namespace pd
 {
-	void DeformableMesh::toggle_vertices_fixed(const std::unordered_set<int> &v, float wi)
+	void DeformableMesh::toggle_vertices_fixed(const std::unordered_set<int> &v, float wc)
 	{
 		for (const int vi : v)
 		{
-			if (vertex_fixed[vi] == false)
+			if (is_vertex_fixed(vi) == false)
 			{
-				// m(vi) = FIXED_VERTEX_MASS;
-				add_positional_constraint(vi, wi);
+				add_positional_constraint(vi, wc);
+				fixed_vertices.insert(vi);
 			}
-			vertex_fixed[vi] = !vertex_fixed[vi];
-			// else
-			// {
-			// 	m(vi) = mass_per_vertex;
-			// }
+			else
+			{
+				fixed_vertices.erase(vi);
+			}
 		}
 	}
 
-	void DeformableMesh::add_positional_constraint(int vi, float wi)
+	void DeformableMesh::add_positional_constraint(int vi, float wc)
 	{
 		constraints.emplace_back(std::make_unique<PositionalConstraint>(
-			wi, vi, p
+			wc, vi, p
 		));
 	}
 
-	void DeformableMesh::set_edge_length_constraint(float wi)
+	void DeformableMesh::set_edge_strain_constraints(float wc)
 	{
 		Eigen::MatrixXi edges = get_edges();
 
@@ -38,8 +37,8 @@ namespace pd
 			const auto e0 = edge(0);
 			const auto e1 = edge(1);
 
-			constraints.emplace_back(std::make_unique<EdgeLengthConstraint>(
-				wi, e0, e1, p
+			constraints.emplace_back(std::make_unique<EdgeStrainConstraint>(
+				wc, e0, e1, p
 			));
 		}
 	}
@@ -57,11 +56,6 @@ namespace pd
 
 		for (int i = 0; i < p.rows(); i++)
 		{
-			if (vertex_fixed[i] == true)
-			{
-				continue;
-			}
-
 			if (eq(static_cast<float>(m(i)), mass_per_vertex) == false)
 			{
 				m(i) = static_cast<double>(mass_per_vertex);

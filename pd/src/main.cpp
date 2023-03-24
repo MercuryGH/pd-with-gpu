@@ -155,12 +155,15 @@ int main(int argc, char* argv[])
 
 		if (ImGui::CollapsingHeader("Model Generator", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			// user select add model or reset a model
 			constexpr int OP_ADD = 0;
 			constexpr int OP_RESET = 1;
 			static int add_or_reset = OP_ADD;
-			ImGui::RadioButton("Add", &add_or_reset, OP_ADD); ImGui::SameLine();
-			ImGui::RadioButton("Reset", &add_or_reset, OP_RESET); 
+			// user select add model or reset a model
+			if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id))
+			{
+				ImGui::RadioButton("Add", &add_or_reset, OP_ADD); ImGui::SameLine();
+				ImGui::RadioButton("Reset", &add_or_reset, OP_RESET); 
+			}
 
 			ImGui::SetNextItemOpen(true); // Helpful for testing, can be removed later
 			if (ImGui::TreeNode("Cloth"))
@@ -293,7 +296,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		if (ImGui::CollapsingHeader("Constraint Setting", ImGuiTreeNodeFlags_DefaultOpen))
+		if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id) && ImGui::CollapsingHeader("Constraint Setting", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			static bool enable_edge_length_constraint = false;
 
@@ -331,7 +334,7 @@ int main(int argc, char* argv[])
 
 				if (enable_edge_length_constraint)
 				{
-					model.set_edge_length_constraint(physics_params.edge_length_constraint_wi);
+					model.set_edge_strain_constraints(physics_params.edge_length_constraint_wi);
 				}
 				if (enable_positional_constraint && user_control.toggle_vertex_fix)
 				{
@@ -383,6 +386,12 @@ int main(int argc, char* argv[])
 		}
 		if (ImGui::CollapsingHeader("Visualization Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
+			if (ImGui::Button("Recompute normals"))
+			{
+				for (int i = 0; i < viewer.data_list.size(); i++)
+					viewer.data_list[i].compute_normals();
+			}
+
 			const int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
 			ImGui::Checkbox("Wireframe", [&]() { 
 					return viewer.data_list[idx].show_lines != 0; 
@@ -392,7 +401,6 @@ int main(int argc, char* argv[])
 				}
 			);
 			ImGui::InputFloat("Point Size", &viewer.data_list[idx].point_size, 1.f, 10.f);
-
 
 			int n_vertices, n_faces;
 			n_vertices = n_faces = 0;
@@ -482,6 +490,18 @@ int main(int argc, char* argv[])
 
 		auto [V, F] = generator::generate_cloth(20, 20);
 		obj_manager.add_model(V, F);
+
+		pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
+
+		// add positional constraint
+		model.toggle_vertices_fixed({ 0, 380 }, physics_params.positional_constraint_wi);
+
+		// add edge strain constraints
+		model.set_edge_strain_constraints(physics_params.edge_length_constraint_wi);
+
+		// add bending constraint
+
+		obj_manager.recalc_total_n_constraints();
 	};
 	pre_user_input_routine();
 

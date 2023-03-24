@@ -2,29 +2,16 @@
 #include <pd/positional_constraint.h>
 
 namespace pd {
-	__host__ __device__ PositionalConstraint::PositionalConstraint(float wi, int vi, int n, float x0, float y0, float z0) :
-		Constraint(wi, n),
+	__host__ __device__ PositionalConstraint::PositionalConstraint(float wc, int vi, float x0, float y0, float z0) :
+		Constraint(wc, 1, new int[1] {vi}),
 		vi(vi),
 		x0(x0), y0(y0), z0(z0)
 	{
-		n_vertices = 1;
-		vertices = new int[n_vertices] {vi};
 	}
 
 	Eigen::VectorXf PositionalConstraint::local_solve(const Eigen::VectorXf& q) const
 	{
 		return Eigen::Vector3f(x0, y0, z0);
-	}
-
-	Eigen::VectorXf PositionalConstraint::get_c_AcTAchpc(const Eigen::VectorXf& pc) const
-	{
-		Eigen::VectorXf ret;
-		ret.resize(3 * n);
-		ret.setZero();
-
-		// pc = p0 in positional constraint
-		ret.block(3 * vi, 0, 3, 1) = wc * Eigen::Vector3f(x0, y0, z0);
-		return ret;
 	}
 
 	std::vector<Eigen::Triplet<float>> PositionalConstraint::get_c_AcTAc(int n_vertex_offset) const

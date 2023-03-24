@@ -7,22 +7,19 @@ namespace pd {
 	class PositionalConstraint : public Constraint
 	{
 	public:
-		__host__ __device__ PositionalConstraint(float wi, int vi, int n, float x0, float y0, float z0);
+		__host__ __device__ PositionalConstraint(float wc, int vi, float x0, float y0, float z0);
 
-		PositionalConstraint(float wi, int vi, const Positions& p) :
-			Constraint(wi, p.rows()),
+		PositionalConstraint(float wc, int vi, const Positions& p) :
+			Constraint(wc, 1, new int[1] {vi}),
 			vi(vi)
 		{
 			Eigen::VectorXf p0 = p.row(vi).transpose().cast<float>();
 			x0 = p0.x();
 			y0 = p0.y();
 			z0 = p0.z();
-			n_vertices = 1;
-			vertices = new int[n_vertices] {vi};
 		}
 
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
-		Eigen::VectorXf get_c_AcTAchpc(const Eigen::VectorXf& pc) const override;
 		std::vector<Eigen::Triplet<float>> get_c_AcTAc(int n_vertex_offset) const override;
 
 		__host__ __device__ void project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const override;

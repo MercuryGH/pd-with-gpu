@@ -2,7 +2,7 @@
 #include <cuda_runtime.h>
 #include <pd/constraint.h>
 #include <pd/positional_constraint.h>
-#include <pd/edge_length_constraint.h>
+#include <pd/edge_strain_constraint.h>
 #include <pd/types.h>
 
 namespace pd
@@ -34,7 +34,6 @@ namespace pd
 		int n1,
 		float* __restrict__ wi_pcs,
 		int* __restrict__ vi_pcs,
-		int* __restrict__ n_pcs,
 		float* __restrict__ x0_pcs,
 		float* __restrict__ y0_pcs,
 		float* __restrict__ z0_pcs,
@@ -43,7 +42,6 @@ namespace pd
 		float* __restrict__ wi_elcs,
 		int* __restrict__ vi_elcs,
 		int* __restrict__ vj_elcs,
-		int* __restrict__ n_elcs,
 		float* __restrict__ rest_length_elcs,
 
 		int* __restrict__ d_local_cnt,
@@ -52,11 +50,11 @@ namespace pd
 	__global__ void test_kernel();
 
 	__global__ void create_local_gpu_positional_constraint(
-		float wi, int vi, int n, float x0, float y0, float z0, 
+		float wc, int vi, float x0, float y0, float z0, 
 		Constraint** __restrict__ d_local_constraints, int* __restrict__ d_local_cnt);
 
 	__global__ void create_local_gpu_edge_length_constraint(
-		float wi, int vi, int vj, int n, float rest_length,
+		float wc, int vi, int vj, float rest_length,
 		Constraint** __restrict__ d_local_constraints, int* __restrict__ d_local_cnt);
 
 	__global__ void free_constraints(

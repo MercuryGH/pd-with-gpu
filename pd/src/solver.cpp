@@ -1,7 +1,7 @@
 #include <iostream>
 #include <pd/solver.h>
 #include <pd/positional_constraint.h>
-#include <pd/edge_length_constraint.h>
+#include <pd/edge_strain_constraint.h>
 
 namespace pd {
 
@@ -155,12 +155,18 @@ namespace pd {
 
 			// auto fails
 			const Eigen::MatrixX3d a = f_exts.at(id).array().colwise() / (model.m).array(); // M^{-1} f_{ext}
-			Eigen::MatrixX3f q_explicit = (q + dt * v + dtsqr * a).cast<Float>(); // n * 3 matrix
+			Eigen::MatrixX3f q_explicit = (q + dt * v + dtsqr * a).cast<float>(); // n * 3 matrix
 
 			const int n = model.positions().rows();
 
 			// resolve collision
 			model.resolve_collision(rigid_colliders, q_explicit);
+			
+			// fixed vertex
+			for (const int vi : model.fixed_vertices)
+			{
+				q_explicit.row(vi) = q.row(vi).cast<float>();
+			}
 
 			const auto flatten = [n](const Eigen::MatrixXf& q) {
 				assert(q.cols() == 3);
@@ -305,13 +311,7 @@ namespace pd {
 				const Eigen::VectorXf& cur_model_q_n_plus1 = q_nplus1.block(3 * acc, 0, 3 * n, 1);
 				assert(cur_model_q_n_plus1.size() == 3 * n);
 
-				const Eigen::VectorXf pc = constraint->local_solve(cur_model_q_n_plus1);
-
-				//std::cout << pi << "\n";
-				//const auto test = constraint->get_c_AcTAchpc(pc);
-				//std::cout << "test(0) = " << test(0) << "\n";
-
-				b.block(3 * acc, 0, 3 * n, 1) += constraint->get_c_AcTAchpc(pc);
+				constraint->project_c_AcTAchpc(b.data(), q_nplus1.data());
 			}
 			acc += n;
 		}
