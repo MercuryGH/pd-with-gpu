@@ -58,15 +58,18 @@ namespace ui
 		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
 		viewer.core().align_camera_center(model.positions());
 		viewer.data_list[idx].point_size = 10.f;
+		// viewer.data_list[idx].label_size = 2.f;
+		viewer.data_list[idx].show_custom_labels = true;
 		viewer.data_list[idx].double_sided = true;
 
 		// reset solver
 		solver.dirty = true;
 
+		user_control.cur_sel_mesh_id = obj_id;
+
 		// if this is the only model, select it
 		if (models.size() == 1)
 		{
-			user_control.cur_sel_mesh_id = obj_id;
 			gizmo.visible = true;
 			bind_gizmo(obj_id);
 		}
@@ -180,10 +183,11 @@ namespace ui
 		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
 		viewer.data_list[idx].show_lines = 0;
 
+		user_control.cur_sel_mesh_id = obj_id;
+
 		// if this is the only model, select it
 		if (models.size() == 1)
 		{
-			user_control.cur_sel_mesh_id = obj_id;
 			gizmo.visible = true;
 			bind_gizmo(obj_id);
 		}
@@ -213,7 +217,7 @@ namespace ui
 		{
 			const Eigen::MatrixXd& V = models[obj_id].positions();
 
-			gizmo.T.block(0, 3, 3, 1) =
+			gizmo.T.block<3, 1>(0, 3) =
 				0.5 * (V.colwise().maxCoeff() + V.colwise().minCoeff()).transpose().cast<float>();
 		}
 		else if (is_rigid_collider(obj_id))
@@ -221,7 +225,7 @@ namespace ui
 			// Note: only translation is available for rigid colliders.
 			// For floor, only vertical translation is allowed.
 			const Eigen::Vector3f center = rigid_colliders[obj_id]->center();
-			gizmo.T.block(0, 3, 3, 1) = center;
+			gizmo.T.block<3, 1>(0, 3) = center;
 		}
 		else
 		{

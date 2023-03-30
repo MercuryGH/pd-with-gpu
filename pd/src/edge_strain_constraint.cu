@@ -65,7 +65,7 @@ namespace pd {
 
 	__host__ __device__ void EdgeStrainConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
 	{
-		// #vertex offset is already included
+		// #vertex offset is not included
 		Eigen::Vector3f vi_pos{ q[3 * vi], q[3 * vi + 1], q[3 * vi + 2] };
 		Eigen::Vector3f vj_pos{ q[3 * vj], q[3 * vj + 1], q[3 * vj + 2] };
 

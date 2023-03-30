@@ -5,8 +5,14 @@
 #include <numeric>
 #include <unordered_set>
 
+#include <igl/adjacency_list.h>
+
+#include <igl/is_vertex_manifold.h>
+#include <igl/is_edge_manifold.h>
+
 #include <igl/edges.h>
 #include <igl/is_border_vertex.h>
+#include <igl/adjacency_list.h>
 #include <Eigen/Core>
 
 #include <primitive/primitive.h>
@@ -48,6 +54,19 @@ namespace pd
 		{
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
+
+			// Bug: block(5,3,4) is a vertex non-manifold
+			Eigen::VectorXi indicator;
+			if (igl::is_vertex_manifold(boundary_facets, indicator) == false)
+			{
+				printf("Warning: Non vertex manifold mesh detected!\n");
+			}
+			if (igl::is_edge_manifold(boundary_facets) == false)
+			{
+				printf("Warning: Non edge manifold mesh detected!\n");
+			}
+
+			igl::adjacency_list(boundary_facets, adj_list, true);
 		}
 
 		// construct from triangle elements
@@ -63,6 +82,18 @@ namespace pd
 		{
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
+
+			Eigen::VectorXi indicator;
+			if (igl::is_vertex_manifold(f, indicator) == false)
+			{
+				printf("Warning: Non vertex manifold mesh detected!\n");
+			}
+			if (igl::is_edge_manifold(f) == false)
+			{
+				printf("Warning: Non edge manifold mesh detected!\n");
+			}
+
+			igl::adjacency_list(f, adj_list, true);
 		}
 
 		// Debug only
@@ -77,6 +108,8 @@ namespace pd
 		const Faces& faces() const { return boundary_facets; }
 		const Constraints& get_all_constraints() const { return constraints; }
 		bool is_vertex_fixed(int vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
+		const std::unordered_set<int>& get_fixed_vertices() const { return fixed_vertices; }
+		const std::vector<std::vector<int>>& get_adj_list() const { return adj_list; }
 		Eigen::MatrixXi get_edges() const { Eigen::MatrixXi edges; igl::edges(e, edges); return edges; }
 		const Eigen::VectorXd& get_masses() const { return m; }
 
@@ -129,6 +162,8 @@ namespace pd
 		Masses m;      // Per-vertex mass
 		Velocities v;  // Per-vertex velocity
 		Constraints constraints; // Vector of constraints
+
+		std::vector<std::vector<int>> adj_list; // sorted adjancecy list
 
 		std::unordered_set<int> fixed_vertices; // store all fixed vertex
 	};

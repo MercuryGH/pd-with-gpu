@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
 	viewer.callback_key_pressed = ui::keypress_handler{ gizmo };
 
-	ui::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params };
+	ui::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control };
 	viewer.callback_pre_draw = frame_callback; // frame routine
 
 	const auto HelpMarker = [](const char* desc)
@@ -87,23 +87,21 @@ int main(int argc, char* argv[])
 
 		ImGui::Begin("Object Manager");
 
-		static int cur_select_id = -1;
 		if (ImGui::BeginListBox("deformable objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
 		{
 			for (const auto& [id, model] : models)
 			{
 				const std::string model_name = std::string("Mesh ") + std::to_string(id);
 
-				const bool is_selected = (cur_select_id == id);
+				const bool is_selected = (user_control.cur_sel_mesh_id == id);
 				if (ImGui::Selectable(model_name.c_str(), is_selected))
 				{
-					obj_manager.bind_gizmo(id);
 					user_control.cur_sel_mesh_id = id;
-
-					cur_select_id = id;
+					user_control.selected_vertex_idx = 0;
 				}
 				if (is_selected)
 				{
+					obj_manager.bind_gizmo(id);
 					ImGui::SetItemDefaultFocus();
 				}
 			}
@@ -115,16 +113,14 @@ int main(int argc, char* argv[])
 			{
 				const std::string model_name = std::string("Collider ") + std::to_string(id);
 
-				const bool is_selected = (cur_select_id == id);
+				const bool is_selected = (user_control.cur_sel_mesh_id == id);
 				if (ImGui::Selectable(model_name.c_str(), is_selected))
 				{
-					obj_manager.bind_gizmo(id);
 					user_control.cur_sel_mesh_id = id;
-
-					cur_select_id = id;
 				}
 				if (is_selected)
 				{
+					obj_manager.bind_gizmo(id);
 					ImGui::SetItemDefaultFocus();
 				}
 			}
@@ -190,8 +186,8 @@ int main(int argc, char* argv[])
 			if (ImGui::TreeNode("Bar"))
 			{
 				static int w = 5;
-				static int h = 5;
-				static int d = 5;
+				static int h = 3;
+				static int d = 2;
 				ImGui::InputInt("width", &w);
 				ImGui::InputInt("height", &h);
 				ImGui::InputInt("depth", &d);

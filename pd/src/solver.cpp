@@ -176,7 +176,7 @@ namespace pd {
 				ret.resize(3 * n);
 				for (int i = 0; i < n; i++)
 				{
-					ret.block(3 * i, 0, 3, 1) = q.row(i).transpose();
+					ret.block<3, 1>(3 * i, 0) = q.row(i).transpose();
 				}
 
 				return ret;
@@ -203,8 +203,8 @@ namespace pd {
 				for (int j = 0; j < 3; j++)
 					m_i(j, j) = static_cast<float>(model.m(i));
 
-				const auto sn_i = q_nplus1.block(3 * acc + 3 * i, 0, 3, 1);
-				global_solve_b_mass_term.block(3 * acc + 3 * i, 0, 3, 1) = dtsqr_inv * m_i * sn_i;
+				const auto sn_i = q_nplus1.block<3, 1>(3 * acc + 3 * i, 0);
+				global_solve_b_mass_term.block<3, 1>(3 * acc + 3 * i, 0) = dtsqr_inv * m_i * sn_i;
 			}
 			acc += n;
 		}
@@ -258,7 +258,7 @@ namespace pd {
 			Eigen::MatrixXf ret(total_n, 3);
 			for (int i = 0; i < total_n; i++)
 			{
-				ret.row(i) = p.block(3 * i, 0, 3, 1).transpose();
+				ret.row(i) = p.block<3, 1>(3 * i, 0).transpose();
 			}
 			return ret;
 		};
@@ -266,10 +266,6 @@ namespace pd {
 		// const bool clamp = true; // clamp bottom (y = -1)
 		
 		Eigen::MatrixXd positions = unflatten(q_nplus1).cast<double>();
-		//{
-		//	std::cout << "Test\n";
-		//	std::cout << result.block(30, 0, 9, 1) << "\n";
-		//}
 		// if (clamp)
 		// {
 		// 	constexpr double BOTTOM_Y = -1;

@@ -107,8 +107,7 @@ namespace ui
 				user_control.mouse_x = viewer.current_mouse_x;
 				user_control.mouse_y = viewer.current_mouse_y;
 			}
-
-			if (modifier == GLFW_MOD_SHIFT)
+			else if (modifier == GLFW_MOD_SHIFT)
 			{
 				flag = true;
 				// toggle fix/unfix
@@ -121,6 +120,11 @@ namespace ui
 				{
 					user_control.toggle_fixed_vertex_idxs.erase(hit_vertex_idx);
 				}
+			}
+			else
+			{
+				user_control.cur_sel_mesh_id = mesh_id;
+				user_control.selected_vertex_idx = hit_vertex_idx;
 			}
 
 			return flag;
@@ -328,6 +332,7 @@ namespace ui
 		ui::PhysicsParams& physics_params;
 		std::unordered_map<int, Eigen::MatrixX3d>& f_exts;
 		ui::SolverParams& solver_params;
+		const ui::UserControl& user_control;
 
 		util::CpuTimer timer;
 		static double last_elapse_time;
@@ -362,21 +367,32 @@ namespace ui
 
 			// visualzie points
 			const Eigen::RowVector3d RED_COLOR{ 1., 0., 0. };
-			const Eigen::RowVector3d YELLOW_COLOR{ 0.6, 1., 0. };
+			const Eigen::RowVector3d SUB_YELLOW_COLOR{ 0.3, 0.6, 0 };
+			const Eigen::RowVector3d YELLOW_COLOR{ 0.6, 1, 0 };
 			for (const auto& [id, model] : models)
 			{
 				int idx = viewer.mesh_index(id);
 				viewer.data_list[idx].clear_points();
-				for (int i = 0; i < model.positions().rows(); i++)
+				viewer.data_list[idx].clear_labels();
+				for (const int vi : model.get_fixed_vertices())
 				{
-					if (model.is_vertex_fixed(i))
-					{
-						viewer.data_list[idx].add_points(model.positions().row(i), RED_COLOR);
-					}
+					viewer.data_list[idx].add_points(model.positions().row(vi), RED_COLOR);
 				}
 
-				// debug draw
-				// viewer.data_list[idx].add_points(model.positions().row(10), YELLOW_COLOR);
+				if (user_control.cur_sel_mesh_id == id)
+				{
+					Eigen::RowVector3d pos = model.positions().row(user_control.selected_vertex_idx);
+					viewer.data_list[idx].add_points(pos, YELLOW_COLOR);
+
+					const Eigen::RowVector3d OFFSET = Eigen::RowVector3d(0, 0.005, 0);
+					viewer.data_list[idx].add_label(pos + OFFSET, std::to_string(user_control.selected_vertex_idx));
+					for (const int v : model.get_adj_list().at(user_control.selected_vertex_idx))
+					{
+						Eigen::RowVector3d v_p = model.positions().row(v);
+						viewer.data_list[idx].add_points(v_p, SUB_YELLOW_COLOR);
+						viewer.data_list[idx].add_label(v_p + OFFSET, std::to_string(v));
+					}
+				}
 			}
 
 			timer.stop();

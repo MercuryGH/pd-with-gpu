@@ -11,6 +11,8 @@ namespace pd {
 	public:
 		__host__ __device__ Constraint(float wc, int n_vertices, int* vertices) : wc(wc), n_vertices(n_vertices), vertices(vertices) {}
 
+		__host__ __device__ Constraint(float wc, int n_vertices) : wc(wc), n_vertices(n_vertices) {}
+
 		// Local solve for A_c'p_c
 		// q: 3n * 1 vector indicating positions
 		// return: A_c'p_c
