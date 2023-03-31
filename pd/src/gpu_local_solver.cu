@@ -79,6 +79,11 @@ namespace pd
 		is_allocated = true;
 	}
 
+	/*
+	* 改进思路：
+	* 首先将所有Constraint用运行时方式获取类型，然后用cudaMalloc分配内存
+	* 最后用kernel模板函数对每个类型的Constraint并行在GPU上构造
+	*/
 	void GpuLocalSolver::gpu_object_creation_parallel(const std::unordered_map<int, DeformableMesh>& models)
 	{
 		std::vector<float> t1_pcs;
@@ -185,6 +190,7 @@ namespace pd
 
 
 		// copy dev mem
+		// 改进思路：copy Object 而不是 object 的各个分量
 		checkCudaErrors(cudaMalloc((void **)&wi_pcs, sizeof(float) * n1));
 		checkCudaErrors(cudaMalloc((void **)&vi_pcs, sizeof(int) * n1));
 		checkCudaErrors(cudaMalloc((void **)&x0_pcs, sizeof(float) * n1));
