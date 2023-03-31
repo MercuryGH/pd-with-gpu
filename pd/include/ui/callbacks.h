@@ -386,11 +386,15 @@ namespace ui
 
 					const Eigen::RowVector3d OFFSET = Eigen::RowVector3d(0, 0.005, 0);
 					viewer.data_list[idx].add_label(pos + OFFSET, std::to_string(user_control.selected_vertex_idx));
+
+					int cnt = 1;
 					for (const int v : model.get_adj_list().at(user_control.selected_vertex_idx))
 					{
 						Eigen::RowVector3d v_p = model.positions().row(v);
 						viewer.data_list[idx].add_points(v_p, SUB_YELLOW_COLOR);
-						viewer.data_list[idx].add_label(v_p + OFFSET, std::to_string(v));
+						std::string neighbor_vertex_prompt = std::to_string(cnt) + "-" + std::to_string(v);
+						cnt++;
+						viewer.data_list[idx].add_label(v_p + OFFSET, neighbor_vertex_prompt);
 					}
 				}
 			}

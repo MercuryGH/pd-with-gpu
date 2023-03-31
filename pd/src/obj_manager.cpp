@@ -211,6 +211,45 @@ namespace ui
 		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
 
+	void ObjManager::apply_constraints(
+		int obj_id,
+		const PhysicsParams& physics_params,
+		bool enable_edge_strain_constraint,
+		bool enable_bending_constraint,
+		bool enable_tet_strain_constraint,
+		bool enable_positional_constraint
+	)
+	{
+		pd::DeformableMesh& model = models[obj_id];
+
+		model.reset_constraints();
+		solver.dirty = true;
+
+		if (enable_edge_strain_constraint)
+		{
+			model.set_edge_strain_constraints(physics_params.edge_strain_constraint_wc);
+		}
+		if (enable_bending_constraint)
+		{
+			model.set_bending_constraints(physics_params.bending_constraint_wc);
+		}
+		if (enable_tet_strain_constraint)
+		{
+
+		}
+		if (enable_positional_constraint && user_control.toggle_vertex_fix)
+		{
+			model.toggle_vertices_fixed(
+				user_control.toggle_fixed_vertex_idxs, 
+				physics_params.positional_constraint_wc 
+			);
+			user_control.toggle_vertex_fix = false;
+			user_control.toggle_fixed_vertex_idxs.clear();
+		}
+
+		recalc_total_n_constraints();
+	}
+
 	void ObjManager::bind_gizmo(int obj_id)
 	{
 		if (is_deformable_model(obj_id))

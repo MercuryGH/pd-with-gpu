@@ -101,7 +101,10 @@ int main(int argc, char* argv[])
 				}
 				if (is_selected)
 				{
-					obj_manager.bind_gizmo(id);
+					if ((obj_manager.is_deformable_model(id) && viewer.core().is_animating) == false)
+					{
+						obj_manager.bind_gizmo(id);  // To rebind gizmo in animating causes weird behavior sometimes 
+					}
 					ImGui::SetItemDefaultFocus();
 				}
 			}
@@ -120,8 +123,8 @@ int main(int argc, char* argv[])
 				}
 				if (is_selected)
 				{
-					obj_manager.bind_gizmo(id);
 					ImGui::SetItemDefaultFocus();
+					obj_manager.bind_gizmo(id);
 				}
 			}
 			ImGui::EndListBox();
@@ -294,16 +297,29 @@ int main(int argc, char* argv[])
 
 		if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id) && ImGui::CollapsingHeader("Constraint Setting", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			static bool enable_edge_length_constraint = false;
-
+			static bool enable_edge_strain_constraint = false;
+			static bool enable_bending_constraint = false;
+			static bool enable_tet_strain_constraint = false;
 			static bool enable_positional_constraint = false;
 
 			ImGui::SetNextItemOpen(true); // can be removed later
-			if (ImGui::TreeNode("Edge Length"))
+			if (ImGui::TreeNode("Edge Strain"))
 			{
 				// Edge length params
-				ImGui::InputFloat("wi", &physics_params.edge_length_constraint_wi, 1.f, 10.f, "%.1f");
-				ImGui::Checkbox("Enable", &enable_edge_length_constraint);
+				ImGui::InputFloat("wc", &physics_params.edge_strain_constraint_wc, 1.f, 10.f, "%.1f");
+				ImGui::Checkbox("Enable", &enable_edge_strain_constraint);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Bending"))
+			{
+				ImGui::InputFloat("wc", &physics_params.bending_constraint_wc, 1e-9f, 1e-5f, "%.9f");
+				ImGui::Checkbox("Enable", &enable_bending_constraint);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Tet Strain"))
+			{
+				ImGui::InputFloat("wc", &physics_params.tet_strain_constraint_wc, 1.f, 10.f, "%.1f");
+				ImGui::Checkbox("Enable", &enable_tet_strain_constraint);
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Positional"))
@@ -316,33 +332,21 @@ int main(int argc, char* argv[])
 				}
 				ImGui::TextWrapped("For mesh %d, Vertex indices to be toggled: %s", user_control.cur_sel_mesh_id, vertices_to_be_toggled.c_str());
 				// Pinned 
-				ImGui::InputFloat("wi", &physics_params.positional_constraint_wi, 10.f, 100.f, "%.1f");
+				ImGui::InputFloat("wc", &physics_params.positional_constraint_wc, 10.f, 100.f, "%.1f");
 				ImGui::Checkbox("Enable", &enable_positional_constraint);
 				ImGui::TreePop();
 			}
 
 			if (ImGui::Button("Apply Constraints") && obj_manager.is_deformable_model(user_control.cur_sel_mesh_id))
 			{
-				pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
-
-				model.reset_constraints();
-				solver.dirty = true;
-
-				if (enable_edge_length_constraint)
-				{
-					model.set_edge_strain_constraints(physics_params.edge_length_constraint_wi);
-				}
-				if (enable_positional_constraint && user_control.toggle_vertex_fix)
-				{
-					model.toggle_vertices_fixed(
-						user_control.toggle_fixed_vertex_idxs, 
-						physics_params.positional_constraint_wi 
-					);
-					user_control.toggle_vertex_fix = false;
-					user_control.toggle_fixed_vertex_idxs.clear();
-				}
-
-				obj_manager.recalc_total_n_constraints();
+				obj_manager.apply_constraints(
+					user_control.cur_sel_mesh_id,
+					physics_params,
+					enable_edge_strain_constraint,
+					enable_bending_constraint,
+					enable_tet_strain_constraint,
+					enable_positional_constraint
+				);
 			}
 			ImGui::Text("#Constraints = %d", total_n_constraints);
 		}
@@ -490,10 +494,11 @@ int main(int argc, char* argv[])
 		pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
 
 		// add positional constraint
-		model.toggle_vertices_fixed({ 0, 380 }, physics_params.positional_constraint_wi);
+		model.toggle_vertices_fixed({ 0, 380 }, physics_params.positional_constraint_wc);
 
 		// add edge strain constraints
-		model.set_edge_strain_constraints(physics_params.edge_length_constraint_wi);
+		model.set_edge_strain_constraints(physics_params.edge_strain_constraint_wc);
+		model.set_bending_constraints(physics_params.bending_constraint_wc);
 
 		// add bending constraint
 

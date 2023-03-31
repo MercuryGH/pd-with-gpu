@@ -37,7 +37,7 @@ namespace pd
 		// 	triplets.emplace_back(3 * n_vertex_offset + 3 * vj + i, 3 * n_vertex_offset + 3 * vi + i, -wc);
 		// }
 
-		return std::vector<Eigen::Triplet<float>>{ triplets.begin(), triplets.end() };
+		return triplets;
 	}
 
 	__host__ __device__ void TetStrainConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const

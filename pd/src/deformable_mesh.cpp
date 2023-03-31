@@ -1,6 +1,8 @@
 #include <pd/deformable_mesh.h>
 #include <pd/positional_constraint.h>
 #include <pd/edge_strain_constraint.h>
+#include <pd/bending_constraint.h>
+#include <pd/tet_strain_constraint.h>
 
 namespace pd
 {
@@ -43,6 +45,34 @@ namespace pd
 		}
 	}
 
+	void DeformableMesh::set_bending_constraints(float wc)
+	{
+		std::vector<bool> borders = igl::is_border_vertex(boundary_facets);
+		for (int i = 0; i < positions().rows(); i++)
+		{
+			if (borders[i] == true)
+			{
+				// fixed_vertices.insert(i);
+				continue;
+			}
+
+			std::vector<int> neighbor_vertices;
+			for (const int v : adj_list.at(i))
+			{
+				neighbor_vertices.push_back(v);
+			}
+
+			constraints.emplace_back(std::make_unique<BendingConstraint>(
+				wc, i, neighbor_vertices, p
+			));
+		}
+	}
+
+	void DeformableMesh::set_tet_strain_constraints(float wc)
+	{
+
+	}
+
 	bool DeformableMesh::apply_mass_per_vertex(float mass_per_vertex)
 	{
 		bool need_modify = false;
@@ -78,7 +108,7 @@ namespace pd
 				if (flag == true)
 				{
 					collision_cnt++;
-					printf("Detect collision! %d\n", collision_cnt);
+					// printf("Detect collision! %d\n", collision_cnt);
 				}
 			}
 			q_explicit.row(i) = pos.transpose();

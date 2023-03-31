@@ -104,7 +104,6 @@ namespace pd {
 		timer.start();
 
 		precompute_A();
-		// TODO: modify calculation of A-Jacobi (function sign is models but not constraints)
 		(*linear_sys_solver)->set_A(A, models);
 
 		timer.stop();

@@ -16,12 +16,12 @@ namespace pd {
 
 	std::vector<Eigen::Triplet<float>> PositionalConstraint::get_c_AcTAc(int n_vertex_offset) const
 	{
-		std::array<Eigen::Triplet<float>, 3u> triplets;
+		std::vector<Eigen::Triplet<float>> triplets(3);
 		for (int i = 0; i < 3; i++)
 		{
-			triplets[i] = { 3 * n_vertex_offset + 3 * vi + i, 3 * n_vertex_offset + 3 * vi + i, wc };
+			triplets.emplace_back(3 * n_vertex_offset + 3 * vi + i, 3 * n_vertex_offset + 3 * vi + i, wc);
 		}
-		return std::vector<Eigen::Triplet<float>>{ triplets.begin(), triplets.end() };
+		return triplets;
 	}
 
 	__host__ __device__ void PositionalConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const

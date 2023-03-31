@@ -55,7 +55,7 @@ namespace pd
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
 
-			// Bug: block(5,3,4) is a vertex non-manifold
+			// Bug: block(5,3,4) etc. is a vertex non-manifold
 			Eigen::VectorXi indicator;
 			if (igl::is_vertex_manifold(boundary_facets, indicator) == false)
 			{
@@ -83,6 +83,7 @@ namespace pd
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
 
+			
 			Eigen::VectorXi indicator;
 			if (igl::is_vertex_manifold(f, indicator) == false)
 			{
@@ -139,6 +140,8 @@ namespace pd
 	    // methods
 		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wc);
 		void set_edge_strain_constraints(float wc);
+		void set_bending_constraints(float wc);
+		void set_tet_strain_constraints(float wc);
 
 		// TODO: use area weighted method to apply mass
 		bool apply_mass_per_vertex(float mass_per_vertex);

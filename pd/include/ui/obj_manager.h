@@ -60,6 +60,15 @@ namespace ui
 		void add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive);
 		void remove_rigid_collider(int obj_id);
 
+		void apply_constraints(
+			int obj_id,
+			const PhysicsParams& physics_params,
+			bool enable_edge_strain_constraint,
+			bool enable_bending_constraint,
+			bool enable_tet_strain_constraint,
+			bool enable_positional_constraint
+		);
+
 		// Bind the gizmo to a new mesh when needed.
 		void bind_gizmo(int obj_id);
 	};

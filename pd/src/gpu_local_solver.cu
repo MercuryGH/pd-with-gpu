@@ -92,6 +92,24 @@ namespace pd
 		std::vector<int> t3_elcs;
 		std::vector<float> t5_elcs;
 
+/*
+		float wc, 
+		int n_vertices, 
+		float rest_mean_curvature,
+		int* const vertices,
+		float* const laplacian_weights
+*/
+		std::vector<float> t1_bcs;
+		std::vector<int> t2_bcs;
+		std::vector<float> t3_bcs;
+
+		int* d_vertices_bcs;
+		float* d_laplacian_weights_bcs;
+		checkCudaErrors(cudaMalloc((void **)&d_vertices_bcs, sizeof(int*) * n_constraints));
+		checkCudaErrors(cudaMalloc((void **)&d_laplacian_weights_bcs, sizeof(float*) * n_constraints));
+		std::vector<int*> tmp_vertices_bcs;
+		std::vector<float*> tmp_laplacian_weights_bcs;
+
 		// copy all constraints (serial code but fast)
 		int acc = 0;
 		for (const auto& [id, model] : models)
@@ -116,6 +134,22 @@ namespace pd
 					t2_elcs.push_back(acc + p->vi);
 					t3_elcs.push_back(acc + p->vj);
 					t5_elcs.push_back(p->rest_length);
+				}
+				else if (auto p = dynamic_cast<const BendingConstraint *>(constraint.get()))
+				{
+					t1_bcs.push_back(p->wc);
+					t2_bcs.push_back(p->n_vertices);
+					t3_bcs.push_back(p->rest_mean_curvature);
+
+					int* t4_tmp;
+					float* t5_tmp;
+					checkCudaErrors(cudaMalloc((void **)&t4_tmp, sizeof(int) * p->n_vertices));
+					checkCudaErrors(cudaMalloc((void **)&t5_tmp, sizeof(float) * p->n_vertices));
+					checkCudaErrors(cudaMemcpy(t4_tmp, p->vertices, sizeof(int) * p->n_vertices, cudaMemcpyHostToDevice));
+					checkCudaErrors(cudaMemcpy(t5_tmp, p->laplacian_weights, sizeof(float) * p->n_vertices, cudaMemcpyHostToDevice));
+
+					tmp_vertices_bcs.push_back(t4_tmp);
+					tmp_laplacian_weights_bcs.push_back(t5_tmp);
 				}
 				else
 				{
@@ -146,6 +180,9 @@ namespace pd
 		int *vi_elcs;
 		int *vj_elcs;
 		float *rest_length_elcs;
+
+		int n3 = t1_bcs.size();
+
 
 		// copy dev mem
 		checkCudaErrors(cudaMalloc((void **)&wi_pcs, sizeof(float) * n1));

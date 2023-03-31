@@ -13,13 +13,13 @@ namespace pd
 		__host__ __device__ BendingConstraint(
 			float wc, 
 			int n_vertices, 
-			int center_vertex, 
-			const int* const neighbor_vertices,
-			const float* const laplacian_weights
+			float rest_mean_curvature,
+			int* const neighbor_vertices,
+			float* const laplacian_weights
 		);
 
 		/**
-		 * The neighbor_vertices param must be given in sequential clockwise order.
+		 * The neighbor_vertices param must be given in sequential coutner-clockwise order.
 		*/
 		BendingConstraint(float wc, int center_vertex, const std::vector<int>& neighbor_vertices, const Positions& q);
 
@@ -42,7 +42,8 @@ namespace pd
 		// precomputing using mean value formula
 		__host__ void precompute_laplacian_weights(const std::vector<int>& neighbor_vertices, const Positions& q);
 
-		__host__ __device__ Eigen::Vector3f apply_laplacian(Eigen::Vector3f pos, const float* __restrict__ q) const;
+		__host__ Eigen::Vector3d apply_laplacian(const Positions& positions) const;
+		__host__ __device__ Eigen::Vector3f apply_laplacian(const float* __restrict__ q) const;
 
 		// determine if 3 points are in the same line
 		static bool is_collinear(Eigen::Vector3d p1, Eigen::Vector3d p2, Eigen::Vector3d p3)
@@ -78,8 +79,6 @@ namespace pd
 		__host__ __device__ static Eigen::Vector3f get_triangle_normal(Eigen::Vector3f p21, Eigen::Vector3f p31);
 
 	public:
-		int center_vertex;
-
 		float* laplacian_weights;
 
 		float rest_mean_curvature{ 0 };

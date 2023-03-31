@@ -3,6 +3,8 @@
 #include <pd/constraint.h>
 #include <pd/positional_constraint.h>
 #include <pd/edge_strain_constraint.h>
+#include <pd/bending_constraint.h>
+#include <pd/tet_strain_constraint.h>
 #include <pd/types.h>
 
 namespace pd
