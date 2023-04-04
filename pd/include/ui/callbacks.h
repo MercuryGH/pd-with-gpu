@@ -285,7 +285,6 @@ namespace ui
 			for (auto& [id, f_ext] : f_exts)
 			{
 				// apply gravity at y direction on all vertices
-				// TODO: don't enforce gravity on pinned vertex
 				f_ext.col(1) -= GRAVITY * models[id].get_masses();
 			}
 		}

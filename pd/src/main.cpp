@@ -238,6 +238,20 @@ int main(int argc, char* argv[])
 						}
 					}
 				}
+				if (ImGui::Button("Load Armadillo")) // TOOD: For test only, must be removed later
+				{
+					Eigen::MatrixXd V;
+					Eigen::MatrixXi F;
+					igl::read_triangle_mesh("/home/xinghai/codes/pd-with-gpu/assets/meshes/armadillo.obj", V, F);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F);
+					}
+				}
 
 				ImGui::TreePop();
 			}
@@ -484,27 +498,39 @@ int main(int argc, char* argv[])
 	};
 
 	// use only for testing
-	const auto pre_user_input_routine = [&]()
+	[&]()
 	{
 		obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(-1));
 
-		auto [V, F] = generator::generate_cloth(20, 20);
-		obj_manager.add_model(V, F);
+		// Eigen::MatrixXd V;
+		// Eigen::MatrixXi F;
+		// igl::read_triangle_mesh("/home/xinghai/codes/pd-with-gpu/assets/meshes/armadillo.obj", V, F);
+		// obj_manager.add_model(V, F);
 
+		// pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
+
+		static int w = 2;
+		static int h = 3;
+		static int d = 3;
+		auto [V, T, boundary_facets] = generator::generate_bar(w, h, d);
+		obj_manager.add_model(V, T, boundary_facets);
 		pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
 
-		// add positional constraint
-		model.toggle_vertices_fixed({ 0, 380 }, physics_params.positional_constraint_wc);
+		// auto [V, F] = generator::generate_cloth(20, 20);
+		// obj_manager.add_model(V, F);
+
+		// pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
+
+		// // add positional constraint
+		// model.toggle_vertices_fixed({ 0, 380 }, physics_params.positional_constraint_wc);
 
 		// add edge strain constraints
 		model.set_edge_strain_constraints(physics_params.edge_strain_constraint_wc);
+		// add bending constraint
 		model.set_bending_constraints(physics_params.bending_constraint_wc);
 
-		// add bending constraint
-
 		obj_manager.recalc_total_n_constraints();
-	};
-	pre_user_input_routine();
+	}();
 
 	viewer.launch(true, false, "Projective Dynamics", 0, 0);
 

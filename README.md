@@ -19,7 +19,7 @@ PD testing.
 
 ## 当前存在的Bugs
 
-* constraints 数目过多时，预计算local step GPU 会崩溃。最大数目为42000 constraints。可用120*120和130*130布料测试。
+* constraints 数目过多时，预计算local step GPU 会崩溃。最大数目为42000 constraints。可用120\*120和130\*130布料测试。
 
 > 原因： https://stackoverflow.com/questions/70024184/cuda-complex-object-initialization-within-device-problem-with-cudadevicesetlimi
 
@@ -84,6 +84,8 @@ b *0x00007fffc7284290
 ### 测试结果
 
 100 * 100、90 * 90 布料、bunny_l，A-Jacobi-1, 2, 3 (Itr Solver #Itr = 700, PD #Itr = 2) 都可以胜过 Direct
+
+当PD #Itr增大时，A-Jacobi变慢的速率比Direct快，所以完全不占优势。
 
 #### 测试结果与顶点数的关系
 

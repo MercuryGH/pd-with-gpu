@@ -2,18 +2,21 @@
 
 namespace util
 {
-	void CpuTimer::start() {
+	void CpuTimer::start() 
+	{
 		start_time = std::chrono::steady_clock::now();
 		running = true;
 	}
 
-	void CpuTimer::stop() {
+	void CpuTimer::stop() 
+	{
 		end_time = std::chrono::steady_clock::now();
 		running = false;
 		//last_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
 	}
 
-	double CpuTimer::elapsed_milliseconds() {
+	double CpuTimer::elapsed_milliseconds() 
+	{
 		std::chrono::time_point<std::chrono::steady_clock> cur_time;
 		if (running)
 		{
@@ -27,7 +30,8 @@ namespace util
 		return std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - start_time).count();
 	}
 
-	double CpuTimer::elapsed_seconds() {
+	double CpuTimer::elapsed_seconds() 
+	{
 		return elapsed_milliseconds() / 1000.0;
 	}
 }

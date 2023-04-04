@@ -13,7 +13,6 @@ namespace pd
 	using Velocities = Eigen::MatrixXd; 
 	using Faces = Eigen::MatrixXi;
 	using Elements = Eigen::MatrixXi;
-	using Constraints = std::vector<std::unique_ptr<pd::Constraint>>;
 
 	using Float = float; // scalar type
 }

@@ -1,6 +1,6 @@
 #include <pd/a_jacobi.h>
 #include <pd/types.h>
-#include <util/helper_cuda.h>
+#include <util/gpu_helper.h>
 #include <util/adj_list_graph.h>
 #include <array>
 
@@ -431,79 +431,79 @@ namespace pd
 			int ring_width,
 			std::vector<int>& neighbor_indices,
 			std::vector<float>& neighbor_B_vals
-			) {
-				if (ring_width == 1)
+		) {
+			if (ring_width == 1)
+			{
+				neighbor_indices.reserve(B[i].size());
+				neighbor_B_vals.reserve(B[i].size());
+				for (const auto& [k, v] : B[i])
 				{
-					neighbor_indices.reserve(B[i].size());
-					neighbor_B_vals.reserve(B[i].size());
-					for (const auto& [k, v] : B[i])
+					neighbor_indices.push_back(k);
+					neighbor_B_vals.push_back(order >= 2 ? v * D[k] : v);
+				}
+			}
+			// compute D_{ss}^{-1} * B_{is}B_{sj} for l = 2
+			if (ring_width == 2)
+			{
+				std::unordered_map<int, float> a_products_on_vertex;
+				for (const auto& [s, v1] : B[i])
+				{
+					for (const auto& [j, v2] : B[s])
 					{
-						neighbor_indices.push_back(k);
-						neighbor_B_vals.push_back(order >= 2 ? v * D[k] : v);
+						// If D cannot be precomputed, times D is done later.
+						if (order == 2)
+						{
+							a_products_on_vertex[j] += v1 * v2 * D[s];
+						}
+						else if (order == 3)
+						{
+							a_products_on_vertex[j] += v1 * v2 * D[s] * D[j];
+						}
+						else
+						{
+							a_products_on_vertex[j] += v1 * v2;
+						}
 					}
 				}
-				// compute D_{ss}^{-1} * B_{is}B_{sj} for l = 2
-				if (ring_width == 2)
+
+				neighbor_indices.reserve(a_products_on_vertex.size());
+				neighbor_B_vals.reserve(a_products_on_vertex.size());
+				for (const auto& [k, v] : a_products_on_vertex)
 				{
-					std::unordered_map<int, float> a_products_on_vertex;
-					for (const auto& [s, v1] : B[i])
+					neighbor_indices.push_back(k);
+					neighbor_B_vals.push_back(v);
+				}
+			}
+			if (ring_width == 3)
+			{
+				std::unordered_map<int, float> a_products_on_vertex;
+				for (const auto& [t, v1] : B[i])
+				{
+					for (const auto& [s, v2] : B[t])
 					{
-						for (const auto& [j, v2] : B[s])
+						for (const auto& [j, v3] : B[s])
 						{
 							// If D cannot be precomputed, times D is done later.
-							if (order == 2)
+							if (order == 3)
 							{
-								a_products_on_vertex[j] += v1 * v2 * D[s];
-							}
-							else if (order == 3)
-							{
-								a_products_on_vertex[j] += v1 * v2 * D[s] * D[j];
+								a_products_on_vertex[j] += v1 * v2 * v3 * D[t] * D[s];
 							}
 							else
 							{
-								a_products_on_vertex[j] += v1 * v2;
+								a_products_on_vertex[j] += v1 * v2 * v3;
 							}
 						}
 					}
-
-					neighbor_indices.reserve(a_products_on_vertex.size());
-					neighbor_B_vals.reserve(a_products_on_vertex.size());
-					for (const auto& [k, v] : a_products_on_vertex)
-					{
-						neighbor_indices.push_back(k);
-						neighbor_B_vals.push_back(v);
-					}
 				}
-				if (ring_width == 3)
+
+				neighbor_indices.reserve(a_products_on_vertex.size());
+				neighbor_B_vals.reserve(a_products_on_vertex.size());
+				for (const auto& [k, v] : a_products_on_vertex)
 				{
-					std::unordered_map<int, float> a_products_on_vertex;
-					for (const auto& [t, v1] : B[i])
-					{
-						for (const auto& [s, v2] : B[t])
-						{
-							for (const auto& [j, v3] : B[s])
-							{
-								// If D cannot be precomputed, times D is done later.
-								if (order == 3)
-								{
-									a_products_on_vertex[j] += v1 * v2 * v3 * D[t] * D[s];
-								}
-								else
-								{
-									a_products_on_vertex[j] += v1 * v2 * v3;
-								}
-							}
-						}
-					}
-
-					neighbor_indices.reserve(a_products_on_vertex.size());
-					neighbor_B_vals.reserve(a_products_on_vertex.size());
-					for (const auto& [k, v] : a_products_on_vertex)
-					{
-						neighbor_indices.push_back(k);
-						neighbor_B_vals.push_back(v);
-					}
+					neighbor_indices.push_back(k);
+					neighbor_B_vals.push_back(v);
 				}
+			}
 		};
 
 		std::array<std::vector<int>, A_JACOBI_MAX_ORDER> k_ring_neighbor_sizes;
@@ -559,10 +559,9 @@ namespace pd
 		}
 
 		const int n_vertex = n / 3;
+		const int n_blocks = util::get_n_blocks(n_vertex);
 		if (order == 1)
 		{
-			const int n_blocks = n_vertex / WARP_SIZE + (n_vertex % WARP_SIZE == 0 ? 0 : 1);
-
 			// precompute b term 1
 			precompute_b_term_1<<<n_blocks, WARP_SIZE>>>(d_b_term, d_b, d_diagonals, n_vertex);
 
@@ -598,8 +597,6 @@ namespace pd
 		}
 		else if (order == 2)
 		{
-			const int n_blocks = n_vertex / WARP_SIZE + (n_vertex % WARP_SIZE == 0 ? 0 : 1);
-
 			// precompute b term 2
 			precompute_b_term_2<<<n_blocks, WARP_SIZE>>>(
 				d_b_term,
@@ -647,8 +644,6 @@ namespace pd
 		}
 		else if (order == 3)
 		{
-			const int n_blocks = n_vertex / WARP_SIZE + (n_vertex % WARP_SIZE == 0 ? 0 : 1);
-
 			// precompute b term 3
 			precompute_b_term_3<<<n_blocks, WARP_SIZE>>>(
 				d_b_term,

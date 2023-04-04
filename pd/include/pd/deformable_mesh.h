@@ -19,6 +19,8 @@
 #include <pd/constraint.h>
 #include <pd/types.h>
 
+#include <thrust/host_vector.h>
+#include <thrust/universal_vector.h>
 
 namespace pd
 {
@@ -97,6 +99,16 @@ namespace pd
 			igl::adjacency_list(f, adj_list, true);
 		}
 
+		~DeformableMesh()
+		{
+			std::cout << "Debug: delete mesh " << this->obj_id << "\n";
+			for (const auto& constraint : constraints)
+			{
+				delete constraint;
+			}
+			constraints.clear();
+		}
+
 		// Debug only
 		void dimension_check() const 
 		{
@@ -107,7 +119,7 @@ namespace pd
 		bool empty() const { return p.rows() == 0; }
 		const Positions& positions() const { return p; }
 		const Faces& faces() const { return boundary_facets; }
-		const Constraints& get_all_constraints() const { return constraints; }
+		const thrust::host_vector<pd::Constraint*>& get_all_constraints() const { return constraints; }
 		bool is_vertex_fixed(int vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
 		const std::unordered_set<int>& get_fixed_vertices() const { return fixed_vertices; }
 		const std::vector<std::vector<int>>& get_adj_list() const { return adj_list; }
@@ -164,7 +176,7 @@ namespace pd
 
 		Masses m;      // Per-vertex mass
 		Velocities v;  // Per-vertex velocity
-		Constraints constraints; // Vector of constraints
+		thrust::host_vector<pd::Constraint*> constraints; // Vector of constraints
 
 		std::vector<std::vector<int>> adj_list; // sorted adjancecy list
 

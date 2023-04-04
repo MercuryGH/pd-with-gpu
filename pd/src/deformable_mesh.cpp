@@ -24,7 +24,7 @@ namespace pd
 
 	void DeformableMesh::add_positional_constraint(int vi, float wc)
 	{
-		constraints.emplace_back(std::make_unique<PositionalConstraint>(
+		constraints.push_back(new PositionalConstraint(
 			wc, vi, p
 		));
 	}
@@ -39,7 +39,7 @@ namespace pd
 			const auto e0 = edge(0);
 			const auto e1 = edge(1);
 
-			constraints.emplace_back(std::make_unique<EdgeStrainConstraint>(
+			constraints.push_back(new EdgeStrainConstraint(
 				wc, e0, e1, p
 			));
 		}
@@ -62,7 +62,7 @@ namespace pd
 				neighbor_vertices.push_back(v);
 			}
 
-			constraints.emplace_back(std::make_unique<BendingConstraint>(
+			constraints.push_back(new BendingConstraint(
 				wc, i, neighbor_vertices, p
 			));
 		}

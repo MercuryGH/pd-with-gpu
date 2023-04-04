@@ -9,9 +9,15 @@ namespace pd
     {
     public:
 		__host__ __device__ TetStrainConstraint(float wc, int n);
+		TetStrainConstraint() = default;
 
 		TetStrainConstraint(float wc, const Positions& p) : Constraint(wc, 0, nullptr)
 		{
+		}
+
+		Constraint* clone() const override
+		{
+			return new TetStrainConstraint(*this);
 		}
 
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
@@ -23,6 +29,8 @@ namespace pd
 		{
 			printf("TetStrainConstraint\n");
 		}
+
+		__host__ __device__ ~TetStrainConstraint() override {}
 
 	public:
 

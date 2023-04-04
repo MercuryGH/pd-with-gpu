@@ -10,6 +10,8 @@ namespace pd
     class BendingConstraint: public Constraint
     {
     public:
+		BendingConstraint() = default;
+
 		__host__ __device__ BendingConstraint(
 			float wc, 
 			int n_vertices, 
@@ -23,6 +25,16 @@ namespace pd
 		*/
 		BendingConstraint(float wc, int center_vertex, const std::vector<int>& neighbor_vertices, const Positions& q);
 
+		BendingConstraint(const BendingConstraint& rhs);
+		BendingConstraint(BendingConstraint&& rhs) noexcept;
+		BendingConstraint& operator=(const BendingConstraint& rhs);
+		BendingConstraint& operator=(BendingConstraint&& rhs) noexcept;
+
+		Constraint* clone() const override
+		{
+			return new BendingConstraint(*this);
+		}
+
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
 		std::vector<Eigen::Triplet<float>> get_c_AcTAc(int n_vertex_offset) const override;
 
@@ -35,10 +47,11 @@ namespace pd
 
 		__host__ __device__ ~BendingConstraint() override
 		{
-			delete[] laplacian_weights;
+			cudaFree(laplacian_weights);
 		}
 
 	private:
+		void realloc_laplacian_weights();
 		// precomputing using mean value formula
 		__host__ void precompute_laplacian_weights(const std::vector<int>& neighbor_vertices, const Positions& q);
 
@@ -79,7 +92,7 @@ namespace pd
 		__host__ __device__ static Eigen::Vector3f get_triangle_normal(Eigen::Vector3f p21, Eigen::Vector3f p31);
 
 	public:
-		float* laplacian_weights;
+		float* laplacian_weights{ nullptr };
 
 		float rest_mean_curvature{ 0 };
     };

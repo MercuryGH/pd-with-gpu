@@ -7,16 +7,29 @@ namespace pd {
 	class PositionalConstraint : public Constraint
 	{
 	public:
-		__host__ __device__ PositionalConstraint(float wc, int vi, float x0, float y0, float z0);
+		// __host__ __device__ PositionalConstraint(float wc, int vi, float x0, float y0, float z0);
+		PositionalConstraint() = default;
 
 		PositionalConstraint(float wc, int vi, const Positions& p) :
-			Constraint(wc, 1, new int[1] {vi}),
-			vi(vi)
+			Constraint(wc, 1)
 		{
+			cudaMallocManaged(&vertices, sizeof(int) * 1);
+			vertices[0] = vi;
+
 			Eigen::VectorXf p0 = p.row(vi).transpose().cast<float>();
 			x0 = p0.x();
 			y0 = p0.y();
 			z0 = p0.z();
+		}
+
+		PositionalConstraint(const PositionalConstraint& rhs) = default;
+		PositionalConstraint(PositionalConstraint&& rhs) noexcept = default;
+		PositionalConstraint& operator=(const PositionalConstraint& rhs) = default;
+		PositionalConstraint& operator=(PositionalConstraint&& rhs) noexcept = default;
+
+		Constraint* clone() const override
+		{
+			return new PositionalConstraint(*this);
 		}
 
 		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
@@ -29,9 +42,11 @@ namespace pd {
 			printf("PositionalConstraint\n");
 		}
 
-	public:
-		int vi;
+		__host__ __device__ ~PositionalConstraint() override { /* printf("Delete PC\n"); */ }
 
+		__host__ __device__ int vi() const { return vertices[0]; }
+
+	public:
 		// fixed vertex position
 		float x0, y0, z0;
 		//Eigen::Vector3f p0;

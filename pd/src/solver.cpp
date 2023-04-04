@@ -68,7 +68,7 @@ namespace pd {
 
 		if (use_gpu_for_local_step)
 		{
-			gpu_local_solver->gpu_local_step_solver_init(3 * total_n);
+			gpu_local_solver->gpu_local_step_solver_alloc(3 * total_n);
 			//gpu_local_solver->gpu_object_creation_serial(model->constraints);
 
 			gpu_local_solver->gpu_object_creation_parallel(models);  
@@ -122,12 +122,9 @@ namespace pd {
 		{
 			(*linear_sys_solver)->clear();
 		}
-		if (use_gpu_for_local_step)
+		if (gpu_local_solver != nullptr)
 		{
-			if (gpu_local_solver != nullptr)
-			{
-				gpu_local_solver->free_local_gpu_memory_entry();
-			}
+			gpu_local_solver->free_local_gpu_memory_entry();
 		}
 	}
 

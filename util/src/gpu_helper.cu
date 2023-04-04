@@ -54,4 +54,9 @@ namespace util
 		printf("Available #dev = %d\n", n_gpu_devs);
 		test_device(best_dev_idx);
 	}
+
+	int get_n_blocks(int n_elements, int n_threads)
+	{
+		return (n_elements + n_threads + 1) / n_threads;
+	}
 }

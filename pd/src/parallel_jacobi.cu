@@ -1,6 +1,6 @@
 #include <pd/parallel_jacobi.h>
 #include <util/cpu_timer.h>
-#include <util/helper_cuda.h>
+#include <util/gpu_helper.h>
 #include <iostream>
 
 namespace pd
@@ -93,7 +93,7 @@ namespace pd
 		//float eps = 1e-4f;
 		if (false)
 		{
-			const int n_blocks = n / WARP_SIZE + (n % WARP_SIZE == 0 ? 0 : 1);
+			const int n_blocks = util::get_n_blocks(n);
 			for (int i = 0; i < n_itr; i++)
 			{
 				// double buffer

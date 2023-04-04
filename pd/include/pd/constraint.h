@@ -5,13 +5,45 @@
 #include <Eigen/SparseCore>
 #include <cuda_runtime.h>
 
+#include <util/cuda_managed.h>
+
 namespace pd {
-	class Constraint
+	/**
+	 * @brief Abstract Constraint
+	 */
+	class Constraint: public util::CudaManaged
 	{
 	public:
+		Constraint() = default;
+
 		__host__ __device__ Constraint(float wc, int n_vertices, int* vertices) : wc(wc), n_vertices(n_vertices), vertices(vertices) {}
 
 		__host__ __device__ Constraint(float wc, int n_vertices) : wc(wc), n_vertices(n_vertices) {}
+
+		/**
+		 * @brief Copy constructor
+		 */
+		__host__ __device__ Constraint(const Constraint& rhs);
+
+		/**
+		 * @brief Move constructor
+		 */
+		Constraint(Constraint&& rhs) noexcept;
+
+		/**
+		 * @brief Assignment operator
+		 */
+		Constraint& operator=(const Constraint& rhs);
+
+		/**
+		 * @brief Move assignment
+		 */
+		Constraint& operator=(Constraint&& rhs) noexcept;
+
+		/**
+		 * @brief Deep copy self
+		 */
+		virtual Constraint* clone() const = 0;
 
 		// Local solve for A_c'p_c
 		// q: 3n * 1 vector indicating positions
@@ -30,7 +62,7 @@ namespace pd {
         // Called by host but not actually called by device
 		__host__ __device__ virtual ~Constraint()
 		{
-			delete[] vertices;
+			cudaFree(vertices);
 		}
 
 		int get_involved_vertices(int** vertices) const
@@ -39,10 +71,15 @@ namespace pd {
 			return n_vertices;
 		}
 
-	public:
-		float wc;
+		void set_vertex_offset(int n_vertex_offset);
+		
+	private:
+		void realloc_vertices(int size);
 
-		int n_vertices;
-		int* vertices;
+	public:
+		float wc{ 0.0f };
+
+		int n_vertices{ 0 };
+		int* vertices{ nullptr };
 	};
 }
