@@ -1,54 +1,380 @@
-Without bending:
-
-(0, 0) = 0.00187458
-(0, 1) = -0.00032
-(0, 314) = -0.00032
-(0, 316) = -0.00032
-(0, 320) = -0.00032
-
-(1, 0) = -0.00032
-(1, 1) = 0.00161525
-(1, 2) = -0.00032
-(1, 319) = -0.00032
-(1, 320) = -0.00032
-
-(2, 1) = -0.00032
-(2, 2) = 0.00153552
-(2, 3) = -0.00032
-(2, 319) = -0.00032
-(2, 321) = -0.00032
-
-With bending:
-
-(0, 0) = 0.00201236
-(0, 1) = -0.00020829
-(0, 314) = -0.000253044
-(0, 316) = -0.000714002
-(0, 320) = -0.00077374
-
-(0, 313) = 8.0204e-05
-(0, 315) = 0.000179837
-(0, 318) = 7.69141e-05
-(0, 319) = 0.000113956
-(0, 1201) = 8.03866e-05
-
-(1, 0) = -0.00020829
-(1, 1) = 0.00188687
-(1, 2) = -8.35102e-05
-(1, 319) = -0.000881745
-(1, 320) = -0.000943732
-(1, 315) = 0.000129097
-(1, 316) = 9.14356e-05
-(1, 318) = 0.00025751
-(1, 321) = 8.76145e-05
-
-(2, 1) = -8.35102e-05
-(2, 2) = 0.00224949
-(2, 3) = -0.000127773
-(2, 318) = 0.000438124
-(2, 319) = -0.00177689
-(2, 320) = 0.00036309
-(2, 321) = -0.00117361
-(2, 322) = 0.000101851
-(2, 323) = 0.000173794
-(2, 324) = 9.09469e-05
+Vertex 253, Rest mean curvature = 0.812855, deformed_laplace = -0.769330, 0.079353, -0.250204
+Vertex 256, Rest mean curvature = 1.714054, deformed_laplace = 1.677556, 0.347384, 0.002127
+Vertex 257, Rest mean curvature = 0.321658, deformed_laplace = -0.065351, 0.318350, 0.001517
+Vertex 258, Rest mean curvature = 0.381345, deformed_laplace = -0.112490, 0.365811, 0.001039
+Vertex 259, Rest mean curvature = 0.439025, deformed_laplace = -0.169322, 0.405641, 0.000577
+Vertex 260, Rest mean curvature = 0.494150, deformed_laplace = -0.233968, 0.435420, 0.000262
+Vertex 261, Rest mean curvature = 0.546188, deformed_laplace = -0.304227, 0.453487, 0.000083
+Vertex 262, Rest mean curvature = 0.594666, deformed_laplace = -0.377879, 0.458928, -0.000015
+Vertex 263, Rest mean curvature = 0.639145, deformed_laplace = -0.452477, 0.451167, -0.000058
+Vertex 264, Rest mean curvature = 0.679256, deformed_laplace = -0.525474, 0.430118, -0.000057
+Vertex 265, Rest mean curvature = 0.714655, deformed_laplace = -0.594548, 0.396290, -0.000042
+Vertex 266, Rest mean curvature = 0.745071, deformed_laplace = -0.657376, 0.350520, -0.000021
+Vertex 267, Rest mean curvature = 0.770260, deformed_laplace = -0.711931, 0.294134, -0.000010
+Vertex 268, Rest mean curvature = 0.790046, deformed_laplace = -0.756533, 0.228788, -0.000037
+Vertex 269, Rest mean curvature = 0.804277, deformed_laplace = -0.789727, 0.156408, -0.000176
+Vertex 270, Rest mean curvature = 0.812860, deformed_laplace = -0.809007, 0.079348, -0.000223
+Vertex 273, Rest mean curvature = 1.714054, deformed_laplace = 1.596121, 0.347571, -0.516312
+Vertex 274, Rest mean curvature = 0.321658, deformed_laplace = -0.061733, 0.318377, 0.021495
+Vertex 275, Rest mean curvature = 0.381343, deformed_laplace = -0.106729, 0.365824, 0.035614
+Vertex 276, Rest mean curvature = 0.439024, deformed_laplace = -0.160955, 0.405688, 0.052774
+Vertex 277, Rest mean curvature = 0.494149, deformed_laplace = -0.222522, 0.435442, 0.072480
+Vertex 278, Rest mean curvature = 0.546187, deformed_laplace = -0.289423, 0.453529, 0.094048
+Vertex 279, Rest mean curvature = 0.594666, deformed_laplace = -0.359505, 0.458962, 0.116734
+Vertex 280, Rest mean curvature = 0.639148, deformed_laplace = -0.430423, 0.451168, 0.139742
+Vertex 281, Rest mean curvature = 0.679254, deformed_laplace = -0.499838, 0.430121, 0.162297
+Vertex 282, Rest mean curvature = 0.714659, deformed_laplace = -0.565598, 0.396313, 0.183670
+Vertex 283, Rest mean curvature = 0.745072, deformed_laplace = -0.625312, 0.350525, 0.203097
+Vertex 284, Rest mean curvature = 0.770260, deformed_laplace = -0.677208, 0.294136, 0.219973
+Vertex 285, Rest mean curvature = 0.790045, deformed_laplace = -0.719577, 0.228777, 0.233721
+Vertex 286, Rest mean curvature = 0.804278, deformed_laplace = -0.751192, 0.156397, 0.243880
+Vertex 287, Rest mean curvature = 0.812854, deformed_laplace = -0.769530, 0.079336, 0.249816
+Vertex 36, Rest mean curvature = 0.321660, deformed_laplace = 0.039374, 0.320568, 0.052681
+Vertex 37, Rest mean curvature = 0.381345, deformed_laplace = 0.067087, 0.366897, 0.091087
+Vertex 38, Rest mean curvature = 0.439024, deformed_laplace = 0.100360, 0.406223, 0.137196
+Vertex 39, Rest mean curvature = 0.494151, deformed_laplace = 0.138207, 0.435750, 0.189553
+Vertex 40, Rest mean curvature = 0.546188, deformed_laplace = 0.179415, 0.453752, 0.246444
+Vertex 41, Rest mean curvature = 0.594666, deformed_laplace = 0.222590, 0.459076, 0.305975
+Vertex 42, Rest mean curvature = 0.639147, deformed_laplace = 0.266374, 0.451272, 0.366281
+Vertex 43, Rest mean curvature = 0.679256, deformed_laplace = 0.309234, 0.430183, 0.425281
+Vertex 44, Rest mean curvature = 0.714658, deformed_laplace = 0.349840, 0.396342, 0.481129
+Vertex 45, Rest mean curvature = 0.745072, deformed_laplace = 0.386741, 0.350552, 0.531908
+Vertex 46, Rest mean curvature = 0.770263, deformed_laplace = 0.418778, 0.294151, 0.575999
+Vertex 47, Rest mean curvature = 0.790047, deformed_laplace = 0.444943, 0.228801, 0.612133
+Vertex 48, Rest mean curvature = 0.804276, deformed_laplace = 0.464204, 0.156393, 0.638898
+Vertex 49, Rest mean curvature = 0.812859, deformed_laplace = 0.475410, 0.079316, 0.654479
+Vertex 52, Rest mean curvature = 1.714054, deformed_laplace = -1.357503, 0.350810, -0.987079
+Vertex 53, Rest mean curvature = 0.321657, deformed_laplace = 0.053718, 0.319959, 0.037229
+Vertex 54, Rest mean curvature = 0.381342, deformed_laplace = 0.091908, 0.366610, 0.065353
+Vertex 55, Rest mean curvature = 0.439026, deformed_laplace = 0.137774, 0.406084, 0.099039
+Vertex 56, Rest mean curvature = 0.494148, deformed_laplace = 0.189921, 0.435647, 0.137192
+Vertex 57, Rest mean curvature = 0.546188, deformed_laplace = 0.246702, 0.453689, 0.178629
+Vertex 58, Rest mean curvature = 0.594669, deformed_laplace = 0.306169, 0.459035, 0.221935
+Vertex 59, Rest mean curvature = 0.639148, deformed_laplace = 0.366428, 0.451225, 0.265779
+Vertex 60, Rest mean curvature = 0.679256, deformed_laplace = 0.425447, 0.430170, 0.308682
+Vertex 61, Rest mean curvature = 0.714658, deformed_laplace = 0.481298, 0.396320, 0.349269
+Vertex 62, Rest mean curvature = 0.745074, deformed_laplace = 0.532084, 0.350542, 0.386173
+Vertex 63, Rest mean curvature = 0.770263, deformed_laplace = 0.576211, 0.294154, 0.418259
+Vertex 64, Rest mean curvature = 0.790050, deformed_laplace = 0.612214, 0.228798, 0.444513
+Vertex 65, Rest mean curvature = 0.804278, deformed_laplace = 0.638844, 0.156405, 0.464059
+Vertex 66, Rest mean curvature = 0.812861, deformed_laplace = 0.654296, 0.079337, 0.475374
+Vertex 69, Rest mean curvature = 1.714054, deformed_laplace = -1.596119, 0.349212, -0.520063
+Vertex 70, Rest mean curvature = 0.321661, deformed_laplace = 0.062529, 0.319351, 0.018385
+Vertex 71, Rest mean curvature = 0.381342, deformed_laplace = 0.107510, 0.366376, 0.033444
+Vertex 72, Rest mean curvature = 0.439022, deformed_laplace = 0.161509, 0.405952, 0.051375
+Vertex 73, Rest mean curvature = 0.494149, deformed_laplace = 0.222891, 0.435584, 0.071602
+Vertex 74, Rest mean curvature = 0.546187, deformed_laplace = 0.289669, 0.453617, 0.093481
+Vertex 75, Rest mean curvature = 0.594665, deformed_laplace = 0.359655, 0.459005, 0.116328
+Vertex 76, Rest mean curvature = 0.639147, deformed_laplace = 0.430536, 0.451209, 0.139424
+Vertex 77, Rest mean curvature = 0.679256, deformed_laplace = 0.499908, 0.430147, 0.161992
+Vertex 78, Rest mean curvature = 0.714657, deformed_laplace = 0.565557, 0.396309, 0.183344
+Vertex 79, Rest mean curvature = 0.745072, deformed_laplace = 0.625277, 0.350534, 0.202762
+Vertex 80, Rest mean curvature = 0.770265, deformed_laplace = 0.677171, 0.294156, 0.219657
+Vertex 81, Rest mean curvature = 0.790048, deformed_laplace = 0.719479, 0.228805, 0.233490
+Vertex 82, Rest mean curvature = 0.804278, deformed_laplace = 0.750867, 0.156424, 0.243864
+Vertex 83, Rest mean curvature = 0.812859, deformed_laplace = 0.769081, 0.079363, 0.249843
+Vertex 86, Rest mean curvature = 1.714054, deformed_laplace = -1.678686, 0.348388, -0.001869
+Vertex 87, Rest mean curvature = 0.321660, deformed_laplace = 0.065130, 0.319014, -0.002053
+Vertex 88, Rest mean curvature = 0.381344, deformed_laplace = 0.112516, 0.366180, -0.001568
+Vertex 89, Rest mean curvature = 0.439024, deformed_laplace = 0.169396, 0.405861, -0.001147
+Vertex 90, Rest mean curvature = 0.494150, deformed_laplace = 0.234029, 0.435533, -0.000843
+Vertex 91, Rest mean curvature = 0.546188, deformed_laplace = 0.304290, 0.453577, -0.000649
+Vertex 92, Rest mean curvature = 0.594666, deformed_laplace = 0.377906, 0.458980, -0.000535
+Vertex 93, Rest mean curvature = 0.639147, deformed_laplace = 0.452416, 0.451167, -0.000468
+Vertex 94, Rest mean curvature = 0.679252, deformed_laplace = 0.525428, 0.430137, -0.000435
+Vertex 95, Rest mean curvature = 0.714658, deformed_laplace = 0.594469, 0.396300, -0.000417
+Vertex 96, Rest mean curvature = 0.745074, deformed_laplace = 0.657261, 0.350528, -0.000395
+Vertex 97, Rest mean curvature = 0.770263, deformed_laplace = 0.711818, 0.294154, -0.000360
+Vertex 98, Rest mean curvature = 0.790051, deformed_laplace = 0.756360, 0.228809, -0.000277
+Vertex 99, Rest mean curvature = 0.804278, deformed_laplace = 0.789438, 0.156438, -0.000114
+Vertex 100, Rest mean curvature = 0.812858, deformed_laplace = 0.808612, 0.079379, -0.000051
+Vertex 103, Rest mean curvature = 1.714054, deformed_laplace = -1.597033, 0.347856, 0.516658
+Vertex 104, Rest mean curvature = 0.321658, deformed_laplace = 0.061320, 0.318740, -0.022195
+Vertex 105, Rest mean curvature = 0.381345, deformed_laplace = 0.106494, 0.366016, -0.036322
+Vertex 106, Rest mean curvature = 0.439023, deformed_laplace = 0.160742, 0.405812, -0.053470
+Vertex 107, Rest mean curvature = 0.494149, deformed_laplace = 0.222297, 0.435491, -0.073119
+Vertex 326, Rest mean curvature = 0.381345, deformed_laplace = -0.034403, 0.364999, 0.107115
+Vertex 327, Rest mean curvature = 0.439026, deformed_laplace = -0.052316, 0.405361, 0.161445
+Vertex 328, Rest mean curvature = 0.494148, deformed_laplace = -0.072450, 0.435288, 0.223017
+Vertex 329, Rest mean curvature = 0.546187, deformed_laplace = -0.094209, 0.453430, 0.289889
+Vertex 330, Rest mean curvature = 0.594668, deformed_laplace = -0.116951, 0.458869, 0.359929
+Vertex 331, Rest mean curvature = 0.639147, deformed_laplace = -0.139954, 0.451083, 0.430805
+Vertex 332, Rest mean curvature = 0.679258, deformed_laplace = -0.162490, 0.430071, 0.500232
+Vertex 333, Rest mean curvature = 0.714660, deformed_laplace = -0.183836, 0.396264, 0.565929
+Vertex 334, Rest mean curvature = 0.745070, deformed_laplace = -0.203275, 0.350523, 0.625681
+Vertex 335, Rest mean curvature = 0.770262, deformed_laplace = -0.220152, 0.294134, 0.677494
+Vertex 336, Rest mean curvature = 0.790048, deformed_laplace = -0.233990, 0.228794, 0.719836
+Vertex 337, Rest mean curvature = 0.804278, deformed_laplace = -0.244250, 0.156426, 0.751248
+Vertex 338, Rest mean curvature = 0.812859, deformed_laplace = -0.250099, 0.079348, 0.769555
+Vertex 144, Rest mean curvature = 0.639148, deformed_laplace = 0.265616, 0.451115, -0.366214
+Vertex 145, Rest mean curvature = 0.679255, deformed_laplace = 0.308554, 0.430108, -0.425275
+Vertex 146, Rest mean curvature = 0.714658, deformed_laplace = 0.349118, 0.396268, -0.481095
+Vertex 147, Rest mean curvature = 0.745071, deformed_laplace = 0.386063, 0.350527, -0.531914
+Vertex 148, Rest mean curvature = 0.770260, deformed_laplace = 0.418131, 0.294155, -0.576015
+Vertex 149, Rest mean curvature = 0.790050, deformed_laplace = 0.444459, 0.228839, -0.612092
+Vertex 150, Rest mean curvature = 0.804276, deformed_laplace = 0.464039, 0.156466, -0.638744
+Vertex 151, Rest mean curvature = 0.812858, deformed_laplace = 0.475417, 0.079380, -0.654266
+Vertex 154, Rest mean curvature = 1.714054, deformed_laplace = -0.520476, 0.347682, 1.595005
+Vertex 155, Rest mean curvature = 0.321659, deformed_laplace = 0.018137, 0.318736, -0.063017
+Vertex 156, Rest mean curvature = 0.381345, deformed_laplace = 0.033225, 0.365868, -0.107656
+Vertex 157, Rest mean curvature = 0.439024, deformed_laplace = 0.051282, 0.405619, -0.161490
+Vertex 158, Rest mean curvature = 0.494149, deformed_laplace = 0.071601, 0.435348, -0.222788
+Vertex 159, Rest mean curvature = 0.546186, deformed_laplace = 0.093531, 0.453436, -0.289530
+Vertex 160, Rest mean curvature = 0.594666, deformed_laplace = 0.116395, 0.458861, -0.359475
+Vertex 161, Rest mean curvature = 0.639149, deformed_laplace = 0.139493, 0.451102, -0.430359
+Vertex 162, Rest mean curvature = 0.679255, deformed_laplace = 0.162069, 0.430078, -0.499754
+Vertex 163, Rest mean curvature = 0.714659, deformed_laplace = 0.183425, 0.396269, -0.565456
+Vertex 164, Rest mean curvature = 0.745069, deformed_laplace = 0.202861, 0.350535, -0.625236
+Vertex 165, Rest mean curvature = 0.770263, deformed_laplace = 0.219712, 0.294144, -0.677016
+Vertex 166, Rest mean curvature = 0.790048, deformed_laplace = 0.233605, 0.228843, -0.719525
+Vertex 167, Rest mean curvature = 0.804277, deformed_laplace = 0.243983, 0.156474, -0.750866
+Vertex 168, Rest mean curvature = 0.812858, deformed_laplace = 0.250013, 0.079396, -0.769165
+Vertex 171, Rest mean curvature = 1.714054, deformed_laplace = -0.002053, 0.347558, 1.677659
+Vertex 172, Rest mean curvature = 0.321659, deformed_laplace = -0.002158, 0.318645, -0.065557
+Vertex 173, Rest mean curvature = 0.381345, deformed_laplace = -0.001617, 0.365875, -0.112669
+Vertex 174, Rest mean curvature = 0.439023, deformed_laplace = -0.001074, 0.405611, -0.169442
+Vertex 175, Rest mean curvature = 0.494150, deformed_laplace = -0.000689, 0.435318, -0.234001
+Vertex 176, Rest mean curvature = 0.546188, deformed_laplace = -0.000450, 0.453437, -0.304272
+Vertex 177, Rest mean curvature = 0.594668, deformed_laplace = -0.000326, 0.458866, -0.377883
+Vertex 178, Rest mean curvature = 0.639149, deformed_laplace = -0.000269, 0.451101, -0.452425
+Vertex 179, Rest mean curvature = 0.679256, deformed_laplace = -0.000251, 0.430066, -0.525373
+Vertex 180, Rest mean curvature = 0.714657, deformed_laplace = -0.000244, 0.396262, -0.594446
+Vertex 181, Rest mean curvature = 0.745073, deformed_laplace = -0.000239, 0.350515, -0.657264
+Vertex 182, Rest mean curvature = 0.770263, deformed_laplace = -0.000212, 0.294153, -0.711858
+Vertex 183, Rest mean curvature = 0.790047, deformed_laplace = -0.000129, 0.228827, -0.756457
+Vertex 184, Rest mean curvature = 0.804278, deformed_laplace = 0.000049, 0.156467, -0.789696
+Vertex 185, Rest mean curvature = 0.812855, deformed_laplace = 0.000133, 0.079375, -0.808885
+Vertex 188, Rest mean curvature = 1.714054, deformed_laplace = 0.516500, 0.347502, 1.596105
+Vertex 189, Rest mean curvature = 0.321659, deformed_laplace = -0.022235, 0.318615, -0.061705
+Vertex 190, Rest mean curvature = 0.381344, deformed_laplace = -0.036286, 0.365850, -0.106661
+Vertex 191, Rest mean curvature = 0.439023, deformed_laplace = -0.053310, 0.405588, -0.160808
+Vertex 192, Rest mean curvature = 0.494149, deformed_laplace = -0.072901, 0.435320, -0.222351
+Vertex 193, Rest mean curvature = 0.546186, deformed_laplace = -0.094388, 0.453418, -0.289232
+Vertex 194, Rest mean curvature = 0.594670, deformed_laplace = -0.117017, 0.458853, -0.359286
+Vertex 195, Rest mean curvature = 0.639147, deformed_laplace = -0.140001, 0.451082, -0.430175
+Vertex 196, Rest mean curvature = 0.679255, deformed_laplace = -0.162544, 0.430072, -0.499614
+Vertex 197, Rest mean curvature = 0.714659, deformed_laplace = -0.183890, 0.396268, -0.565323
+Vertex 198, Rest mean curvature = 0.745073, deformed_laplace = -0.203291, 0.350502, -0.625015
+Vertex 199, Rest mean curvature = 0.770258, deformed_laplace = -0.220141, 0.294158, -0.676947
+Vertex 200, Rest mean curvature = 0.790044, deformed_laplace = -0.233837, 0.228831, -0.719360
+Vertex 201, Rest mean curvature = 0.804276, deformed_laplace = -0.243957, 0.156468, -0.751106
+Vertex 202, Rest mean curvature = 0.812856, deformed_laplace = -0.249809, 0.079372, -0.769383
+Vertex 205, Rest mean curvature = 1.714054, deformed_laplace = 0.984430, 0.347489, 1.358336
+Vertex 206, Rest mean curvature = 0.321655, deformed_laplace = -0.040119, 0.318573, -0.051826
+Vertex 207, Rest mean curvature = 0.381346, deformed_laplace = -0.067365, 0.365786, -0.090214
+Vertex 208, Rest mean curvature = 0.439022, deformed_laplace = -0.100304, 0.405578, -0.136483
+Vertex 209, Rest mean curvature = 0.494150, deformed_laplace = -0.137969, 0.435324, -0.188968
+Vertex 210, Rest mean curvature = 0.546187, deformed_laplace = -0.179083, 0.453421, -0.245950
+Vertex 211, Rest mean curvature = 0.594664, deformed_laplace = -0.222250, 0.458852, -0.305561
+Vertex 212, Rest mean curvature = 0.639146, deformed_laplace = -0.266031, 0.451089, -0.365909
+Vertex 213, Rest mean curvature = 0.679258, deformed_laplace = -0.308963, 0.430098, -0.425010
+Vertex 214, Rest mean curvature = 0.714659, deformed_laplace = -0.349538, 0.396253, -0.480844
+Vertex 215, Rest mean curvature = 0.745072, deformed_laplace = -0.386452, 0.350498, -0.531639
+Vertex 108, Rest mean curvature = 0.546187, deformed_laplace = 0.289183, 0.453529, -0.094646
+Vertex 109, Rest mean curvature = 0.594666, deformed_laplace = 0.359216, 0.458931, -0.117272
+Vertex 110, Rest mean curvature = 0.639148, deformed_laplace = 0.430143, 0.451161, -0.140248
+Vertex 111, Rest mean curvature = 0.679256, deformed_laplace = 0.499510, 0.430101, -0.162753
+Vertex 112, Rest mean curvature = 0.714657, deformed_laplace = 0.565211, 0.396292, -0.184084
+Vertex 113, Rest mean curvature = 0.745072, deformed_laplace = 0.624949, 0.350534, -0.203470
+Vertex 114, Rest mean curvature = 0.770259, deformed_laplace = 0.676788, 0.294155, -0.220280
+Vertex 115, Rest mean curvature = 0.790048, deformed_laplace = 0.719244, 0.228825, -0.233979
+Vertex 116, Rest mean curvature = 0.804277, deformed_laplace = 0.750910, 0.156454, -0.244083
+Vertex 117, Rest mean curvature = 0.812857, deformed_laplace = 0.768954, 0.079382, -0.249879
+Vertex 120, Rest mean curvature = 1.714054, deformed_laplace = -1.358952, 0.347890, 0.984648
+Vertex 121, Rest mean curvature = 0.321657, deformed_laplace = 0.051513, 0.318829, -0.040278
+Vertex 122, Rest mean curvature = 0.381342, deformed_laplace = 0.090066, 0.366004, -0.067578
+Vertex 123, Rest mean curvature = 0.439023, deformed_laplace = 0.136314, 0.405668, -0.100540
+Vertex 124, Rest mean curvature = 0.494149, deformed_laplace = 0.188788, 0.435387, -0.138208
+Vertex 125, Rest mean curvature = 0.546187, deformed_laplace = 0.245732, 0.453454, -0.179310
+Vertex 126, Rest mean curvature = 0.594666, deformed_laplace = 0.305381, 0.458891, -0.222479
+Vertex 127, Rest mean curvature = 0.639147, deformed_laplace = 0.365752, 0.451140, -0.266255
+Vertex 128, Rest mean curvature = 0.679257, deformed_laplace = 0.424806, 0.430106, -0.309130
+Vertex 129, Rest mean curvature = 0.714656, deformed_laplace = 0.480671, 0.396277, -0.349697
+Vertex 130, Rest mean curvature = 0.745072, deformed_laplace = 0.531505, 0.350527, -0.386604
+Vertex 131, Rest mean curvature = 0.770263, deformed_laplace = 0.575639, 0.294157, -0.418637
+Vertex 132, Rest mean curvature = 0.790045, deformed_laplace = 0.611795, 0.228831, -0.444787
+Vertex 133, Rest mean curvature = 0.804277, deformed_laplace = 0.638706, 0.156464, -0.464124
+Vertex 134, Rest mean curvature = 0.812857, deformed_laplace = 0.654225, 0.079382, -0.475319
+Vertex 137, Rest mean curvature = 1.714054, deformed_laplace = -0.988037, 0.347732, 1.356215
+Vertex 138, Rest mean curvature = 0.321662, deformed_laplace = 0.036629, 0.318748, -0.054288
+Vertex 139, Rest mean curvature = 0.381341, deformed_laplace = 0.064812, 0.365921, -0.092114
+Vertex 140, Rest mean curvature = 0.439025, deformed_laplace = 0.098629, 0.405658, -0.137756
+Vertex 141, Rest mean curvature = 0.494149, deformed_laplace = 0.136892, 0.435363, -0.189782
+Vertex 142, Rest mean curvature = 0.546187, deformed_laplace = 0.178379, 0.453456, -0.246471
+Vertex 143, Rest mean curvature = 0.594666, deformed_laplace = 0.221743, 0.458873, -0.305951
+Vertex 18, Rest mean curvature = 1.714054, deformed_laplace = -0.519790, 0.343828, -1.595877
+Vertex 19, Rest mean curvature = 0.321662, deformed_laplace = 0.020712, 0.318855, 0.062340
+Vertex 20, Rest mean curvature = 0.381346, deformed_laplace = 0.035345, 0.366268, 0.107528
+Vertex 21, Rest mean curvature = 0.439025, deformed_laplace = 0.052802, 0.405881, 0.161664
+Vertex 22, Rest mean curvature = 0.494150, deformed_laplace = 0.072655, 0.435581, 0.223150
+Vertex 23, Rest mean curvature = 0.546188, deformed_laplace = 0.094281, 0.453650, 0.289966
+Vertex 24, Rest mean curvature = 0.594665, deformed_laplace = 0.116980, 0.459045, 0.359942
+Vertex 25, Rest mean curvature = 0.639147, deformed_laplace = 0.140007, 0.451275, 0.430827
+Vertex 26, Rest mean curvature = 0.679254, deformed_laplace = 0.162578, 0.430210, 0.500191
+Vertex 27, Rest mean curvature = 0.714658, deformed_laplace = 0.183939, 0.396361, 0.565831
+Vertex 28, Rest mean curvature = 0.745074, deformed_laplace = 0.203387, 0.350586, 0.625540
+Vertex 29, Rest mean curvature = 0.770263, deformed_laplace = 0.220260, 0.294194, 0.677406
+Vertex 30, Rest mean curvature = 0.790052, deformed_laplace = 0.233997, 0.228837, 0.719807
+Vertex 31, Rest mean curvature = 0.804275, deformed_laplace = 0.244055, 0.156429, 0.751268
+Vertex 32, Rest mean curvature = 0.812858, deformed_laplace = 0.249798, 0.079348, 0.769375
+Vertex 35, Rest mean curvature = 1.714054, deformed_laplace = -0.986396, 0.355079, -1.356869
+Vertex 216, Rest mean curvature = 0.770265, deformed_laplace = -0.418541, 0.294147, -0.575833
+Vertex 217, Rest mean curvature = 0.790046, deformed_laplace = -0.444691, 0.228817, -0.611947
+Vertex 218, Rest mean curvature = 0.804277, deformed_laplace = -0.464083, 0.156457, -0.638972
+Vertex 219, Rest mean curvature = 0.812858, deformed_laplace = -0.475335, 0.079363, -0.654580
+Vertex 222, Rest mean curvature = 1.714054, deformed_laplace = 1.355970, 0.347467, 0.987655
+Vertex 223, Rest mean curvature = 0.321661, deformed_laplace = -0.054079, 0.318584, -0.036956
+Vertex 224, Rest mean curvature = 0.381344, deformed_laplace = -0.091843, 0.365775, -0.065034
+Vertex 225, Rest mean curvature = 0.439023, deformed_laplace = -0.137471, 0.405556, -0.098854
+Vertex 226, Rest mean curvature = 0.494149, deformed_laplace = -0.189529, 0.435323, -0.137132
+Vertex 227, Rest mean curvature = 0.546186, deformed_laplace = -0.246226, 0.453396, -0.178588
+Vertex 228, Rest mean curvature = 0.594668, deformed_laplace = -0.305735, 0.458857, -0.221972
+Vertex 229, Rest mean curvature = 0.639147, deformed_laplace = -0.366039, 0.451103, -0.265838
+Vertex 230, Rest mean curvature = 0.679258, deformed_laplace = -0.425096, 0.430083, -0.308754
+Vertex 231, Rest mean curvature = 0.714659, deformed_laplace = -0.481005, 0.396278, -0.349358
+Vertex 232, Rest mean curvature = 0.745073, deformed_laplace = -0.531783, 0.350496, -0.386225
+Vertex 233, Rest mean curvature = 0.770263, deformed_laplace = -0.575959, 0.294143, -0.418334
+Vertex 234, Rest mean curvature = 0.790051, deformed_laplace = -0.612023, 0.228820, -0.444618
+Vertex 235, Rest mean curvature = 0.804277, deformed_laplace = -0.638801, 0.156448, -0.464286
+Vertex 236, Rest mean curvature = 0.812856, deformed_laplace = -0.654343, 0.079362, -0.475682
+Vertex 239, Rest mean curvature = 1.714054, deformed_laplace = 1.594766, 0.347542, 0.520338
+Vertex 240, Rest mean curvature = 0.321658, deformed_laplace = -0.062757, 0.318547, -0.018535
+Vertex 241, Rest mean curvature = 0.381343, deformed_laplace = -0.107373, 0.365806, -0.033578
+Vertex 242, Rest mean curvature = 0.439026, deformed_laplace = -0.161227, 0.405563, -0.051631
+Vertex 243, Rest mean curvature = 0.494149, deformed_laplace = -0.222558, 0.435304, -0.071933
+Vertex 244, Rest mean curvature = 0.546186, deformed_laplace = -0.289361, 0.453443, -0.093858
+Vertex 245, Rest mean curvature = 0.594668, deformed_laplace = -0.359327, 0.458858, -0.116701
+Vertex 246, Rest mean curvature = 0.639150, deformed_laplace = -0.430272, 0.451131, -0.139797
+Vertex 247, Rest mean curvature = 0.679257, deformed_laplace = -0.499677, 0.430086, -0.162343
+Vertex 248, Rest mean curvature = 0.714661, deformed_laplace = -0.565396, 0.396278, -0.183684
+Vertex 249, Rest mean curvature = 0.745071, deformed_laplace = -0.625150, 0.350514, -0.203074
+Vertex 250, Rest mean curvature = 0.770264, deformed_laplace = -0.677065, 0.294139, -0.219936
+Vertex 251, Rest mean curvature = 0.790051, deformed_laplace = -0.719458, 0.228804, -0.233766
+Vertex 290, Rest mean curvature = 1.714054, deformed_laplace = 1.358485, 0.348522, -0.984157
+Vertex 291, Rest mean curvature = 0.321662, deformed_laplace = -0.052177, 0.318747, 0.039496
+Vertex 292, Rest mean curvature = 0.381344, deformed_laplace = -0.090642, 0.365918, 0.066810
+Vertex 293, Rest mean curvature = 0.439024, deformed_laplace = -0.136917, 0.405689, 0.099898
+Vertex 294, Rest mean curvature = 0.494150, deformed_laplace = -0.189384, 0.435438, 0.137697
+Vertex 295, Rest mean curvature = 0.546187, deformed_laplace = -0.246315, 0.453501, 0.178903
+Vertex 296, Rest mean curvature = 0.594667, deformed_laplace = -0.305923, 0.458924, 0.222135
+Vertex 297, Rest mean curvature = 0.639149, deformed_laplace = -0.366277, 0.451161, 0.265962
+Vertex 298, Rest mean curvature = 0.679255, deformed_laplace = -0.425344, 0.430133, 0.308877
+Vertex 299, Rest mean curvature = 0.714659, deformed_laplace = -0.481242, 0.396310, 0.349498
+Vertex 300, Rest mean curvature = 0.745073, deformed_laplace = -0.532081, 0.350538, 0.386439
+Vertex 301, Rest mean curvature = 0.770265, deformed_laplace = -0.576243, 0.294148, 0.418536
+Vertex 302, Rest mean curvature = 0.790044, deformed_laplace = -0.612282, 0.228779, 0.444693
+Vertex 303, Rest mean curvature = 0.804276, deformed_laplace = -0.639149, 0.156392, 0.464125
+Vertex 304, Rest mean curvature = 0.812860, deformed_laplace = -0.654694, 0.079313, 0.475425
+Vertex 307, Rest mean curvature = 1.714054, deformed_laplace = 0.988113, 0.349765, -1.355953
+Vertex 308, Rest mean curvature = 0.321655, deformed_laplace = -0.037582, 0.318925, 0.053595
+Vertex 309, Rest mean curvature = 0.381344, deformed_laplace = -0.065810, 0.366028, 0.091599
+Vertex 310, Rest mean curvature = 0.439024, deformed_laplace = -0.099582, 0.405792, 0.137466
+Vertex 311, Rest mean curvature = 0.494148, deformed_laplace = -0.137752, 0.435482, 0.189659
+Vertex 312, Rest mean curvature = 0.546186, deformed_laplace = -0.179143, 0.453551, 0.246480
+Vertex 313, Rest mean curvature = 0.594667, deformed_laplace = -0.222430, 0.458942, 0.306014
+Vertex 314, Rest mean curvature = 0.639146, deformed_laplace = -0.266242, 0.451141, 0.366310
+Vertex 315, Rest mean curvature = 0.679258, deformed_laplace = -0.309158, 0.430126, 0.425398
+Vertex 316, Rest mean curvature = 0.714657, deformed_laplace = -0.349772, 0.396306, 0.481302
+Vertex 317, Rest mean curvature = 0.745073, deformed_laplace = -0.386689, 0.350522, 0.532090
+Vertex 318, Rest mean curvature = 0.770261, deformed_laplace = -0.418792, 0.294133, 0.576240
+Vertex 319, Rest mean curvature = 0.790048, deformed_laplace = -0.445012, 0.228767, 0.612288
+Vertex 320, Rest mean curvature = 0.804274, deformed_laplace = -0.464512, 0.156370, 0.639016
+Vertex 321, Rest mean curvature = 0.812856, deformed_laplace = -0.475761, 0.079292, 0.654607
+Vertex 324, Rest mean curvature = 1.714054, deformed_laplace = 0.521304, 0.334223, -1.597554
+Vertex 325, Rest mean curvature = 0.321657, deformed_laplace = -0.019196, 0.315566, 0.061581
+Vertex 252, Rest mean curvature = 0.804275, deformed_laplace = -0.751028, 0.156440, -0.244198
+Vertex 253, Rest mean curvature = 0.812855, deformed_laplace = -0.769304, 0.079347, -0.250211
+Vertex 256, Rest mean curvature = 1.714054, deformed_laplace = 1.677474, 0.347730, 0.002129
+Vertex 257, Rest mean curvature = 0.321658, deformed_laplace = -0.065401, 0.318577, 0.001618
+Vertex 258, Rest mean curvature = 0.381345, deformed_laplace = -0.112476, 0.365821, 0.001099
+Vertex 259, Rest mean curvature = 0.439025, deformed_laplace = -0.169287, 0.405576, 0.000594
+Vertex 260, Rest mean curvature = 0.494150, deformed_laplace = -0.233925, 0.435346, 0.000257
+Vertex 261, Rest mean curvature = 0.546188, deformed_laplace = -0.304181, 0.453419, 0.000073
+Vertex 262, Rest mean curvature = 0.594666, deformed_laplace = -0.377840, 0.458884, -0.000025
+Vertex 263, Rest mean curvature = 0.639145, deformed_laplace = -0.452447, 0.451146, -0.000064
+Vertex 264, Rest mean curvature = 0.679256, deformed_laplace = -0.525443, 0.430110, -0.000061
+Vertex 265, Rest mean curvature = 0.714655, deformed_laplace = -0.594535, 0.396290, -0.000041
+Vertex 266, Rest mean curvature = 0.745071, deformed_laplace = -0.657361, 0.350524, -0.000018
+Vertex 267, Rest mean curvature = 0.770260, deformed_laplace = -0.711911, 0.294140, -0.000007
+Vertex 268, Rest mean curvature = 0.790046, deformed_laplace = -0.756538, 0.228798, -0.000036
+Vertex 269, Rest mean curvature = 0.804277, deformed_laplace = -0.789774, 0.156417, -0.000185
+Vertex 270, Rest mean curvature = 0.812860, deformed_laplace = -0.808977, 0.079344, -0.000241
+Vertex 273, Rest mean curvature = 1.714054, deformed_laplace = 1.596043, 0.347968, -0.516262
+Vertex 274, Rest mean curvature = 0.321658, deformed_laplace = -0.061747, 0.318622, 0.021594
+Vertex 275, Rest mean curvature = 0.381343, deformed_laplace = -0.106702, 0.365842, 0.035659
+Vertex 276, Rest mean curvature = 0.439024, deformed_laplace = -0.160917, 0.405631, 0.052774
+Vertex 277, Rest mean curvature = 0.494149, deformed_laplace = -0.222482, 0.435370, 0.072459
+Vertex 278, Rest mean curvature = 0.546187, deformed_laplace = -0.289386, 0.453468, 0.094023
+Vertex 279, Rest mean curvature = 0.594666, deformed_laplace = -0.359472, 0.458922, 0.116710
+Vertex 280, Rest mean curvature = 0.639148, deformed_laplace = -0.430398, 0.451147, 0.139725
+Vertex 281, Rest mean curvature = 0.679254, deformed_laplace = -0.499814, 0.430113, 0.162284
+Vertex 282, Rest mean curvature = 0.714659, deformed_laplace = -0.565591, 0.396319, 0.183663
+Vertex 283, Rest mean curvature = 0.745072, deformed_laplace = -0.625300, 0.350531, 0.203091
+Vertex 284, Rest mean curvature = 0.770260, deformed_laplace = -0.677201, 0.294143, 0.219970
+Vertex 285, Rest mean curvature = 0.790045, deformed_laplace = -0.719584, 0.228787, 0.233719
+Vertex 286, Rest mean curvature = 0.804278, deformed_laplace = -0.751248, 0.156406, 0.243884
+Vertex 287, Rest mean curvature = 0.812854, deformed_laplace = -0.769512, 0.079328, 0.249791
+Vertex 36, Rest mean curvature = 0.321660, deformed_laplace = 0.039517, 0.320982, 0.052706
+Vertex 37, Rest mean curvature = 0.381345, deformed_laplace = 0.067174, 0.366995, 0.091085
+Vertex 38, Rest mean curvature = 0.439024, deformed_laplace = 0.100406, 0.406221, 0.137190
+Vertex 39, Rest mean curvature = 0.494151, deformed_laplace = 0.138235, 0.435732, 0.189551
+Vertex 40, Rest mean curvature = 0.546188, deformed_laplace = 0.179433, 0.453740, 0.246447
+Vertex 41, Rest mean curvature = 0.594666, deformed_laplace = 0.222605, 0.459068, 0.305980
+Vertex 42, Rest mean curvature = 0.639147, deformed_laplace = 0.266392, 0.451274, 0.366292
+Vertex 43, Rest mean curvature = 0.679256, deformed_laplace = 0.309251, 0.430186, 0.425283
+Vertex 44, Rest mean curvature = 0.714658, deformed_laplace = 0.349864, 0.396346, 0.481142
+Vertex 45, Rest mean curvature = 0.745072, deformed_laplace = 0.386764, 0.350554, 0.531913
+Vertex 46, Rest mean curvature = 0.770263, deformed_laplace = 0.418801, 0.294151, 0.576006
+Vertex 47, Rest mean curvature = 0.790047, deformed_laplace = 0.444982, 0.228804, 0.612164
+Vertex 48, Rest mean curvature = 0.804276, deformed_laplace = 0.464255, 0.156395, 0.638961
+Vertex 49, Rest mean curvature = 0.812859, deformed_laplace = 0.475403, 0.079297, 0.654471
+Vertex 52, Rest mean curvature = 1.714054, deformed_laplace = -1.357469, 0.351326, -0.986940
+Vertex 53, Rest mean curvature = 0.321657, deformed_laplace = 0.053856, 0.320274, 0.037167
+Vertex 54, Rest mean curvature = 0.381342, deformed_laplace = 0.091976, 0.366663, 0.065290
+Vertex 55, Rest mean curvature = 0.439026, deformed_laplace = 0.137800, 0.406057, 0.098988
+Vertex 56, Rest mean curvature = 0.494148, deformed_laplace = 0.189923, 0.435604, 0.137156
+Vertex 57, Rest mean curvature = 0.546188, deformed_laplace = 0.246703, 0.453661, 0.178598
+Vertex 58, Rest mean curvature = 0.594669, deformed_laplace = 0.306172, 0.459017, 0.221914
+Vertex 59, Rest mean curvature = 0.639148, deformed_laplace = 0.366433, 0.451219, 0.265763
+Vertex 60, Rest mean curvature = 0.679256, deformed_laplace = 0.425455, 0.430169, 0.308667
+Vertex 61, Rest mean curvature = 0.714658, deformed_laplace = 0.481310, 0.396322, 0.349252
+Vertex 62, Rest mean curvature = 0.745074, deformed_laplace = 0.532094, 0.350540, 0.386155
+Vertex 63, Rest mean curvature = 0.770263, deformed_laplace = 0.576226, 0.294158, 0.418245
+Vertex 64, Rest mean curvature = 0.790050, deformed_laplace = 0.612246, 0.228802, 0.444510
+Vertex 65, Rest mean curvature = 0.804278, deformed_laplace = 0.638894, 0.156410, 0.464093
+Vertex 66, Rest mean curvature = 0.812861, deformed_laplace = 0.654268, 0.079325, 0.475355
+Vertex 69, Rest mean curvature = 1.714054, deformed_laplace = -1.596051, 0.349558, -0.519958
+Vertex 70, Rest mean curvature = 0.321661, deformed_laplace = 0.062629, 0.319603, 0.018271
+Vertex 71, Rest mean curvature = 0.381342, deformed_laplace = 0.107539, 0.366399, 0.033351
+Vertex 72, Rest mean curvature = 0.439022, deformed_laplace = 0.161503, 0.405903, 0.051313
+Vertex 73, Rest mean curvature = 0.494149, deformed_laplace = 0.222871, 0.435529, 0.071558
+Vertex 74, Rest mean curvature = 0.546187, deformed_laplace = 0.289647, 0.453575, 0.093449
+Vertex 75, Rest mean curvature = 0.594665, deformed_laplace = 0.359639, 0.458982, 0.116303
+Vertex 76, Rest mean curvature = 0.639147, deformed_laplace = 0.430529, 0.451200, 0.139402
+Vertex 77, Rest mean curvature = 0.679256, deformed_laplace = 0.499900, 0.430143, 0.161971
+Vertex 78, Rest mean curvature = 0.714657, deformed_laplace = 0.565552, 0.396308, 0.183324
+Vertex 79, Rest mean curvature = 0.745072, deformed_laplace = 0.625273, 0.350535, 0.202741
+Vertex 80, Rest mean curvature = 0.770265, deformed_laplace = 0.677167, 0.294160, 0.219636
+Vertex 81, Rest mean curvature = 0.790048, deformed_laplace = 0.719494, 0.228811, 0.233480
+Vertex 82, Rest mean curvature = 0.804278, deformed_laplace = 0.750922, 0.156434, 0.243874
+Vertex 83, Rest mean curvature = 0.812859, deformed_laplace = 0.769043, 0.079354, 0.249834
+Vertex 86, Rest mean curvature = 1.714054, deformed_laplace = -1.678582, 0.348680, -0.001799
+Vertex 87, Rest mean curvature = 0.321660, deformed_laplace = 0.065190, 0.319234, -0.002193
+Vertex 88, Rest mean curvature = 0.381344, deformed_laplace = 0.112513, 0.366182, -0.001664
+Vertex 89, Rest mean curvature = 0.439024, deformed_laplace = 0.169363, 0.405799, -0.001200
+Vertex 90, Rest mean curvature = 0.494150, deformed_laplace = 0.233988, 0.435469, -0.000872
+Vertex 91, Rest mean curvature = 0.546188, deformed_laplace = 0.304253, 0.453527, -0.000667
+Vertex 92, Rest mean curvature = 0.594666, deformed_laplace = 0.377879, 0.458949, -0.000550
+Vertex 93, Rest mean curvature = 0.639147, deformed_laplace = 0.452393, 0.451150, -0.000483
+Vertex 94, Rest mean curvature = 0.679252, deformed_laplace = 0.525411, 0.430133, -0.000450
+Vertex 95, Rest mean curvature = 0.714658, deformed_laplace = 0.594456, 0.396299, -0.000429
+Vertex 96, Rest mean curvature = 0.745074, deformed_laplace = 0.657251, 0.350531, -0.000411
+Vertex 97, Rest mean curvature = 0.770263, deformed_laplace = 0.711809, 0.294157, -0.000374
+Vertex 98, Rest mean curvature = 0.790051, deformed_laplace = 0.756366, 0.228817, -0.000288
+Vertex 99, Rest mean curvature = 0.804278, deformed_laplace = 0.789489, 0.156449, -0.000114
+Vertex 100, Rest mean curvature = 0.812858, deformed_laplace = 0.808576, 0.079371, -0.000047
+Vertex 103, Rest mean curvature = 1.714054, deformed_laplace = -1.596907, 0.348129, 0.516687
+Vertex 104, Rest mean curvature = 0.321658, deformed_laplace = 0.061335, 0.318949, -0.022340
+Vertex 105, Rest mean curvature = 0.381345, deformed_laplace = 0.106459, 0.366015, -0.036408
+Vertex 106, Rest mean curvature = 0.439023, deformed_laplace = 0.160695, 0.405750, -0.053504
+Vertex 107, Rest mean curvature = 0.494149, deformed_laplace = 0.222253, 0.435422, -0.073127

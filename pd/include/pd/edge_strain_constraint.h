@@ -10,7 +10,7 @@ namespace pd {
 		// __host__ __device__ EdgeStrainConstraint(float wc, int vi, int vj, float rest_length);
 		EdgeStrainConstraint() = default;
 
-		EdgeStrainConstraint(float wc, int vi, int vj, const Positions& p) :
+		EdgeStrainConstraint(float wc, int vi, int vj, const Positions& p):
 			Constraint(wc, 2),
 			rest_length((p.row(vi) - p.row(vj)).norm())
 		{

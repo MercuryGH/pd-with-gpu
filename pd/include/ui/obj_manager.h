@@ -48,9 +48,9 @@ namespace ui
 
 	public:	
 	    // add triangle mesh model
-		void add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 		// add tetrahedron mesh model
-		void add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);
+		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);
 
 		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);

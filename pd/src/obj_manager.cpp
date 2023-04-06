@@ -19,7 +19,7 @@ namespace ui
 		V.array() /= (V.maxCoeff() - V.minCoeff());
 	}
 
-	void ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+	int ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 	{
 		rescale(V);
 
@@ -28,9 +28,11 @@ namespace ui
 		models.emplace(obj_id, pd::DeformableMesh(V, F, obj_id));
 
 		add_simulation_model_info(obj_id);
+
+		return obj_id;
 	}
 
-	void ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
+	int ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
 	{
 		rescale(V);
 
@@ -39,6 +41,8 @@ namespace ui
 		models.emplace(obj_id, pd::DeformableMesh(V, T, boundray_facets, obj_id));
 
 		add_simulation_model_info(obj_id);
+
+		return obj_id;
 	}
 
 	void ObjManager::add_simulation_model_info(int obj_id)
@@ -60,7 +64,6 @@ namespace ui
 		viewer.data_list[idx].point_size = 10.f;
 		// viewer.data_list[idx].label_size = 2.f;
 		viewer.data_list[idx].show_custom_labels = true;
-		viewer.data_list[idx].double_sided = true;
 
 		// reset solver
 		solver.dirty = true;
@@ -155,6 +158,7 @@ namespace ui
 
 		// select the first mesh
 		user_control.cur_sel_mesh_id = models.begin()->first;
+		user_control.selected_vertex_idx = 0;
 		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
 
@@ -206,7 +210,7 @@ namespace ui
 		obj_init_pos_map.erase(obj_id);
 		rigid_colliders.erase(obj_id);
 
-		// select the first model
+		// select the first collider
 		user_control.cur_sel_mesh_id = rigid_colliders.begin()->first;
 		bind_gizmo(user_control.cur_sel_mesh_id);
 	}

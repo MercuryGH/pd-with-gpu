@@ -12,6 +12,6 @@ namespace ui
 		float bending_constraint_wc{ 5e-7f };
 		float tet_strain_constraint_wc{ 100.f };
 
-		float external_force_val{ 1.f };
+		float external_force_val{ 0.1f };
 	};
 }

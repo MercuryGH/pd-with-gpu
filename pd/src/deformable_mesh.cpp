@@ -39,6 +39,15 @@ namespace pd
 			const auto e0 = edge(0);
 			const auto e1 = edge(1);
 
+			const double rest_length = (p.row(e0) - p.row(e1)).norm();
+			constexpr double EPS = 1e-5;
+
+			// discard very short edge
+			if (rest_length < EPS)
+			{
+				continue;
+			}
+
 			constraints.push_back(new EdgeStrainConstraint(
 				wc, e0, e1, p
 			));
@@ -50,16 +59,31 @@ namespace pd
 		std::vector<bool> borders = igl::is_border_vertex(boundary_facets);
 		for (int i = 0; i < positions().rows(); i++)
 		{
+			bool discard_flag = false;
 			if (borders[i] == true)
 			{
 				// fixed_vertices.insert(i);
-				continue;
+				discard_flag = true;
 			}
 
 			std::vector<int> neighbor_vertices;
 			for (const int v : adj_list.at(i))
 			{
+				const double edge_length = (p.row(i) - p.row(v)).norm();
+				constexpr double EPS = 1e-5;
+				if (edge_length < EPS) // vertex that adj to a very short edge is not considered
+				{
+					discard_flag = true;
+					break;
+				}
+
 				neighbor_vertices.push_back(v);
+			}
+
+			if (discard_flag)
+			{
+				printf("Discard bending in vertex %d\n", i);
+				continue;
 			}
 
 			constraints.push_back(new BendingConstraint(

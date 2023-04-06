@@ -9,8 +9,9 @@
 #include <ui/solver_params.h>
 #include <ui/user_control.h>
 #include <ui/callbacks.h>
+#include <ui/menus.h>
 
-#include <model/model_generator.h>
+#include <meshgen/mesh_generator.h>
 
 #include <primitive/primitive.h>
 #include <primitive/floor.h>
@@ -20,10 +21,13 @@
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
 #include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
 
+#include <instancing/instancing.h>
+
 #include <util/gpu_helper.h>
 
 int main(int argc, char* argv[])
 {
+	// TODO: hide igl::opengl::glfw::Viewer usage
 	igl::opengl::glfw::Viewer viewer;
 	igl::opengl::glfw::imgui::ImGuiPlugin menu_plugin;
 	viewer.plugins.push_back(&menu_plugin);
@@ -55,6 +59,7 @@ int main(int argc, char* argv[])
 	ui::SolverParams solver_params;
 
 	static int total_n_constraints = 0;
+	static bool always_recompute_normal = false;
 	ui::ObjManager obj_manager{ viewer, gizmo, solver, models, rigid_colliders, obj_init_pos_map, f_exts, user_control, solver_params, total_n_constraints };
 
 	gizmo.callback = ui::gizmo_handler{ viewer, models, rigid_colliders, obj_init_pos_map, user_control };
@@ -63,7 +68,7 @@ int main(int argc, char* argv[])
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
 	viewer.callback_key_pressed = ui::keypress_handler{ gizmo };
 
-	ui::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control };
+	ui::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control, always_recompute_normal };
 	viewer.callback_pre_draw = frame_callback; // frame routine
 
 	const auto HelpMarker = [](const char* desc)
@@ -152,110 +157,7 @@ int main(int argc, char* argv[])
 
 		ImGui::Separator();
 
-		if (ImGui::CollapsingHeader("Model Generator", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			constexpr int OP_ADD = 0;
-			constexpr int OP_RESET = 1;
-			static int add_or_reset = OP_ADD;
-			// user select add model or reset a model
-			if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id))
-			{
-				ImGui::RadioButton("Add", &add_or_reset, OP_ADD); ImGui::SameLine();
-				ImGui::RadioButton("Reset", &add_or_reset, OP_RESET); 
-			}
-
-			ImGui::SetNextItemOpen(true); // Helpful for testing, can be removed later
-			if (ImGui::TreeNode("Cloth"))
-			{
-				static int w = 20;
-				static int h = 20;
-				ImGui::InputInt("width", &w);
-				ImGui::InputInt("height", &h);
-				if (ImGui::Button("Generate"))
-				{
-					auto [V, F] = generator::generate_cloth(w, h);
-					if (add_or_reset == OP_ADD)
-					{
-						obj_manager.add_model(V, F);
-					}
-					if (add_or_reset == OP_RESET)
-					{
-						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F);
-					}
-				}
-				
-				ImGui::TreePop();
-			}
-			if (ImGui::TreeNode("Bar"))
-			{
-				static int w = 5;
-				static int h = 3;
-				static int d = 2;
-				ImGui::InputInt("width", &w);
-				ImGui::InputInt("height", &h);
-				ImGui::InputInt("depth", &d);
-				if (ImGui::Button("Generate"))
-				{
-					auto [V, T, boundary_facets] = generator::generate_bar(w, h, d);
-					if (add_or_reset == OP_ADD)
-					{
-						obj_manager.add_model(V, T, boundary_facets);
-					}
-					if (add_or_reset == OP_RESET)
-					{
-						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, T, boundary_facets);
-					}
-				}
-				
-				ImGui::TreePop();
-			}
-			if (ImGui::TreeNode(".obj File"))
-			{
-				if (ImGui::Button("Load .obj file"))
-				{
-					std::string file_name = igl::file_dialog_open();
-					std::filesystem::path obj_file{ file_name };
-
-					if (std::filesystem::exists(obj_file) && std::filesystem::is_regular_file(obj_file))
-					{
-						Eigen::MatrixXd V;
-						Eigen::MatrixXi F;
-						bool flag = igl::read_triangle_mesh(file_name, V, F);
-						if (flag)
-						{
-							if (add_or_reset == OP_ADD)
-							{
-								obj_manager.add_model(V, F);
-							}
-							if (add_or_reset == OP_RESET)
-							{
-								obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F);
-							}
-						}
-						else
-						{
-							printf("Load .obj file failed!\n");
-						}
-					}
-				}
-				if (ImGui::Button("Load Armadillo")) // TOOD: For test only, must be removed later
-				{
-					Eigen::MatrixXd V;
-					Eigen::MatrixXi F;
-					igl::read_triangle_mesh("/home/xinghai/codes/pd-with-gpu/assets/meshes/armadillo.obj", V, F);
-					if (add_or_reset == OP_ADD)
-					{
-						obj_manager.add_model(V, F);
-					}
-					if (add_or_reset == OP_RESET)
-					{
-						obj_manager.reset_model(user_control.cur_sel_mesh_id, V, F);
-					}
-				}
-
-				ImGui::TreePop();
-			}
-		}
+		ui::deformable_mesh_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
 
 		if (ImGui::CollapsingHeader("Static Object Generator", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -400,6 +302,7 @@ int main(int argc, char* argv[])
 		}
 		if (ImGui::CollapsingHeader("Visualization Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
+			ImGui::Checkbox("Always recompute normals", &always_recompute_normal); ImGui::SameLine();
 			if (ImGui::Button("Recompute normals"))
 			{
 				for (int i = 0; i < viewer.data_list.size(); i++)
@@ -414,6 +317,7 @@ int main(int argc, char* argv[])
 					viewer.data_list[idx].show_lines = value;
 				}
 			);
+			ImGui::Checkbox("Double sided lighting", &viewer.data_list[idx].double_sided);
 			ImGui::InputFloat("Point Size", &viewer.data_list[idx].point_size, 1.f, 10.f);
 
 			int n_vertices, n_faces;
@@ -485,7 +389,7 @@ int main(int argc, char* argv[])
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 			if (ImGui::Button("Simulate 1 Step") && viewer.core().is_animating == false)
 			{
-				ui::tick(viewer, models, physics_params, solver_params, solver, f_exts);
+				ui::tick(viewer, models, physics_params, solver_params, solver, f_exts, always_recompute_normal);
 			}
 			ImGui::PopStyleColor(3);
 
@@ -500,7 +404,10 @@ int main(int argc, char* argv[])
 	// use only for testing
 	[&]()
 	{
-		obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(-1));
+		instancing::Instantiator instantiator { obj_manager, models };
+		
+		instantiator.instance_floor();
+		instantiator.instance_bending_skirt();
 
 		// Eigen::MatrixXd V;
 		// Eigen::MatrixXi F;
@@ -509,14 +416,14 @@ int main(int argc, char* argv[])
 
 		// pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
 
-		static int w = 2;
-		static int h = 3;
-		static int d = 3;
-		auto [V, T, boundary_facets] = generator::generate_bar(w, h, d);
-		obj_manager.add_model(V, T, boundary_facets);
-		pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
+		// static int w = 2;
+		// static int h = 3;
+		// static int d = 3;
+		// auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
 
-		// auto [V, F] = generator::generate_cloth(20, 20);
+		// obj_manager.add_model(V, T, boundary_facets);
+
+		// auto [V, F] = meshgen::generate_cloth(20, 20);
 		// obj_manager.add_model(V, F);
 
 		// pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
@@ -525,9 +432,9 @@ int main(int argc, char* argv[])
 		// model.toggle_vertices_fixed({ 0, 380 }, physics_params.positional_constraint_wc);
 
 		// add edge strain constraints
-		model.set_edge_strain_constraints(physics_params.edge_strain_constraint_wc);
+		// model.set_edge_strain_constraints(physics_params.edge_strain_constraint_wc);
 		// add bending constraint
-		model.set_bending_constraints(physics_params.bending_constraint_wc);
+		// model.set_bending_constraints(physics_params.bending_constraint_wc * 7);
 
 		obj_manager.recalc_total_n_constraints();
 	}();

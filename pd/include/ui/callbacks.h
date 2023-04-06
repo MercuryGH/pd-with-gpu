@@ -272,7 +272,9 @@ namespace ui
 		ui::PhysicsParams& physics_params,
 		ui::SolverParams& solver_params,
 		pd::Solver& solver,
-		std::unordered_map<int, Eigen::MatrixX3d>& f_exts)
+		std::unordered_map<int, Eigen::MatrixX3d>& f_exts,
+		bool always_recompute_normal
+	)
 	{
 		if (models.empty() == true)
 		{
@@ -319,6 +321,10 @@ namespace ui
 			// viewer.data_list[idx].clear();
 			int idx = viewer.mesh_index(id);
 			viewer.data_list[idx].set_vertices(model.positions());
+			if (always_recompute_normal)
+			{
+				viewer.data_list[idx].compute_normals();
+			}
 		}
 	}
 
@@ -332,6 +338,7 @@ namespace ui
 		std::unordered_map<int, Eigen::MatrixX3d>& f_exts;
 		ui::SolverParams& solver_params;
 		const ui::UserControl& user_control;
+		const bool& always_recompute_normal;
 
 		util::CpuTimer timer;
 		static double last_elapse_time;
@@ -361,7 +368,7 @@ namespace ui
 
 			if (viewer.core().is_animating)
 			{
-				tick(viewer, models, physics_params, solver_params, solver, f_exts);
+				tick(viewer, models, physics_params, solver_params, solver, f_exts, always_recompute_normal);
 			}
 
 			// visualzie points

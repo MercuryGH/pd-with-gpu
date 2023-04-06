@@ -15,7 +15,5 @@ namespace primitive
     private:
         Eigen::Vector3f center_point;
         float radius;
-
-        constexpr static float PI = 3.14159f;
     };
 }

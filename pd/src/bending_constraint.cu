@@ -147,21 +147,23 @@ namespace pd
 			const Eigen::Vector3d counter_clockwise_next_pos = positions.row(counter_clockwise_next_pos_idx).transpose();
 			const Eigen::Vector3d clockwise_next_pos = positions.row(clockwise_next_pos_idx).transpose();
 
+			bool cc_collinear_flag = false;
 			if (is_collinear(cur_pos, center_pos, counter_clockwise_next_pos))
 			{
 				printf("Warning: Vertex %d, %d, %d are collinear, the triangulation of the mesh may be wrong!\n", cur_pos_idx, counter_clockwise_next_pos_idx, center_vertex);
-				assert(false);
+				cc_collinear_flag = true;
 			}
+			bool c_collinear_flag = false;
 			if (is_collinear(cur_pos, center_pos, clockwise_next_pos))
 			{
 				printf("Warning: Vertex %d, %d, %d are collinear, the triangulation of the mesh may be wrong!\n", cur_pos_idx, clockwise_next_pos_idx, center_vertex);
-				assert(false);
+				c_collinear_flag = true;
 			}
 
 			const double dis = (cur_pos - center_pos).norm();
 
-			const double tan_alpha = get_half_tan(cur_pos, center_pos, counter_clockwise_next_pos);
-			const double tan_beta = get_half_tan(cur_pos, center_pos, clockwise_next_pos);
+			const double tan_alpha = cc_collinear_flag ? 0 : get_half_tan(cur_pos, center_pos, counter_clockwise_next_pos);
+			const double tan_beta = c_collinear_flag ? 0 : get_half_tan(cur_pos, center_pos, clockwise_next_pos);
 
 			const double coefficient = (tan_alpha + tan_beta) / dis;
 

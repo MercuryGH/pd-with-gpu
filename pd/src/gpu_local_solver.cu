@@ -192,7 +192,7 @@ namespace pd
 		// peak vtable and its content
 		// print_ptr_content((void*)&temp);
 		// print_ptr_content((void*)obj);
-		memcpy((void*)obj, &temp, sizeof(void*)); // Can this only copy vtable
+		memcpy((void*)obj, &temp, sizeof(void*)); // This only rewrites vtable ptr
 	}
 
 	template<typename T>
