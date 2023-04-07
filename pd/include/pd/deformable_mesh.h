@@ -29,19 +29,6 @@ namespace pd
 		friend class AJacobi;
 	public:
 		DeformableMesh() = default;
-		/*
-		DeformableMesh() :
-			p0(p),
-			p(p),
-			f(f),
-			e(e),
-			m(m),
-			v(p.rows(), p.cols()),
-			fixed_vertices()
-		{
-			v.setZero(); // init velocity to 0
-		}
-		*/
 
 		// construct from tetrahedron elements
 		DeformableMesh(const Positions &p, const Elements &t, const Faces &boundary_facets, int obj_id) :
@@ -126,8 +113,6 @@ namespace pd
 		Eigen::MatrixXi get_edges() const { Eigen::MatrixXi edges; igl::edges(e, edges); return edges; }
 		const Eigen::VectorXd& get_masses() const { return m; }
 
-		// const 
-
 		// setters
 		void reset_constraints()
 		{
@@ -145,6 +130,14 @@ namespace pd
 		void set_positions(const Positions& p)
 		{
 			this->p = p;
+		}
+
+		void apply_translation(Eigen::Vector3d translate)
+		{
+			for (int i = 0; i < p.rows(); i++)
+			{
+				p.row(i) += translate.transpose();
+			}
 		}
 
 		int obj_id{ -1 };

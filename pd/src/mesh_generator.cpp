@@ -1,3 +1,4 @@
+#include <iostream>
 #include <meshgen/mesh_generator.h>
 
 #include <igl/boundary_facets.h>
@@ -104,20 +105,6 @@ namespace meshgen {
 			}
 		}
 
-		// for (int i = 0; i < u_n_verts - 1; i++)
-		// {
-		// 	for (int j = 0; j < v_n_verts; j++)
-		// 	{
-		// 		const int v1 = i * v_n_verts + j;
-        //         const int v2 = (i + 1) * v_n_verts + j;
-        //         const int v3 = (i + 1) * v_n_verts + (j + 1) % v_n_verts;
-        //         const int v4 = i * v_n_verts + (j + 1) % v_n_verts;
-
-		// 		faces.emplace_back(v1, v2, v3);
-		// 		faces.emplace_back(v4, v1, v3);
-		// 	}
-		// }
-
 		Eigen::MatrixXd V(vertices.size(), 3);
 		for (int i = 0; i < vertices.size(); i++)
 		{
@@ -135,6 +122,192 @@ namespace meshgen {
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_hemisphere(float radius, int usub, int vsub)
 	{
 		return generate_sphere(radius, usub, vsub, 1.0f, 0.5f);
+	}
+
+	Eigen::Vector3f cylinder_coord(float theta, float height) 
+	{
+		return Eigen::Vector3f(
+			std::sin(theta),
+			height, 
+			std::cos(theta)
+		);
+	}
+
+	/**
+	 * @brief 
+	 * @todo BUG INCLUDED
+	 * 
+	 * @param radius 
+	 * @param usub 
+	 * @param cir_vsub 
+	 * @param urange 
+	 * @param height 
+	 * @param vertex_n_offset 
+	 * @return std::pair<Eigen::MatrixXd, Eigen::MatrixXi> 
+	 */
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_circle_plane(float radius, int usub, int cir_vsub, int urange, float height, int vertex_n_offset)
+	{
+		const int u_n_verts = usub + 1;
+		const int v_n_verts = cir_vsub + 1;
+
+		const int n_verts = u_n_verts * v_n_verts;
+		const int n_quads = usub * cir_vsub;
+		const int n_tris = n_quads * 2;
+
+		const float du = urange / (float)(u_n_verts - 1);
+		const float dv = 1.0 / (float)(v_n_verts - 1);
+
+		Eigen::MatrixXd V(n_verts, 3);
+		Eigen::MatrixXi F(n_tris, 3);
+
+		float u = 0;
+		int face_cnt = 0;
+		for (int i = 0; i < u_n_verts; i++, u += du)
+		{
+			const float theta = u * 2 * M_PI;
+			float v = 0;
+			for (int j = 0; j < v_n_verts; j++, v += dv)
+			{
+				float r = v * radius;
+				Eigen::Vector3f pos = cylinder_coord(theta, height) * radius;
+				pos.y() = height;
+
+				const int idx = i * v_n_verts + j;
+				V.row(idx) << (double)pos.x(), (double)pos.y(), (double)pos.z(); 
+
+				const int offset_idx = vertex_n_offset + idx;
+				if (i < usub && j < cir_vsub)
+				{
+					const int v0 = offset_idx;
+					const int v1 = offset_idx + v_n_verts;
+					const int v2 = offset_idx + v_n_verts + 1;
+					const int v3 = offset_idx + 1;
+
+					F.row(face_cnt++) << v0, v2, v1;
+					F.row(face_cnt++) << v0, v3, v2;
+				}
+			}
+		}
+
+		return { V, F };
+	}
+
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cylinder(float radius, float height, int usub, int vsub, int capsub, float urange, float vrange)
+	{
+		const bool closed_meridian = (urange == 1.0f); // generate circle with closed meridian
+		const int modular = usub * (vsub + 1);
+
+		const int u_n_verts = usub + 1;
+		const int v_n_verts = vsub + 1;
+
+		const int n_body_verts = u_n_verts * v_n_verts;
+		const int n_body_quads = usub * vsub;
+		const int n_body_tris = n_body_quads * 2;
+
+		std::vector<Eigen::RowVector3d> vertices;
+		std::vector<Eigen::RowVector3i> faces;
+
+		const float du = urange / (float)(u_n_verts - 1);
+		const float dv = vrange / (float)(v_n_verts - 1);
+
+		float u = 0;
+		for (int i = 0; i < u_n_verts; i++, u += du)
+		{
+			const float theta = u * 2 * M_PI;
+			float v = 0;
+			for (int j = 0; j < v_n_verts; j++, v += dv)
+			{
+				const float vertex_y = (v - 0.5f) * height;
+				Eigen::Vector3f pos = cylinder_coord(theta, vertex_y);
+				pos = { pos.x() * radius, pos.y(), pos.z() * radius };
+
+				const int idx = i * v_n_verts + j;
+				if (closed_meridian == true && idx >= modular)
+				{
+					continue;
+				}
+
+				vertices.emplace_back(pos.transpose().cast<double>());
+				if (i < usub && j < vsub)
+				{
+					const int v1 = idx;
+					const int v2 = idx + 1;
+					const int v3 = closed_meridian ? (idx + v_n_verts + 1) % modular : idx + v_n_verts + 1;
+					const int v4 = closed_meridian ? (idx + v_n_verts) % modular : idx + v_n_verts;
+                	faces.emplace_back(v1, v3, v2);
+                	faces.emplace_back(v1, v4, v3);
+				}
+			}
+		}
+
+		if (capsub > 0)
+		{
+			vertices.clear();
+			faces.clear();
+			auto [V, F] = generate_circle_plane(radius, usub, capsub, urange, height / 2, vertices.size());
+			for (int i = 0; i < V.rows(); i++)
+			{
+				Eigen::RowVector3d vrowi = V.row(i);
+				vertices.emplace_back(vrowi);
+			}
+			for (int i = 0; i < F.rows(); i++)
+			{
+				Eigen::RowVector3i frowi = F.row(i);
+				faces.emplace_back(frowi);
+			}
+
+			auto [V2, F2] = generate_circle_plane(radius, usub, capsub, urange, -height / 2, vertices.size());
+			for (int i = 0; i < V2.rows(); i++)
+			{
+				vertices.push_back(V2.row(i));
+			}
+			for (int i = 0; i < F2.rows(); i++)
+			{
+				faces.push_back(F2.row(i));
+			}
+		}
+
+		Eigen::MatrixXd V(vertices.size(), 3);
+		for (int i = 0; i < vertices.size(); i++)
+		{
+			V.row(i) = vertices.at(i);
+		}
+		Eigen::MatrixXi F(faces.size(), 3);
+		for (int i = 0; i < faces.size(); i++)
+		{
+			F.row(i) = faces.at(i);
+		}
+
+		return { V, F };
+	}
+
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cone(float radius, float height, int usub, int vsub, int capsub, float urange, float vrange)
+	{
+		const int u_n_verts = usub + 1;
+		const int v_n_verts = vsub + 1;
+
+		const int n_body_verts = u_n_verts * v_n_verts;
+		const int n_body_quads = usub * vsub;
+		const int n_body_tris = n_body_quads * 2;
+
+		std::vector<Eigen::RowVector3d> vertices;
+		std::vector<Eigen::RowVector3i> faces;
+
+		const float du = urange / (float)(u_n_verts - 1);
+		const float dv = vrange / (float)(v_n_verts - 1);
+
+		Eigen::MatrixXd V(vertices.size(), 3);
+		for (int i = 0; i < vertices.size(); i++)
+		{
+			V.row(i) = vertices.at(i);
+		}
+		Eigen::MatrixXi F(faces.size(), 3);
+		for (int i = 0; i < faces.size(); i++)
+		{
+			F.row(i) = faces.at(i);
+		}
+
+		return { V, F };
 	}
 
 	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> generate_bar(int x, int y, int z, int usub, int vsub)

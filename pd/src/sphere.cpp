@@ -6,7 +6,7 @@ namespace primitive
 {
     bool Sphere::collision_handle(Eigen::Vector3f &pos) const
     {
-        constexpr float EPS = 0.05f;
+        const float EPS = 0.05f;
         if ((pos - center_point).norm() < radius + EPS)
         {
             Eigen::Vector3f dir = pos - center_point;

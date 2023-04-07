@@ -11,5 +11,8 @@ namespace meshgen {
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_sphere(float radius, int usub=20, int vsub=16, float urange=1.0f, float vrange=1.0f);
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_hemisphere(float radius, int usub=20, int vsub=16);
 
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cylinder(float radius, float height, int usub=20, int vsub=16, int capsub=0, float urange=1.0f, float vrange=1.0f);
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cone(float radius, float height, int usub=20, int vsub=4, int capsub=0, float urange=1.0f, float vrange=1.0f);
+
 	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> generate_bar(int x, int y, int z, int usub=2, int vsub=2);
 }

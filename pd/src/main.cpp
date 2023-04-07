@@ -1,8 +1,8 @@
 #include <array>
-#include <filesystem>
 #include <pd/constraint.h>
 #include <pd/deformable_mesh.h>
 #include <pd/solver.h>
+#include <pd/tick.h>
 
 #include <ui/obj_manager.h>
 #include <ui/physics_params.h>
@@ -21,7 +21,7 @@
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
 #include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
 
-#include <instancing/instancing.h>
+#include <instancing/instantiator.h>
 
 #include <util/gpu_helper.h>
 
@@ -36,6 +36,9 @@ int main(int argc, char* argv[])
 	menu_plugin.widgets.push_back(&main_menu);
 	igl::opengl::glfw::imgui::ImGuiMenu obj_menu;
 	menu_plugin.widgets.push_back(&obj_menu);
+	igl::opengl::glfw::imgui::ImGuiMenu instantiator_menu;
+	menu_plugin.widgets.push_back(&instantiator_menu);
+
 	// Only 1 gizmo during simulation
 	igl::opengl::glfw::imgui::ImGuizmoWidget gizmo;
 	gizmo.visible = false;
@@ -62,341 +65,68 @@ int main(int argc, char* argv[])
 	static bool always_recompute_normal = false;
 	ui::ObjManager obj_manager{ viewer, gizmo, solver, models, rigid_colliders, obj_init_pos_map, f_exts, user_control, solver_params, total_n_constraints };
 
-	gizmo.callback = ui::gizmo_handler{ viewer, models, rigid_colliders, obj_init_pos_map, user_control };
+	gizmo.callback = ui::gizmo_handler{ viewer, models, rigid_colliders, obj_manager, obj_init_pos_map, user_control, viewer.core().is_animating };
 	viewer.callback_mouse_down = ui::mouse_down_handler{ models, user_control };
 	viewer.callback_mouse_move = ui::mouse_move_handler{ models, user_control, physics_params, f_exts };
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
 	viewer.callback_key_pressed = ui::keypress_handler{ gizmo };
 
-	ui::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control, always_recompute_normal };
+	pd::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control, always_recompute_normal };
 	viewer.callback_pre_draw = frame_callback; // frame routine
 
-	const auto HelpMarker = [](const char* desc)
-	{
-		ImGui::TextDisabled("(?)");
-		constexpr auto ImGuiHoveredFlags_DelayShort = 1 << 12;
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
-		{
-			ImGui::BeginTooltip();
-			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted(desc);
-			ImGui::PopTextWrapPos();
-			ImGui::EndTooltip();
-		}
-	};
+	instancing::Instantiator instantiator { obj_manager, models };
 
+	const float window_widths[] = {200, 120, 300};
+	const float& viewport_horizontal_start = viewer.core().viewport(0);
+	const float& viewport_horizontal_end = viewer.core().viewport(2);
+	const float& viewport_vertical_start = viewer.core().viewport(1);
+	const float& viewport_vertical_end = viewer.core().viewport(3);
 	obj_menu.callback_draw_viewer_window = [&]()
 	{
-		ImGui::SetNextWindowPos(ImVec2(viewer.core().viewport(2) - 200, viewer.core().viewport(1)), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowSize(ImVec2(200, viewer.core().viewport(3)), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(viewport_horizontal_end - window_widths[0], viewport_vertical_start));
+		ImGui::SetNextWindowSize(ImVec2(window_widths[0], viewport_vertical_end));
 
 		ImGui::Begin("Object Manager");
 
-		if (ImGui::BeginListBox("deformable objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
-		{
-			for (const auto& [id, model] : models)
-			{
-				const std::string model_name = std::string("Mesh ") + std::to_string(id);
+		ui::mesh_manager_menu("Deformable", models, obj_manager, user_control, viewer.core().is_animating);
+		ui::mesh_manager_menu("Collider", rigid_colliders, obj_manager, user_control, viewer.core().is_animating);
 
-				const bool is_selected = (user_control.cur_sel_mesh_id == id);
-				if (ImGui::Selectable(model_name.c_str(), is_selected))
-				{
-					user_control.cur_sel_mesh_id = id;
-					user_control.selected_vertex_idx = 0;
-				}
-				if (is_selected)
-				{
-					if ((obj_manager.is_deformable_model(id) && viewer.core().is_animating) == false)
-					{
-						obj_manager.bind_gizmo(id);  // To rebind gizmo in animating causes weird behavior sometimes 
-					}
-					ImGui::SetItemDefaultFocus();
-				}
-			}
-			ImGui::EndListBox();
-		}
-		if (ImGui::BeginListBox("rigid collider objects", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
-		{
-			for (const auto& [id, collider] : rigid_colliders)
-			{
-				const std::string model_name = std::string("Collider ") + std::to_string(id);
-
-				const bool is_selected = (user_control.cur_sel_mesh_id == id);
-				if (ImGui::Selectable(model_name.c_str(), is_selected))
-				{
-					user_control.cur_sel_mesh_id = id;
-				}
-				if (is_selected)
-				{
-					ImGui::SetItemDefaultFocus();
-					obj_manager.bind_gizmo(id);
-				}
-			}
-			ImGui::EndListBox();
-		}
-
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-		if (ImGui::Button("remove selected mesh"))
-		{
-			if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id))
-			{
-		   		obj_manager.remove_model(user_control.cur_sel_mesh_id);
-			}
-			else if (obj_manager.is_rigid_collider(user_control.cur_sel_mesh_id))
-			{
-				obj_manager.remove_rigid_collider(user_control.cur_sel_mesh_id);
-			}
-			else 
-			{
-				printf("Error: Invalid mesh to remove\n!");
-			}
-		}
-		ImGui::PopStyleColor(3);
+		ui::mesh_remove_menu(obj_manager, user_control.cur_sel_mesh_id);
 
 		ImGui::Separator();
 
 		ui::deformable_mesh_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
+		ui::collider_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
 
-		if (ImGui::CollapsingHeader("Static Object Generator", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			ImGui::SetNextItemOpen(true); // Helpful for testing, can be removed later
-			if (ImGui::TreeNode("Floor"))
-			{
-				static float y = -1;
-				ImGui::InputFloat("y", &y);
+		ui::set_constraints_menu(obj_manager, physics_params, user_control);
 
-				if (ImGui::Button("Generate"))
-				{
-					obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(y));
-				}
+		ImGui::End();
+	};
 
-				ImGui::TreePop();
-			}
+	instantiator_menu.callback_draw_viewer_window = [&]()
+	{
+		constexpr float window_height = 80;
+		ImGui::SetNextWindowPos(ImVec2(viewport_horizontal_end - window_widths[0] - window_widths[1], viewport_vertical_start));
+		ImGui::SetNextWindowSize(ImVec2(window_widths[1], window_height));
 
-			if (ImGui::TreeNode("Sphere"))
-			{
-				static float center_radius[4] = { 0.2f, 0.2f, 0.2f, 0.2f };
-            	ImGui::InputFloat3("center", center_radius);
-				ImGui::InputFloat("radius", &center_radius[3]);
+		ImGui::Begin("Instanciator");
 
-				if (ImGui::Button("Generate"))
-				{
-					obj_manager.add_rigid_collider(std::make_unique<primitive::Sphere>(
-						Eigen::Vector3f(center_radius),
-						center_radius[3]
-					));
-				}
-
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNode("Block"))
-			{
-				static float center[3] = { 0.5f, 0.5f, 0.5f };
-				static float xyz[3] = { 0.4f, 0.5f, 0.6f };
-            	ImGui::InputFloat3("center", center);
-            	ImGui::InputFloat3("xyz", xyz);
-
-				if (ImGui::Button("Generate"))
-				{
-					obj_manager.add_rigid_collider(std::make_unique<primitive::Block>(
-						Eigen::Vector3f(center),
-						Eigen::Vector3f(xyz)
-					));
-				}
-
-				ImGui::TreePop();
-			}
-		}
-
-		if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id) && ImGui::CollapsingHeader("Constraint Setting", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			static bool enable_edge_strain_constraint = false;
-			static bool enable_bending_constraint = false;
-			static bool enable_tet_strain_constraint = false;
-			static bool enable_positional_constraint = false;
-
-			ImGui::SetNextItemOpen(true); // can be removed later
-			if (ImGui::TreeNode("Edge Strain"))
-			{
-				// Edge length params
-				ImGui::InputFloat("wc", &physics_params.edge_strain_constraint_wc, 1.f, 10.f, "%.1f");
-				ImGui::Checkbox("Enable", &enable_edge_strain_constraint);
-				ImGui::TreePop();
-			}
-			if (ImGui::TreeNode("Bending"))
-			{
-				ImGui::InputFloat("wc", &physics_params.bending_constraint_wc, 1e-9f, 1e-5f, "%.9f");
-				ImGui::Checkbox("Enable", &enable_bending_constraint);
-				ImGui::TreePop();
-			}
-			if (ImGui::TreeNode("Tet Strain"))
-			{
-				ImGui::InputFloat("wc", &physics_params.tet_strain_constraint_wc, 1.f, 10.f, "%.1f");
-				ImGui::Checkbox("Enable", &enable_tet_strain_constraint);
-				ImGui::TreePop();
-			}
-			if (ImGui::TreeNode("Positional"))
-			{
-				HelpMarker("Shift + LMC to toggle fix/unfix to a vertex.");
-				std::string vertices_to_be_toggled = "";
-				for (const int vi : user_control.toggle_fixed_vertex_idxs)
-				{
-					vertices_to_be_toggled += std::to_string(vi) + " ";
-				}
-				ImGui::TextWrapped("For mesh %d, Vertex indices to be toggled: %s", user_control.cur_sel_mesh_id, vertices_to_be_toggled.c_str());
-				// Pinned 
-				ImGui::InputFloat("wc", &physics_params.positional_constraint_wc, 10.f, 100.f, "%.1f");
-				ImGui::Checkbox("Enable", &enable_positional_constraint);
-				ImGui::TreePop();
-			}
-
-			if (ImGui::Button("Apply Constraints") && obj_manager.is_deformable_model(user_control.cur_sel_mesh_id))
-			{
-				obj_manager.apply_constraints(
-					user_control.cur_sel_mesh_id,
-					physics_params,
-					enable_edge_strain_constraint,
-					enable_bending_constraint,
-					enable_tet_strain_constraint,
-					enable_positional_constraint
-				);
-			}
-			ImGui::Text("#Constraints = %d", total_n_constraints);
-		}
+		ui::instantiator_menu(instantiator);
 
 		ImGui::End();
 	};
 
 	main_menu.callback_draw_viewer_window = [&]() 
 	{
-		ImGui::SetNextWindowPos(ImVec2(viewer.core().viewport(0), viewer.core().viewport(1)), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowSize(ImVec2(300, viewer.core().viewport(3)), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(viewport_horizontal_start, viewport_vertical_start));
+		ImGui::SetNextWindowSize(ImVec2(window_widths[2], viewport_vertical_end));
+
 		ImGui::Begin("PD Panel");
-		// ImGui::Text("viewer.core().viewport = %f, %f, %f, %f\n", 
-		// 	viewer.core().viewport(0),  // 0
-		// 	viewer.core().viewport(1),  // 0
-		// 	viewer.core().viewport(2),  // 1280
-		// 	viewer.core().viewport(3)   // 800
-		// );
 
-		if (ImGui::CollapsingHeader("Physics Setting"), ImGuiTreeNodeFlags_DefaultOpen)
-		{
-			// physics params
-			ImGui::Checkbox("Enable Gravity", &physics_params.enable_gravity);
+		ui::physics_menu(physics_params, user_control);
+		ui::visualization_menu(viewer, models, always_recompute_normal, user_control.cur_sel_mesh_id);
 
-			ImGui::InputFloat("mass per vertex", &physics_params.mass_per_vertex, 0.01f, 0.1f, "%.3f");
-		}
-		if (ImGui::CollapsingHeader("Picking Setting"), ImGuiTreeNodeFlags_DefaultOpen)
-		{
-			HelpMarker("Ctrl + LMC to apply external force to the model.");
-			ImGui::Text("State: %s", user_control.apply_ext_force ? "Applying" : "Not applying");
-			if (user_control.apply_ext_force)
-			{
-				ImGui::Text("Vertex forced: %d", user_control.ext_forced_vertex_idx);
-			}
-
-			ImGui::InputFloat("dragging force", &physics_params.external_force_val, 1.f, 10.f, "%.2f");
-		}
-		if (ImGui::CollapsingHeader("Visualization Setting"), ImGuiTreeNodeFlags_DefaultOpen)
-		{
-			ImGui::Checkbox("Always recompute normals", &always_recompute_normal); ImGui::SameLine();
-			if (ImGui::Button("Recompute normals"))
-			{
-				for (int i = 0; i < viewer.data_list.size(); i++)
-					viewer.data_list[i].compute_normals();
-			}
-
-			const int idx = viewer.mesh_index(user_control.cur_sel_mesh_id);
-			ImGui::Checkbox("Wireframe", [&]() { 
-					return viewer.data_list[idx].show_lines != 0; 
-				},
-				[&](bool value) {
-					viewer.data_list[idx].show_lines = value;
-				}
-			);
-			ImGui::Checkbox("Double sided lighting", &viewer.data_list[idx].double_sided);
-			ImGui::InputFloat("Point Size", &viewer.data_list[idx].point_size, 1.f, 10.f);
-
-			int n_vertices, n_faces;
-			n_vertices = n_faces = 0;
-			for (const auto& [id, model] : models)
-			{
-				n_vertices += model.positions().rows();
-				n_faces += model.faces().rows();
-			}
-			ImGui::Text("#Vertex = %d", n_vertices);
-			ImGui::Text("#Face = %d", n_faces);
-			// ImGui::Text("#DOF = %d", model.positions().rows() * 3 - model.n_edges);
-		}
-
-		if (ImGui::CollapsingHeader("Simulating Control"), ImGuiTreeNodeFlags_DefaultOpen)
-		{
-			ImGui::Text("Solver is %s", solver.dirty ? "not ready." : "ready.");
-
-			ImGui::Checkbox("Use GPU for local step", &solver_params.use_gpu_for_local_step);
-			ImGui::InputFloat("timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
-			ImGui::InputInt("solver #itr", &solver_params.n_itr_solver_iterations);
-			ImGui::InputInt("PD #itr", &solver_params.n_solver_pd_iterations);
-
-			// Solver Selector
-			const char* items[] = { "Direct", "Parallel Jacobi", "A-Jacobi-1", "A-Jacobi-2", "A-Jacobi-3" };
-			static const char* cur_select_item = "Direct";
-			if (ImGui::BeginCombo("cur solver", cur_select_item))
-			{
-				for (int i = 0; i < IM_ARRAYSIZE(items); i++)
-				{
-					bool is_selected = (cur_select_item == items[i]);
-					if (ImGui::Selectable(items[i], is_selected))
-					{
-						// If solver changed
-						if (solver_params.selected_solver != static_cast<ui::LinearSysSolver>(i))
-						{
-							solver.algo_changed = true;
-							solver.dirty = true;
-						}
-
-						// change solver
-						cur_select_item = items[i];
-						solver_params.selected_solver = static_cast<ui::LinearSysSolver>(i);
-					}
-					if (is_selected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-				ImGui::EndCombo();
-			}
-
-			ImGui::Separator();
-			// statistics
-			if (viewer.core().is_animating)
-			{
-				ImGui::Text("FPS = %lf", 1000.0 / frame_callback.last_elapse_time);
-				ImGui::Text("Last frame time elapsed: %lf ms", frame_callback.last_elapse_time);
-			}
-			//ImGui::Text("Time for 1 tick: %lf ms", frame_callback.last_elapse_time);
-			ImGui::Text("Time for global step: %lf ms", frame_callback.last_global_step_time);
-			ImGui::Text("Time for local step: %lf ms", frame_callback.last_local_step_time);
-			ImGui::Text("Time for precomputation: %lf ms", frame_callback.last_precomputation_time);
-
-			ImGui::Separator();
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-			if (ImGui::Button("Simulate 1 Step") && viewer.core().is_animating == false)
-			{
-				ui::tick(viewer, models, physics_params, solver_params, solver, f_exts, always_recompute_normal);
-			}
-			ImGui::PopStyleColor(3);
-
-			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0x66, 0xCC, 0xFF, 0xFF));
-			ImGui::Checkbox("Auto Simulate!", &viewer.core().is_animating);
-			ImGui::PopStyleColor();
-		}
+		ui::simulation_ctrl_menu(solver, solver_params, physics_params, viewer, frame_callback, models, f_exts, always_recompute_normal);
 
 		ImGui::End();
 	};
@@ -404,39 +134,9 @@ int main(int argc, char* argv[])
 	// use only for testing
 	[&]()
 	{
-		instancing::Instantiator instantiator { obj_manager, models };
-		
 		instantiator.instance_floor();
-		instantiator.instance_bending_skirt();
-
-		// Eigen::MatrixXd V;
-		// Eigen::MatrixXi F;
-		// igl::read_triangle_mesh("/home/xinghai/codes/pd-with-gpu/assets/meshes/armadillo.obj", V, F);
-		// obj_manager.add_model(V, F);
-
-		// pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
-
-		// static int w = 2;
-		// static int h = 3;
-		// static int d = 3;
-		// auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
-
-		// obj_manager.add_model(V, T, boundary_facets);
-
-		// auto [V, F] = meshgen::generate_cloth(20, 20);
-		// obj_manager.add_model(V, F);
-
-		// pd::DeformableMesh& model = models[user_control.cur_sel_mesh_id];
-
-		// // add positional constraint
-		// model.toggle_vertices_fixed({ 0, 380 }, physics_params.positional_constraint_wc);
-
-		// add edge strain constraints
-		// model.set_edge_strain_constraints(physics_params.edge_strain_constraint_wc);
-		// add bending constraint
-		// model.set_bending_constraints(physics_params.bending_constraint_wc * 7);
-
-		obj_manager.recalc_total_n_constraints();
+		// instantiator.instance_cylinder();
+		// instantiator.instance_test();
 	}();
 
 	viewer.launch(true, false, "Projective Dynamics", 0, 0);
