@@ -137,13 +137,23 @@ namespace ui
 		reset_simulation_model_info(obj_id);
 	}
 
-	void ObjManager::remove_model(int obj_id)
+	void ObjManager::recalc_data()
 	{
-		if (models.size() <= 1)
+		recalc_total_n_constraints();
+
+		// select the first mesh
+		user_control.cur_sel_mesh_id = models.begin()->first;
+		user_control.selected_vertex_idx = 0;
+		bind_gizmo(user_control.cur_sel_mesh_id);
+	}
+
+	bool ObjManager::remove_model(int obj_id, bool recalc)
+	{
+		if (is_deformable_model(obj_id) == false || models.size() <= 1)
 		{
-			printf("Error: Cannot remove the last mesh!\n");
-			return;
+			return false;
 		}
+
 		int idx = viewer.mesh_index(obj_id);
 		viewer.erase_mesh(idx);
 
@@ -154,15 +164,15 @@ namespace ui
 		// reset solver
 		solver.dirty = true;
 
-		recalc_total_n_constraints();
+		if (recalc)
+		{
+			recalc_data();
+		}
 
-		// select the first mesh
-		user_control.cur_sel_mesh_id = models.begin()->first;
-		user_control.selected_vertex_idx = 0;
-		bind_gizmo(user_control.cur_sel_mesh_id);
+		return true;
 	}
 
-	void ObjManager::add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive)
+	int ObjManager::add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive)
 	{
 		Eigen::MatrixXd V;
 		Eigen::MatrixXi F;
@@ -195,14 +205,14 @@ namespace ui
 			gizmo.visible = true;
 			bind_gizmo(obj_id);
 		}
+		return obj_id;
 	}
 
-	void ObjManager::remove_rigid_collider(int obj_id)
+	bool ObjManager::remove_rigid_collider(int obj_id, bool recalc)
 	{
-	    if (rigid_colliders.size() <= 1)
+		if (is_rigid_collider(obj_id) == false || rigid_colliders.size() <= 1)
 		{
-			printf("Error: Cannot remove the last mesh!\n");
-			return;
+			return false;
 		}
 		int idx = viewer.mesh_index(obj_id);
 		viewer.erase_mesh(idx);
@@ -210,9 +220,11 @@ namespace ui
 		obj_init_pos_map.erase(obj_id);
 		rigid_colliders.erase(obj_id);
 
-		// select the first collider
-		user_control.cur_sel_mesh_id = rigid_colliders.begin()->first;
-		bind_gizmo(user_control.cur_sel_mesh_id);
+		if (recalc)
+		{
+			recalc_data();
+		}
+		return true;
 	}
 
 	void ObjManager::apply_constraints(
@@ -252,6 +264,16 @@ namespace ui
 		}
 
 		recalc_total_n_constraints();
+	}
+
+	bool ObjManager::reset_all()
+	{
+		while (rigid_colliders.size() > 1 && remove_rigid_collider(rigid_colliders.begin()->first, false));
+		while (models.size() > 1 && remove_model(models.begin()->first, false));
+
+		recalc_data();
+
+		return true;
 	}
 
 	void ObjManager::bind_gizmo(int obj_id)

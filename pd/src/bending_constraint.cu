@@ -101,9 +101,10 @@ namespace pd
 			const int v = vertices[i];
 
 			// discard terms between adjacent vertices since they are rather too small
+			// this is an approximation and also an optimization
 			for (int j = 0; j < 3; j++)
 			{
-				float val = laplacian_weights[0] * laplacian_weights[i] * wc;
+				const float val = laplacian_weights[0] * laplacian_weights[i] * wc;
 				// printf("%f, %f, %f\n", laplacian_weights[0], laplacian_weights[i], wc);
 				// printf("%d-%d adds %f\n", center_vertex, v, val);
 				triplets.emplace_back(

@@ -1,4 +1,8 @@
-#include <array>
+#include <igl/opengl/glfw/Viewer.h>
+#include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
+#include <igl/opengl/glfw/imgui/ImGuiMenu.h>
+#include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
+
 #include <pd/constraint.h>
 #include <pd/deformable_mesh.h>
 #include <pd/solver.h>
@@ -8,18 +12,12 @@
 #include <ui/physics_params.h>
 #include <ui/solver_params.h>
 #include <ui/user_control.h>
-#include <ui/callbacks.h>
 #include <ui/menus.h>
+#include <ui/input_callbacks.h>
 
 #include <meshgen/mesh_generator.h>
 
 #include <primitive/primitive.h>
-#include <primitive/floor.h>
-
-#include <igl/opengl/glfw/Viewer.h>
-#include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
-#include <igl/opengl/glfw/imgui/ImGuiMenu.h>
-#include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
 
 #include <instancing/instantiator.h>
 
@@ -38,6 +36,10 @@ int main(int argc, char* argv[])
 	menu_plugin.widgets.push_back(&obj_menu);
 	igl::opengl::glfw::imgui::ImGuiMenu instantiator_menu;
 	menu_plugin.widgets.push_back(&instantiator_menu);
+	igl::opengl::glfw::imgui::ImGuiMenu constraint_menu;
+	menu_plugin.widgets.push_back(&constraint_menu);
+	igl::opengl::glfw::imgui::ImGuiMenu component_menu;
+	menu_plugin.widgets.push_back(&component_menu);
 
 	// Only 1 gizmo during simulation
 	igl::opengl::glfw::imgui::ImGuizmoWidget gizmo;
@@ -81,55 +83,13 @@ int main(int argc, char* argv[])
 	const float& viewport_horizontal_end = viewer.core().viewport(2);
 	const float& viewport_vertical_start = viewer.core().viewport(1);
 	const float& viewport_vertical_end = viewer.core().viewport(3);
-	obj_menu.callback_draw_viewer_window = [&]()
-	{
-		ImGui::SetNextWindowPos(ImVec2(viewport_horizontal_end - window_widths[0], viewport_vertical_start));
-		ImGui::SetNextWindowSize(ImVec2(window_widths[0], viewport_vertical_end));
 
-		ImGui::Begin("Object Manager");
+	obj_menu.callback_draw_viewer_window = ui::obj_menu_window_handler{ viewer, obj_manager, user_control };
+	constraint_menu.callback_draw_viewer_window = ui::constraint_menu_window_handler{ viewer, obj_manager, user_control, physics_params };
+	component_menu.callback_draw_viewer_window = ui::component_menu_window_handler{ viewer };
+	instantiator_menu.callback_draw_viewer_window = ui::instantiator_menu_window_handler{ viewer, instantiator };
 
-		ui::mesh_manager_menu("Deformable", models, obj_manager, user_control, viewer.core().is_animating);
-		ui::mesh_manager_menu("Collider", rigid_colliders, obj_manager, user_control, viewer.core().is_animating);
-
-		ui::mesh_remove_menu(obj_manager, user_control.cur_sel_mesh_id);
-
-		ImGui::Separator();
-
-		ui::deformable_mesh_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
-		ui::collider_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
-
-		ui::set_constraints_menu(obj_manager, physics_params, user_control);
-
-		ImGui::End();
-	};
-
-	instantiator_menu.callback_draw_viewer_window = [&]()
-	{
-		constexpr float window_height = 80;
-		ImGui::SetNextWindowPos(ImVec2(viewport_horizontal_end - window_widths[0] - window_widths[1], viewport_vertical_start));
-		ImGui::SetNextWindowSize(ImVec2(window_widths[1], window_height));
-
-		ImGui::Begin("Instanciator");
-
-		ui::instantiator_menu(instantiator);
-
-		ImGui::End();
-	};
-
-	main_menu.callback_draw_viewer_window = [&]() 
-	{
-		ImGui::SetNextWindowPos(ImVec2(viewport_horizontal_start, viewport_vertical_start));
-		ImGui::SetNextWindowSize(ImVec2(window_widths[2], viewport_vertical_end));
-
-		ImGui::Begin("PD Panel");
-
-		ui::physics_menu(physics_params, user_control);
-		ui::visualization_menu(viewer, models, always_recompute_normal, user_control.cur_sel_mesh_id);
-
-		ui::simulation_ctrl_menu(solver, solver_params, physics_params, viewer, frame_callback, models, f_exts, always_recompute_normal);
-
-		ImGui::End();
-	};
+	main_menu.callback_draw_viewer_window = ui::pd_menu_window_handler{ viewer, obj_manager, solver, solver_params, physics_params, user_control, frame_callback, f_exts, gizmo, always_recompute_normal };
 
 	// use only for testing
 	[&]()

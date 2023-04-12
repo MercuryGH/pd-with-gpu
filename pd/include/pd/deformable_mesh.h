@@ -39,12 +39,12 @@ namespace pd
 			m(p.rows()),
 			v(p.rows(), p.cols()),
 			fixed_vertices(),
-			obj_id(obj_id)
+			obj_id(obj_id),
+			is_tet_mesh(true)
 		{
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
 
-			// Bug: block(5,3,4) etc. is a vertex non-manifold
 			Eigen::VectorXi indicator;
 			if (igl::is_vertex_manifold(boundary_facets, indicator) == false)
 			{
@@ -55,7 +55,8 @@ namespace pd
 				printf("Warning: Non edge manifold mesh detected!\n");
 			}
 
-			igl::adjacency_list(boundary_facets, adj_list, true);
+			// do not construct ordered adj list since the boundary of tet mesh may be non-manifold
+			igl::adjacency_list(boundary_facets, adj_list, false);
 		}
 
 		// construct from triangle elements
@@ -67,11 +68,11 @@ namespace pd
 			m(p.rows()),
 			v(p.rows(), p.cols()),
 			fixed_vertices(),
-			obj_id(obj_id)
+			obj_id(obj_id),
+			is_tet_mesh(false)
 		{
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
-
 			
 			Eigen::VectorXi indicator;
 			if (igl::is_vertex_manifold(f, indicator) == false)
@@ -166,6 +167,7 @@ namespace pd
 		// Dimensions may differ between different elements.
 		// We need to restore the edges information from the elements matrix.
 		Elements e; 
+		bool is_tet_mesh{ false };
 
 		Masses m;      // Per-vertex mass
 		Velocities v;  // Per-vertex velocity

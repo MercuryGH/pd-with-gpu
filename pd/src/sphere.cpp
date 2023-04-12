@@ -7,12 +7,12 @@ namespace primitive
     bool Sphere::collision_handle(Eigen::Vector3f &pos) const
     {
         const float EPS = 0.05f;
-        if ((pos - center_point).norm() < radius + EPS)
+        Eigen::Vector3f diff = pos - center_point;
+        if (diff.norm() < radius + EPS)
         {
-            Eigen::Vector3f dir = pos - center_point;
-            dir.normalize();
-            dir *= radius + EPS;
-            pos = center_point + dir;
+            diff.normalize();
+            diff *= radius + EPS;
+            pos = center_point + diff;
             return true;
         }
         return false;

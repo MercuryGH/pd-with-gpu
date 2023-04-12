@@ -9,7 +9,8 @@ namespace primitive
         NONE,
         BLOCK,
         FLOOR,
-        SPHERE
+        SPHERE,
+        TORUS
     };
 
     class Primitive

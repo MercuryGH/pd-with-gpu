@@ -25,6 +25,13 @@ namespace pd {
 		bool always_recompute_normal
 	);
 
+	void draw_debug_info(
+		igl::opengl::glfw::Viewer& viewer,
+		std::unordered_map<int, pd::DeformableMesh>& models,
+		int sel_mesh_id,
+		int sel_vertex_idx
+	);
+
 	// Frame routine before rendering
 	struct pre_draw_handler
 	{

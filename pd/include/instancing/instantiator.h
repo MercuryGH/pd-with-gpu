@@ -8,6 +8,8 @@ namespace instancing {
         ui::ObjManager& obj_manager;
 	    std::unordered_map<int, pd::DeformableMesh>& models;
 
+        void reset_all();
+
         void instance_floor();
 
         void instance_bending_hemisphere();

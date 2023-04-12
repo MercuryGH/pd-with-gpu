@@ -7,6 +7,11 @@
 #include <primitive/sphere.h>
 
 namespace instancing {
+    void Instantiator::reset_all()
+    {
+        obj_manager.reset_all();
+    }
+
     void Instantiator::instance_floor()
     {
         obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(-1));
@@ -20,6 +25,7 @@ namespace instancing {
 
         model.set_edge_strain_constraints(100.f);
 
+        // maintain curvature
         // model.set_bending_constraints(5e-7f * 13);
 
         // small curvature
@@ -103,7 +109,7 @@ namespace instancing {
 
     void Instantiator::instance_armadillo()
     {
-        instance_obj_model("/home/xinghai/codes/pd-with-gpu/assets/meshes/armadillo.obj");
+        instance_obj_model("../assets/meshes/armadillo.obj");
     }
 
     void Instantiator::instance_bunny()
@@ -115,7 +121,7 @@ namespace instancing {
     {
         const int usub = 20;
         const int vsub = 16;
-        auto [V, F] = meshgen::generate_cylinder(0.5f, 3, usub, vsub, 4);
+        auto [V, F] = meshgen::generate_cone(0.5f, 3, usub, vsub);
         int id = obj_manager.add_model(V, F);
     }
 

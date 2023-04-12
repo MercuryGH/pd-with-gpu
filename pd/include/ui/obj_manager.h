@@ -11,6 +11,7 @@
 #include <primitive/block.h>
 #include <primitive/sphere.h>
 #include <primitive/floor.h>
+#include <primitive/torus.h>
 
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
@@ -46,6 +47,8 @@ namespace ui
 		void add_simulation_model_info(int obj_id);
 		void reset_simulation_model_info(int obj_id);
 
+		void recalc_data();
+
 	public:	
 	    // add triangle mesh model
 		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
@@ -55,10 +58,10 @@ namespace ui
 		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 		void reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);
 
-		void remove_model(int obj_id);
+		bool remove_model(int obj_id, bool recalc=true);
 
-		void add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive);
-		void remove_rigid_collider(int obj_id);
+		int add_rigid_collider(std::unique_ptr<primitive::Primitive> primitive);
+		bool remove_rigid_collider(int obj_id, bool recalc=true);
 
 		void apply_constraints(
 			int obj_id,
@@ -68,6 +71,8 @@ namespace ui
 			bool enable_tet_strain_constraint,
 			bool enable_positional_constraint
 		);
+
+		bool reset_all();
 
 		// Bind the gizmo to a new mesh when needed.
 		void bind_gizmo(int obj_id);

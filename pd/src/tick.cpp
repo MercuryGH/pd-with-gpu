@@ -64,6 +64,52 @@ namespace pd {
 		}
 	}
 
+    void draw_debug_info(
+		igl::opengl::glfw::Viewer& viewer,
+		std::unordered_map<int, pd::DeformableMesh>& models,
+		int sel_mesh_id,
+		int sel_vertex_idx
+	)
+	{
+		// visualzie points
+        const Eigen::RowVector3d RED_COLOR{ 1., 0., 0. };
+        const Eigen::RowVector3d SUB_YELLOW_COLOR{ 0.3, 0.6, 0 };
+        const Eigen::RowVector3d YELLOW_COLOR{ 0.6, 1, 0 };
+        for (const auto& [id, model] : models)
+        {
+            int idx = viewer.mesh_index(id);
+            viewer.data_list[idx].clear_points();
+            viewer.data_list[idx].clear_labels();
+            for (const int vi : model.get_fixed_vertices())
+            {
+                viewer.data_list[idx].add_points(model.positions().row(vi), RED_COLOR);
+            }
+
+            if (sel_mesh_id == id)
+            {
+                Eigen::RowVector3d pos = model.positions().row(sel_vertex_idx);
+                viewer.data_list[idx].add_points(pos, YELLOW_COLOR);
+
+                const Eigen::RowVector3d normal = viewer.data_list[idx].V_normals.row(sel_vertex_idx);
+                const Eigen::RowVector3d offset = 0.01 * normal;
+                viewer.data_list[idx].add_label(pos + offset, std::to_string(sel_vertex_idx));
+
+                int cnt = 1;
+                for (const int v : model.get_adj_list().at(sel_vertex_idx))
+                {
+                    const Eigen::RowVector3d normal = viewer.data_list[idx].V_normals.row(v);
+                    const Eigen::RowVector3d offset = 0.01 * normal;
+
+                    Eigen::RowVector3d v_p = model.positions().row(v);
+                    viewer.data_list[idx].add_points(v_p, SUB_YELLOW_COLOR);
+                    std::string neighbor_vertex_prompt = std::to_string(cnt) + "-" + std::to_string(v);
+                    cnt++;
+                    viewer.data_list[idx].add_label(v_p + offset, neighbor_vertex_prompt);
+                }
+            }
+        }
+	}
+
     // Frame routine before rendering
     bool pre_draw_handler::operator()(igl::opengl::glfw::Viewer& viewer)
     {
@@ -90,45 +136,13 @@ namespace pd {
             tick(viewer, models, physics_params, solver_params, solver, f_exts, always_recompute_normal);
         }
 
-        // visualzie points
-        const Eigen::RowVector3d RED_COLOR{ 1., 0., 0. };
-        const Eigen::RowVector3d SUB_YELLOW_COLOR{ 0.3, 0.6, 0 };
-        const Eigen::RowVector3d YELLOW_COLOR{ 0.6, 1, 0 };
-        for (const auto& [id, model] : models)
-        {
-            int idx = viewer.mesh_index(id);
-            viewer.data_list[idx].clear_points();
-            viewer.data_list[idx].clear_labels();
-            for (const int vi : model.get_fixed_vertices())
-            {
-                viewer.data_list[idx].add_points(model.positions().row(vi), RED_COLOR);
-            }
-
-            if (user_control.cur_sel_mesh_id == id)
-            {
-                Eigen::RowVector3d pos = model.positions().row(user_control.selected_vertex_idx);
-                viewer.data_list[idx].add_points(pos, YELLOW_COLOR);
-
-                const Eigen::RowVector3d OFFSET = Eigen::RowVector3d(0, 0.005, 0);
-                viewer.data_list[idx].add_label(pos + OFFSET, std::to_string(user_control.selected_vertex_idx));
-
-                int cnt = 1;
-                for (const int v : model.get_adj_list().at(user_control.selected_vertex_idx))
-                {
-                    Eigen::RowVector3d v_p = model.positions().row(v);
-                    viewer.data_list[idx].add_points(v_p, SUB_YELLOW_COLOR);
-                    std::string neighbor_vertex_prompt = std::to_string(cnt) + "-" + std::to_string(v);
-                    cnt++;
-                    viewer.data_list[idx].add_label(v_p + OFFSET, neighbor_vertex_prompt);
-                }
-            }
-        }
-
         timer.stop();
         last_elapse_time = timer.elapsed_milliseconds();
         last_global_step_time = solver.last_global_step_time;
         last_local_step_time = solver.last_local_step_time;
         last_precomputation_time = solver.last_precomputation_time;
+
+        draw_debug_info(viewer, models, user_control.cur_sel_mesh_id, user_control.selected_vertex_idx);
 
         return false;
     }
