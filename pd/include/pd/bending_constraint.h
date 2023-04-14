@@ -12,14 +12,6 @@ namespace pd
     public:
 		BendingConstraint() = default;
 
-		__host__ __device__ BendingConstraint(
-			float wc, 
-			int n_vertices, 
-			float rest_mean_curvature,
-			int* const neighbor_vertices,
-			float* const laplacian_weights
-		);
-
 		/**
 		 * The neighbor_vertices param must be given in sequential coutner-clockwise order.
 		*/

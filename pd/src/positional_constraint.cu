@@ -11,7 +11,7 @@ namespace pd {
 
 	Eigen::VectorXf PositionalConstraint::local_solve(const Eigen::VectorXf& q) const
 	{
-		return Eigen::Vector3f(x0, y0, z0);
+		return p0;
 	}
 
 	std::vector<Eigen::Triplet<float>> PositionalConstraint::get_c_AcTAc(int n_vertex_offset) const
@@ -27,13 +27,13 @@ namespace pd {
 	__host__ __device__ void PositionalConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
 	{
 #ifdef __CUDA_ARCH__
-		atomicAdd(&b[3 * vi()], wc * x0);
-		atomicAdd(&b[3 * vi() + 1], wc * y0);
-		atomicAdd(&b[3 * vi() + 2], wc * z0);
+		atomicAdd(&b[3 * vi()], wc * p0.x());
+		atomicAdd(&b[3 * vi() + 1], wc * p0.y());
+		atomicAdd(&b[3 * vi() + 2], wc * p0.z());
 #else
-		b[3 * vi()] += wc * x0;
-		b[3 * vi() + 1] += wc * y0;
-		b[3 * vi() + 2] += wc * z0;
+		b[3 * vi()] += wc * p0.x();
+		b[3 * vi() + 1] += wc * p0.y();
+		b[3 * vi() + 2] += wc * p0.z();
 #endif
 	}
 }

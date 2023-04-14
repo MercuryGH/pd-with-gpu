@@ -95,6 +95,7 @@ int main(int argc, char* argv[])
 	[&]()
 	{
 		instantiator.instance_floor();
+		solver_params.use_gpu_for_local_step = false;
 		// instantiator.instance_cylinder();
 		// instantiator.instance_test();
 	}();

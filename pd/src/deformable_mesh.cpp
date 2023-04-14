@@ -92,9 +92,21 @@ namespace pd
 		}
 	}
 
-	void DeformableMesh::set_tet_strain_constraints(float wc)
+	void DeformableMesh::set_tet_strain_constraints(float wc, Eigen::Vector3f min_strain_xyz, Eigen::Vector3f max_strain_xyz)
 	{
+		if (this->is_tet_mesh == false)
+		{
+			return;
+		}
 
+		for (int i = 0; i < e.rows(); i++)
+		{
+			const Eigen::RowVector4i tet_vertices = e.row(i);
+
+			constraints.push_back(new TetStrainConstraint(
+				wc, p, tet_vertices, min_strain_xyz, max_strain_xyz
+			));
+		}
 	}
 
 	bool DeformableMesh::apply_mass_per_vertex(float mass_per_vertex)

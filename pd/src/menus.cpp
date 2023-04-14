@@ -476,6 +476,8 @@ namespace ui {
 		if (ImGui::TreeNode("Tet Strain"))
 		{
 			ImGui::InputFloat("wc", &physics_params.tet_strain_constraint_wc, 1.f, 10.f, "%.1f");
+			ImGui::InputFloat3("strain min xyz", physics_params.tet_strain_constraint_min_xyz.data());
+			ImGui::InputFloat3("strain max xyz", physics_params.tet_strain_constraint_max_xyz.data());
 			ImGui::Checkbox("Enable", &enable_tet_strain_constraint);
 			ImGui::TreePop();
 		}

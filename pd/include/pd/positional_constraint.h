@@ -11,15 +11,11 @@ namespace pd {
 		PositionalConstraint() = default;
 
 		PositionalConstraint(float wc, int vi, const Positions& p) :
-			Constraint(wc, 1)
+			Constraint(wc, 1),
+			p0(p.row(vi).transpose().cast<float>())
 		{
 			cudaMallocManaged(&vertices, sizeof(int) * 1);
 			vertices[0] = vi;
-
-			Eigen::VectorXf p0 = p.row(vi).transpose().cast<float>();
-			x0 = p0.x();
-			y0 = p0.y();
-			z0 = p0.z();
 		}
 
 		PositionalConstraint(const PositionalConstraint& rhs) = default;
@@ -48,7 +44,6 @@ namespace pd {
 
 	public:
 		// fixed vertex position
-		float x0, y0, z0;
-		//Eigen::Vector3f p0;
+		Eigen::Vector3f p0;
 	};
 }

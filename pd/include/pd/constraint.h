@@ -16,8 +16,6 @@ namespace pd {
 	public:
 		Constraint() = default;
 
-		__host__ __device__ Constraint(float wc, int n_vertices, int* vertices) : wc(wc), n_vertices(n_vertices), vertices(vertices) {}
-
 		__host__ __device__ Constraint(float wc, int n_vertices) : wc(wc), n_vertices(n_vertices) {}
 
 		/**

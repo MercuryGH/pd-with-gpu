@@ -111,7 +111,17 @@ namespace pd
 		bool is_vertex_fixed(int vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
 		const std::unordered_set<int>& get_fixed_vertices() const { return fixed_vertices; }
 		const std::vector<std::vector<int>>& get_adj_list() const { return adj_list; }
-		Eigen::MatrixXi get_edges() const { Eigen::MatrixXi edges; igl::edges(e, edges); return edges; }
+		/**
+		 * @brief Get the edges from elements
+		 * @note edges are restored from triangles or tetrahedra data
+		 * @return Eigen::MatrixXi #edges*2 array of integers
+		 */
+		Eigen::MatrixXi get_edges() const 
+		{ 
+			Eigen::MatrixXi edges; 
+			igl::edges(e, edges); 
+			return edges; 
+		}
 		const Eigen::VectorXd& get_masses() const { return m; }
 
 		// setters
@@ -147,7 +157,7 @@ namespace pd
 		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wc);
 		void set_edge_strain_constraints(float wc);
 		void set_bending_constraints(float wc);
-		void set_tet_strain_constraints(float wc);
+		void set_tet_strain_constraints(float wc, Eigen::Vector3f min_strain_xyz=Eigen::Vector3f::Ones(), Eigen::Vector3f max_strain_xyz=Eigen::Vector3f::Ones());
 
 		// TODO: use area weighted method to apply mass
 		bool apply_mass_per_vertex(float mass_per_vertex);

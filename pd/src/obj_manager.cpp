@@ -251,7 +251,7 @@ namespace ui
 		}
 		if (enable_tet_strain_constraint)
 		{
-
+			model.set_tet_strain_constraints(physics_params.tet_strain_constraint_wc, physics_params.tet_strain_constraint_min_xyz, physics_params.tet_strain_constraint_max_xyz);
 		}
 		if (enable_positional_constraint && user_control.toggle_vertex_fix)
 		{

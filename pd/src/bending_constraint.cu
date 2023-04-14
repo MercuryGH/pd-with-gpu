@@ -3,18 +3,6 @@
 
 namespace pd
 {
-    __host__ __device__ BendingConstraint::BendingConstraint(
-		float wc, 
-		int n_vertices, 
-		float rest_mean_curvature,
-		int* const vertices,
-		float* const laplacian_weights
-	): Constraint(wc, n_vertices), rest_mean_curvature(rest_mean_curvature)
-	{
-		this->vertices = vertices;
-		this->laplacian_weights = laplacian_weights;
-	}
-
 	BendingConstraint::BendingConstraint(float wc, int center_vertex, const std::vector<int>& neighbor_vertices, const Positions& positions) : Constraint(wc, 1 + neighbor_vertices.size())
 	{
 		cudaMallocManaged(&vertices, sizeof(int) * n_vertices);
