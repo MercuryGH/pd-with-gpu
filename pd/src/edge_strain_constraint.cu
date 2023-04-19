@@ -68,6 +68,12 @@ namespace pd {
 		// #vertex offset is not included
 		Eigen::Vector3f vi_pos{ q[3 * vi()], q[3 * vi() + 1], q[3 * vi() + 2] };
 		Eigen::Vector3f vj_pos{ q[3 * vj()], q[3 * vj() + 1], q[3 * vj() + 2] };
+		// #ifndef __CUDA_ARCH__
+		// for (int i = 0; i < 3 * 8; i += 3)
+		// {
+		// 	printf("vertex %d pos = %f %f %f\n", i / 3, q[i], q[i + 1], q[i + 2]);
+		// }
+		// #endif	
 
 		Eigen::Vector3f j2i = vi_pos - vj_pos;
 		Eigen::Vector3f Achpc = j2i / j2i.norm() * rest_length;

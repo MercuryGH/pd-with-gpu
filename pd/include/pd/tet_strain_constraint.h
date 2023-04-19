@@ -13,8 +13,6 @@ namespace pd
 		TetStrainConstraint(float wc, const Positions& p, Eigen::RowVector4i vertices);
 		TetStrainConstraint(float wc, const Positions& p, Eigen::RowVector4i vertices, Eigen::Vector3f min_strain_xyz, Eigen::Vector3f max_strain_xyz);
 
-		void precompute_D_m_inv(const Positions& positions, float wc);
-
 		Constraint* clone() const override
 		{
 			return new TetStrainConstraint(*this);
@@ -32,7 +30,9 @@ namespace pd
 
 		__host__ __device__ ~TetStrainConstraint() override {}
 
-	public:
+	private:
+		void precompute_D_m_inv(const Positions& positions, float wc);
+
 		// Eigen::SparseMatrix<float, Eigen::ColMajor> A_c;
 		// Eigen::SparseMatrix<float, Eigen::RowMajor> A_c_transpose;
 

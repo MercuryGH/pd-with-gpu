@@ -8,6 +8,7 @@
 #include <ui/obj_manager.h>
 #include <ui/user_control.h>
 #include <ui/physics_params.h>
+#include <ui/screen_capture_plugin.h>
 
 #include <instancing/instantiator.h>
 
@@ -19,9 +20,9 @@ namespace ui {
 		float size_x, size_y;
 	};
 
-	const WindowPositionSize obj_menu_wps{ -200, 0, 200, -150 };
+	const WindowPositionSize obj_menu_wps{ -200, 0, 200, -0.1 };
 	const WindowPositionSize component_menu_wps{ -200, -150, 200, -0.1 };
-	const WindowPositionSize constraint_menu_wps{ -400, 0, 200, 160 };
+	const WindowPositionSize constraint_menu_wps{ -500, 0, 300, 400 };
 	const WindowPositionSize instantiator_menu_wps{ -320, -120, 120, 120 };
 	const WindowPositionSize pd_menu_wps{ 0, 0, 300, -0.1 };
 
@@ -49,7 +50,7 @@ namespace ui {
 	struct instantiator_menu_window_handler
 	{
 		igl::opengl::glfw::Viewer& viewer;
-		instancing::Instantiator &instantiator;
+		ObjManager& obj_manager;
 
 		void operator()();
 	};
@@ -64,6 +65,7 @@ namespace ui {
 	struct pd_menu_window_handler
 	{
 		igl::opengl::glfw::Viewer& viewer;
+		ScreenCapturePlugin& screen_capture_plugin;
 		ObjManager& obj_manager;
 		pd::Solver& solver;
         SolverParams& solver_params;
@@ -97,6 +99,7 @@ namespace ui {
 
 	void visualization_menu(
 		igl::opengl::glfw::Viewer& viewer, 
+		ScreenCapturePlugin& screen_capture_plugin,
 		std::unordered_map<int, pd::DeformableMesh>& models,
 		bool& always_recompute_normal, 
 		int id

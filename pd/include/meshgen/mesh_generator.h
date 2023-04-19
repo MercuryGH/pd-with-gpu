@@ -17,5 +17,5 @@ namespace meshgen {
 
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_torus(float main_radius, float ring_radius, int usub=32, int vsub=16, float urange=1.0f, float vrange=1.0f);
 
-	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> generate_bar(int x, int y, int z, int usub=2, int vsub=2);
+	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> generate_bar(int width, int height, int depth);
 }

@@ -21,7 +21,7 @@ namespace instancing {
     {
         auto [V, F] = meshgen::generate_hemisphere(1);
         int id = obj_manager.add_model(V, F);
-        pd::DeformableMesh& model = models.at(id);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
 
         model.set_edge_strain_constraints(100.f);
 
@@ -43,9 +43,31 @@ namespace instancing {
 
     void Instantiator::instance_cloth()
     {
+        instance_cloth_not_bend();
+        instance_cloth_bend();        
+    }
+
+    void Instantiator::instance_cloth_not_bend()
+    {
         auto [V, F] = meshgen::generate_cloth(20, 20);
         int id = obj_manager.add_model(V, F);
-        pd::DeformableMesh& model = models.at(id);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+        // apply translation
+        model.apply_translation(Eigen::Vector3d(1, 0, 0));
+
+        model.set_edge_strain_constraints(100.f);
+
+        // add positional constraint
+        model.toggle_vertices_fixed({ 0, 420 }, 100.f);
+
+		obj_manager.recalc_total_n_constraints();
+    }
+
+    void Instantiator::instance_cloth_bend()
+    {
+        auto [V, F] = meshgen::generate_cloth(20, 20);
+        int id = obj_manager.add_model(V, F);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
         model.set_edge_strain_constraints(100.f);
 
         model.set_bending_constraints(5e-7f);
@@ -55,14 +77,83 @@ namespace instancing {
 
 		obj_manager.recalc_total_n_constraints();
     }
+    
+    void Instantiator::instance_4hanged_cloth()
+    {
+        instance_4hanged_cloth_not_bend();
+        instance_4hanged_cloth_bend();        
+    }
+
+    void Instantiator::instance_4hanged_cloth_not_bend()
+    {
+        auto [V, F] = meshgen::generate_cloth(20, 20);
+        int id = obj_manager.add_model(V, F);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+        model.apply_translation(Eigen::Vector3d(1, 0, 0));
+
+        model.set_edge_strain_constraints(100.f);
+
+        // add positional constraint
+        model.toggle_vertices_fixed({ 0, 20, 420, 440 }, 100.f);
+
+		obj_manager.recalc_total_n_constraints();
+    }
+
+    void Instantiator::instance_4hanged_cloth_bend()
+    {
+        auto [V, F] = meshgen::generate_cloth(20, 20);
+        int id = obj_manager.add_model(V, F);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+        model.set_edge_strain_constraints(100.f);
+
+        model.set_bending_constraints(5e-7f);
+
+        // add positional constraint
+        model.toggle_vertices_fixed({ 0, 20, 420, 440 }, 100.f);
+
+		obj_manager.recalc_total_n_constraints();
+    }
 
     void Instantiator::instance_cylinder()
     {
-        const int usub = 20;
-        const int vsub = 16;
+        instance_cylinder_not_bend();
+        instance_cylinder_bend();
+    }
+
+    void Instantiator::instance_cylinder_not_bend()
+    {
+        constexpr int usub = 20;
+        constexpr int vsub = 16;
         auto [V, F] = meshgen::generate_cylinder(0.5f, 3, usub, vsub);
         int id = obj_manager.add_model(V, F);
-        pd::DeformableMesh& model = models.at(id);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        // apply translation
+        model.apply_translation(Eigen::Vector3d(1, 0, 0));
+        
+        model.set_edge_strain_constraints(20.f);
+
+        std::unordered_set<int> toggle_vertices;
+        for (int i = 2; i < usub * (vsub + 1) - vsub + 2; i += vsub + 1)
+        {
+            toggle_vertices.insert(i);
+        }
+        for (int i = vsub; i < usub * (vsub + 1); i += vsub + 1)
+        {
+            toggle_vertices.insert(i);
+        }
+        model.toggle_vertices_fixed(toggle_vertices, 10.f);
+
+		obj_manager.recalc_total_n_constraints();
+    }
+
+    void Instantiator::instance_cylinder_bend()
+    {
+        constexpr int usub = 20;
+        constexpr int vsub = 16;
+        auto [V, F] = meshgen::generate_cylinder(0.5f, 3, usub, vsub);
+        int id = obj_manager.add_model(V, F);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
         
         model.set_edge_strain_constraints(20.f);
 
@@ -84,10 +175,21 @@ namespace instancing {
 
     void Instantiator::instance_bar()
     {
-        // static int w = 2;
-        // static int h = 3;
-        // static int d = 3;
-        // auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
+        constexpr int w = 3;
+        constexpr int h = 3;
+        constexpr int d = 12;
+        auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
+        int id = obj_manager.add_model(V, T, boundary_facets);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+        
+        model.set_tet_strain_constraints(0.01f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
+
+        std::unordered_set<int> toggle_vertices;
+        for (int i = 0; i <= (w + 1) * (h + 1) * (d + 1) - (d + 1); i += d + 1)
+        {
+            toggle_vertices.insert(i);
+        }
+        model.toggle_vertices_fixed(toggle_vertices, 100.f);
 
 		obj_manager.recalc_total_n_constraints();
     }
@@ -98,7 +200,7 @@ namespace instancing {
         Eigen::MatrixXi F;
         igl::read_triangle_mesh(file_path, V, F);
         int id = obj_manager.add_model(V, F);
-        pd::DeformableMesh& model = models.at(id);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
 
         model.set_edge_strain_constraints(100.f);
 
@@ -119,38 +221,13 @@ namespace instancing {
 
     void Instantiator::instance_cone()
     {
-        const int usub = 20;
-        const int vsub = 16;
+        constexpr int usub = 20;
+        constexpr int vsub = 16;
         auto [V, F] = meshgen::generate_cone(0.5f, 3, usub, vsub);
         int id = obj_manager.add_model(V, F);
     }
 
     void Instantiator::instance_test()
     {
-        const int usub = 20;
-        const int vsub = 16;
-        auto [V, F] = meshgen::generate_cylinder(0.5f, 3, usub, vsub);
-        int id = obj_manager.add_model(V, F);
-        pd::DeformableMesh& model = models.at(id);
-
-        // apply translation
-        model.apply_translation(Eigen::Vector3d(1, 0, 0));
-        
-        model.set_edge_strain_constraints(20.f);
-
-        // model.set_bending_constraints(5e-7f * 10);
-
-        std::unordered_set<int> toggle_vertices;
-        for (int i = 2; i < usub * (vsub + 1) - vsub + 2; i += vsub + 1)
-        {
-            toggle_vertices.insert(i);
-        }
-        for (int i = vsub; i < usub * (vsub + 1); i += vsub + 1)
-        {
-            toggle_vertices.insert(i);
-        }
-        model.toggle_vertices_fixed(toggle_vertices, 10.f);
-
-		obj_manager.recalc_total_n_constraints();
     }
 }

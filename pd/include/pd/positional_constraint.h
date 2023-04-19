@@ -42,7 +42,7 @@ namespace pd {
 
 		__host__ __device__ int vi() const { return vertices[0]; }
 
-	public:
+	private:
 		// fixed vertex position
 		Eigen::Vector3f p0;
 	};

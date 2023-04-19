@@ -17,8 +17,12 @@ namespace ui
 		int selected_vertex_idx{ 0 };
 
 		// This does not depend on mesh_id. It depends on the id of the current selected mesh.
-		int cur_sel_mesh_id { -1 };
+		int cur_sel_mesh_id{ -1 };
 		bool toggle_vertex_fix{ false };
 		std::unordered_set<int> toggle_fixed_vertex_idxs;
+
+		// debug draw (adj vertex)
+		bool enable_debug_draw{ true };
+		bool enable_tetrahedra_visualization{ false };
 	};
 }

@@ -173,7 +173,7 @@ namespace ui {
         }
 
         const int obj_id = user_control.cur_sel_mesh_id;
-        // disable user manipulation on deformable mesh while animating to avoid weird problem
+        // disable user manipulation on deformable mesh while animating to avoid weird visual problem
         if (obj_manager.is_deformable_model(obj_id) && is_animating) 
         {
             return;
@@ -207,6 +207,7 @@ namespace ui {
 
     bool keypress_handler::operator()(igl::opengl::glfw::Viewer& viewer, int button, int modifier)
     {
+        // gizmo
         switch (button)
         {
             case ' ': gizmo.visible = !gizmo.visible; return true;
@@ -214,7 +215,83 @@ namespace ui {
             case 'E': case 'e': gizmo.operation = ImGuizmo::ROTATE;    return true;
             case 'R': case 'r': gizmo.operation = ImGuizmo::SCALE;     return true;
         }
+
+        // tet visualzation
+        if (button >= '1' && button <= '9')
+        {
+            const double t = double((button - '1') + 1) / 9;
+            const int obj_id = user_control.cur_sel_mesh_id;
+            if (obj_manager.is_deformable_model(obj_id))
+            {
+                const pd::DeformableMesh& model = obj_manager.models.at(obj_id);
+                if (model.is_tet_mesh() == false)
+                {
+                    return false;
+                }
+
+                Eigen::MatrixXd barycenters = model.get_element_barycenters();
+                Eigen::VectorXd z_starts = barycenters.col(2).array() - barycenters.col(2).minCoeff(); // z axis starts
+                z_starts /= z_starts.col(0).maxCoeff(); // "normalize"
+
+                std::vector<int> visable_z;
+                constexpr double SLAB_WIDTH = 0.1;
+                for (int i = 0; i < z_starts.size(); i++)
+                {
+                    double z_start = z_starts(i);
+                    if (z_start < t && z_start > t - SLAB_WIDTH) // the element is in the thick slab
+                    {
+                        visable_z.push_back(i); // this can be visualized
+                    }
+                }
+
+                Eigen::MatrixXd V_tmp(visable_z.size() * 4, 3);
+                Eigen::MatrixXi F_tmp(visable_z.size() * 4, 3);
+                Eigen::VectorXd D_tmp(visable_z.size() * 4);
+
+                for (int i = 0; i < visable_z.size(); i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
+                        int vertex_idx = model.get_elements()(visable_z.at(i), j);
+                        V_tmp.row(i * 4 + j) = model.positions().row(vertex_idx);
+                        // D_tmp(i * 4 + j) = D(visable_z.at(i));
+                    }
+                    // write tets
+                    F_tmp.row(i * 4) << (i * 4), (i * 4) + 1, (i * 4) + 3;
+                    F_tmp.row(i * 4 + 1) << (i * 4), (i * 4) + 2, (i * 4) + 1;
+                    F_tmp.row(i * 4 + 2) << (i * 4) + 3, (i * 4) + 2, (i * 4);
+                    F_tmp.row(i * 4 + 3) << (i * 4) + 1, (i * 4) + 2, (i * 4) + 3;
+                }
+
+		        int idx = viewer.mesh_index(obj_id);
+                viewer.data_list[idx].clear();
+                viewer.data_list[idx].set_mesh(V_tmp, F_tmp);
+                user_control.enable_debug_draw = false;
+                user_control.enable_tetrahedra_visualization = true;
+            }
+        }
+        // cancel tet visualization
+        if (button == '0')
+        {
+            if (user_control.enable_tetrahedra_visualization)
+            {
+                const int obj_id = user_control.cur_sel_mesh_id;
+                if (obj_manager.is_deformable_model(obj_id))
+                {
+                    const pd::DeformableMesh& model = obj_manager.models.at(obj_id);
+                    if (model.is_tet_mesh() == false)
+                    {
+                        return false;
+                    }
+
+                    int idx = viewer.mesh_index(obj_id);
+                    viewer.data_list[idx].clear();
+                    viewer.data_list[idx].set_mesh(model.positions(), model.faces());
+                    user_control.enable_debug_draw = true;
+                    user_control.enable_tetrahedra_visualization = false;
+                }
+            }
+        }
         return false;
     }
-
 }

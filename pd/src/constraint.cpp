@@ -51,6 +51,12 @@ namespace pd
         return *this;
     }
 
+    int Constraint::get_involved_vertices(int** vertices) const
+    {
+        *vertices = this->vertices;
+        return n_vertices;
+    }
+
     void Constraint::set_vertex_offset(int n_vertex_offset)
     {
         for (int i = 0; i < n_vertices; i++)

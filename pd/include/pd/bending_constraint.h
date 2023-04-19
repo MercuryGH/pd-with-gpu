@@ -83,7 +83,6 @@ namespace pd
 		// p1, p2 and p3 are given in counterclockwise order
 		__host__ __device__ static Eigen::Vector3f get_triangle_normal(Eigen::Vector3f p21, Eigen::Vector3f p31);
 
-	public:
 		float* laplacian_weights{ nullptr };
 
 		float rest_mean_curvature{ 0 };

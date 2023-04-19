@@ -153,11 +153,11 @@ namespace pd {
 			const Eigen::MatrixX3d a = f_exts.at(id).array().colwise() / (model.m).array(); // M^{-1} f_{ext}
 			Eigen::MatrixX3f q_explicit = (q + dt * v + dtsqr * a).cast<float>(); // n * 3 matrix
 
+			// resolve collision at desired vertex position
+			DeformableMesh::resolve_collision(rigid_colliders, q_explicit);
+
 			const int n = model.positions().rows();
 
-			// resolve collision
-			model.resolve_collision(rigid_colliders, q_explicit);
-			
 			// fixed vertex
 			for (const int vi : model.fixed_vertices)
 			{
@@ -228,12 +228,12 @@ namespace pd {
 			timer.stop();
 			last_local_step_time += timer.elapsed_milliseconds();
 
-			//if (k == 0)
-				//std::cout << b << "\n";
-			//assert(false);
-
 			// if (k == 0)
-			// 	std::cout << "b = " << b << "\n";
+			// {
+			// 	std::cout << b << "\n";
+			// 	std::cout << A << "\n";
+			// }
+			// assert(false);
 
 			// printf("%d PD itr\n", k);
 
@@ -247,6 +247,7 @@ namespace pd {
 			//if (k == 0)
 				//std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}
+
 		// 3n * 1 vector to n * 3 matrix
 		const auto unflatten = [total_n](const Eigen::VectorXf& p) {
 			assert(total_n * 3 == p.rows());
@@ -259,22 +260,11 @@ namespace pd {
 			return ret;
 		};
 
-		// const bool clamp = true; // clamp bottom (y = -1)
-		
-		Eigen::MatrixXd positions = unflatten(q_nplus1).cast<double>();
-		// if (clamp)
-		// {
-		// 	constexpr double BOTTOM_Y = -1;
-		// 	for (int i = 0; i < n; i++)
-		// 	{
-		// 		if (positions.coeff(i, 1) < BOTTOM_Y)
-		// 		{
-		// 			positions.coeffRef(i, 1) = BOTTOM_Y;
-		// 			velocities.coeffRef(i, 1) = 0;
-		// 		}
-		// 	}
-		// }
+		// resolve collision at the end of solver
+		Eigen::MatrixX3f p = unflatten(q_nplus1);
+		DeformableMesh::resolve_collision(rigid_colliders, p);
 
+		Eigen::MatrixXd positions = p.cast<double>();
 		acc = 0;
 		for (auto& [id, model] : models)
 		{
@@ -300,8 +290,8 @@ namespace pd {
 				//constraint->project_c_AcTAchpc(b.data(), q_nplus1.data(), b.size());
 				//continue;
 
-				const Eigen::VectorXf& cur_model_q_n_plus1 = q_nplus1.block(3 * acc, 0, 3 * n, 1);
-				assert(cur_model_q_n_plus1.size() == 3 * n);
+				// const Eigen::VectorXf& cur_model_q_n_plus1 = q_nplus1.block(3 * acc, 0, 3 * n, 1);
+				// assert(cur_model_q_n_plus1.size() == 3 * n);
 
 				constraint->project_c_AcTAchpc(b.data(), q_nplus1.data());
 			}

@@ -17,7 +17,7 @@ namespace ui
 		int n_solver_pd_iterations{ 10 };
 		int n_itr_solver_iterations{ 500 };
 
-		bool use_gpu_for_local_step{ true };
+		bool use_gpu_for_local_step{ false };
 
 		LinearSysSolver selected_solver{ LinearSysSolver::DIRECT };
 	};

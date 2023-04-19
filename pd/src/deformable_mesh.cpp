@@ -94,7 +94,7 @@ namespace pd
 
 	void DeformableMesh::set_tet_strain_constraints(float wc, Eigen::Vector3f min_strain_xyz, Eigen::Vector3f max_strain_xyz)
 	{
-		if (this->is_tet_mesh == false)
+		if (is_tet_mesh() == false)
 		{
 			return;
 		}
@@ -132,7 +132,7 @@ namespace pd
 		return need_modify;
 	}
 
-	void DeformableMesh::resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit) const
+	void DeformableMesh::resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit)
 	{
 		static int collision_cnt = 0;
 		for (int i = 0; i < q_explicit.rows(); i++)

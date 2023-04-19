@@ -3,6 +3,7 @@ include(FetchContent)
 
 set(LIBIGL_OPENGL ON  CACHE INTERNAL "libigl with opengl"  )
 set(LIBIGL_GLFW   ON  CACHE INTERNAL "libigl with glfw"    )
+set(LIBIGL_PNG    ON  CACHE INTERNAL "libigl with png"   )
 set(LIBIGL_IMGUI  ON  CACHE INTERNAL "libigl with imgui"   )
 
 set(FETCHCONTENT_QUIET FALSE)
@@ -35,6 +36,7 @@ target_link_libraries(pd
 PRIVATE 
     igl::core 
     igl::imgui
+    igl::png
     util
 )
 

@@ -445,24 +445,24 @@ namespace meshgen {
 		return { V, F };
 	}
 
-	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> generate_bar(int x, int y, int z, int usub, int vsub)
+	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> generate_bar(int width, int height, int depth)
 	{
-		if (x < 1 || y < 1 || z < 1)
-		{
-			printf("Error: Invalid arguments!");
-		}
-		// x, y, z <-> width, height, depth
-		const auto base3_vertex_id = [x, y, z](int i, int j, int k) 
-		{
-			return i * y * z + j * z + 	k;
-		};
-		Eigen::MatrixXd V(x * y * z, 3);
+		const int x_n_vertex = width + 1;
+		const int y_n_vertex = height + 1;
+		const int z_n_vertex = depth + 1;
 
-		for (int i = 0; i < x; i++)
+		// x, y, z <-> width, height, depth
+		const auto base3_vertex_id = [x_n_vertex, y_n_vertex, z_n_vertex](int i, int j, int k) 
 		{
-			for (int j = 0; j < y; j++)
+			return i * y_n_vertex * z_n_vertex + j * z_n_vertex + k;
+		};
+		Eigen::MatrixXd V(x_n_vertex * y_n_vertex * z_n_vertex, 3);
+
+		for (int i = 0; i < x_n_vertex; i++)
+		{
+			for (int j = 0; j < y_n_vertex; j++)
 			{
-				for (int k = 0; k < z; k++)
+				for (int k = 0; k < z_n_vertex; k++)
 				{
 					const auto cur_row = base3_vertex_id(i, j, k);
 					V.row(cur_row) = Eigen::Vector3d((double)i, (double)j, (double)k);
@@ -470,15 +470,15 @@ namespace meshgen {
 			}
 		}
 
-		const auto tet_cnt = (x - 1) * (y - 1) * (z - 1) * 5;
+		const auto tet_cnt = (x_n_vertex - 1) * (y_n_vertex - 1) * (z_n_vertex - 1) * 5;
 
 		// tetrahedron face, not triangle
 		Eigen::MatrixXi T(tet_cnt, 4);
-		for (int i = 0; i < x - 1; i++)
+		for (int i = 0; i < x_n_vertex - 1; i++)
 		{
-			for (int j = 0; j < y - 1; j++)
+			for (int j = 0; j < y_n_vertex - 1; j++)
 			{
-				for (int k = 0; k < z - 1; k++)
+				for (int k = 0; k < z_n_vertex - 1; k++)
 				{
 					//     7*-----*6
 					//     /|    /|
@@ -497,7 +497,7 @@ namespace meshgen {
 					const int v6 = base3_vertex_id(i + 1, j + 1, k + 1);
 					const int v7 = base3_vertex_id(i, j + 1, k + 1);
 
-					const int cur_row = (i * (y - 1) * (z - 1) + j * (z - 1) + k) * 5;
+					const int cur_row = (i * (y_n_vertex - 1) * (z_n_vertex - 1) + j * (z_n_vertex - 1) + k) * 5;
 
 					// create tetrahedron by splitting the cube (there are multiple splitting methods)
 					// TODO: This is problematic since it causes non-manifold in some cases

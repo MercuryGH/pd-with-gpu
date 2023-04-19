@@ -63,18 +63,14 @@ namespace pd {
 			cudaFree(vertices);
 		}
 
-		int get_involved_vertices(int** vertices) const
-		{
-			*vertices = this->vertices;
-			return n_vertices;
-		}
+		int get_involved_vertices(int** vertices) const;
 
 		void set_vertex_offset(int n_vertex_offset);
 		
 	private:
 		void realloc_vertices(int size);
 
-	public:
+	protected:
 		float wc{ 0.0f };
 
 		int n_vertices{ 0 };

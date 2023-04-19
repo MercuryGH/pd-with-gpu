@@ -42,7 +42,7 @@ namespace pd {
 		__host__ __device__ int vi() const { return vertices[0]; }
 		__host__ __device__ int vj() const { return vertices[1]; }
 
-	public:
+	private:
 		float rest_length;
 	};
 }

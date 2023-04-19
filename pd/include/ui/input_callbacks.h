@@ -63,6 +63,8 @@ namespace ui
 	struct keypress_handler
 	{
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo;
+		ObjManager& obj_manager;
+		ui::UserControl& user_control;		
 
 		bool operator()(igl::opengl::glfw::Viewer& viewer, int button, int modifier);
 	};

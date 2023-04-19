@@ -142,7 +142,10 @@ namespace pd {
         last_local_step_time = solver.last_local_step_time;
         last_precomputation_time = solver.last_precomputation_time;
 
-        draw_debug_info(viewer, models, user_control.cur_sel_mesh_id, user_control.selected_vertex_idx);
+		if (user_control.enable_debug_draw)
+		{
+        	draw_debug_info(viewer, models, user_control.cur_sel_mesh_id, user_control.selected_vertex_idx);
+		}
 
         return false;
     }

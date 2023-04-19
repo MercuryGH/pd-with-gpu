@@ -43,13 +43,6 @@ namespace ui
 			return rigid_colliders.find(obj_id) != rigid_colliders.end();
 		}
 
-	private:
-		void add_simulation_model_info(int obj_id);
-		void reset_simulation_model_info(int obj_id);
-
-		void recalc_data();
-
-	public:	
 	    // add triangle mesh model
 		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 		// add tetrahedron mesh model
@@ -76,5 +69,14 @@ namespace ui
 
 		// Bind the gizmo to a new mesh when needed.
 		void bind_gizmo(int obj_id);
+
+		const Eigen::RowVector3d DEFORMABLE_MESH_TEXTURE_COLOR = Eigen::RowVector3d((double)0x66 / 0xff, (double)0xcc / 0xff, 1.0);
+		const Eigen::RowVector3d RIGID_COLLIDER_TEXTURE_COLOR = Eigen::RowVector3d((double)125 / 255, (double)220 / 255, (double)117 / 255);
+
+	private:
+		void add_simulation_model_info(int obj_id);
+		void reset_simulation_model_info(int obj_id);
+
+		void recalc_data();
 	};
 }

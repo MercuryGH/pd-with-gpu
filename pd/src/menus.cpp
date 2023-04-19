@@ -1,10 +1,13 @@
+#include <ui/menus.h>
+
 #include <filesystem>
 
 #include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
 #include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
 
-#include <ui/menus.h>
+#include <igl/png/writePNG.h>
+
 #include <ui/input_callbacks.h>
 
 #include <primitive/primitive.h>
@@ -12,6 +15,23 @@
 #include <meshgen/mesh_generator.h>
 
 namespace ui {
+	std::string label_prefix(const char* label)
+	{
+		float width = ImGui::CalcItemWidth();
+
+		float x = ImGui::GetCursorPosX();
+		ImGui::Text(label); 
+		ImGui::SameLine(); 
+		ImGui::SetCursorPosX(x + width * 0.5f + ImGui::GetStyle().ItemInnerSpacing.x);
+		ImGui::SetNextItemWidth(-1);
+
+		std::string label_id = "##";
+		label_id += label;
+
+		return label_id;
+	}
+	#define LABEL(x) label_prefix(x).c_str()
+
     void help_marker(const char* desc)
 	{
 		ImGui::TextDisabled("(?)");
@@ -79,6 +99,7 @@ namespace ui {
 		set_window_position_size(viewer.core().viewport, instantiator_menu_wps);
 		ImGui::Begin("Instantiator");
 
+		instancing::Instantiator instantiator{ obj_manager };
 		ui::instantiator_menu(instantiator);
 
 		ImGui::End();
@@ -86,6 +107,9 @@ namespace ui {
 
 	void component_menu_window_handler::operator()()
 	{
+		return; 
+
+		// not implemented yet
 		set_window_position_size(viewer.core().viewport, component_menu_wps);
 		ImGui::Begin("Component");
 
@@ -99,7 +123,7 @@ namespace ui {
 		ImGui::Begin("PD Panel");
 
 		ui::physics_menu(physics_params, user_control);
-		ui::visualization_menu(viewer, obj_manager.models, always_recompute_normal, user_control.cur_sel_mesh_id);
+		ui::visualization_menu(viewer, screen_capture_plugin, obj_manager.models, always_recompute_normal, user_control.cur_sel_mesh_id);
 
 		ui::simulation_ctrl_menu(
 			solver, 
@@ -196,8 +220,8 @@ namespace ui {
 			{
 				static int w = 20;
 				static int h = 20;
-				ImGui::InputInt("width", &w);
-				ImGui::InputInt("height", &h);
+				ImGui::InputInt(LABEL("width"), &w);
+				ImGui::InputInt(LABEL("height"), &h);
 				if (ImGui::Button("Generate"))
 				{
 					auto [V, F] = meshgen::generate_cloth(w, h);
@@ -216,7 +240,7 @@ namespace ui {
 			if (ImGui::TreeNode("Hemisphere shell"))
 			{
 				static float radius = 1.0f;
-				ImGui::InputFloat("radius", &radius);
+				ImGui::InputFloat(LABEL("radius"), &radius);
 				if (ImGui::Button("Generate"))
 				{
 					auto [V, F] = meshgen::generate_hemisphere(radius);
@@ -235,7 +259,7 @@ namespace ui {
 			if (ImGui::TreeNode("Sphere shell"))
 			{
 				static float radius = 0.5f;
-				ImGui::InputFloat("radius", &radius);
+				ImGui::InputFloat(LABEL("radius"), &radius);
 				if (ImGui::Button("Generate"))
 				{
 					auto [V, F] = meshgen::generate_sphere(radius);
@@ -254,8 +278,8 @@ namespace ui {
 			{
 				static float radius = 0.5f;
 				static float height = 1.2f;
-				ImGui::InputFloat("radius", &radius);
-				ImGui::InputFloat("height", &height);
+				ImGui::InputFloat(LABEL("radius"), &radius);
+				ImGui::InputFloat(LABEL("height"), &height);
 				if (ImGui::Button("Generate"))
 				{
 					auto [V, F] = meshgen::generate_cylinder(radius, height);
@@ -274,8 +298,8 @@ namespace ui {
 			{
 				static float radius = 0.5f;
 				static float height = 1.2f;
-				ImGui::InputFloat("radius", &radius);
-				ImGui::InputFloat("height", &height);
+				ImGui::InputFloat(LABEL("radius"), &radius);
+				ImGui::InputFloat(LABEL("height"), &height);
 				if (ImGui::Button("Generate"))
 				{
 					auto [V, F] = meshgen::generate_cone(radius, height);
@@ -294,8 +318,8 @@ namespace ui {
 			{
 				static float main_radius = 1.2f;
 				static float ring_radius = 0.4f;
-				ImGui::InputFloat("main_radius", &main_radius);
-				ImGui::InputFloat("ring_radius", &ring_radius);
+				ImGui::InputFloat(LABEL("main radius"), &main_radius);
+				ImGui::InputFloat(LABEL("ring radius"), &ring_radius);
 				if (ImGui::Button("Generate"))
 				{
 					auto [V, F] = meshgen::generate_torus(main_radius, ring_radius);
@@ -312,12 +336,12 @@ namespace ui {
 			}
 			if (ImGui::TreeNode("Bar"))
 			{
-				static int w = 5;
-				static int h = 3;
-				static int d = 2;
-				ImGui::InputInt("width", &w);
-				ImGui::InputInt("height", &h);
-				ImGui::InputInt("depth", &d);
+				static int w = 3;
+				static int h = 4;
+				static int d = 5;
+				ImGui::InputInt(LABEL("width"), &w);
+				ImGui::InputInt(LABEL("height"), &h);
+				ImGui::InputInt(LABEL("depth"), &d);
 				if (ImGui::Button("Generate"))
 				{
 					auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
@@ -389,7 +413,7 @@ namespace ui {
 			if (ImGui::TreeNode("Floor"))
 			{
 				static float y = -1;
-				ImGui::InputFloat("y", &y);
+				ImGui::InputFloat(LABEL("y"), &y);
 
 				if (ImGui::Button("Generate"))
 				{
@@ -402,8 +426,8 @@ namespace ui {
 			if (ImGui::TreeNode("Sphere"))
 			{
 				static float center_radius[4] = { 0.2f, 0.2f, 0.2f, 0.2f };
-            	ImGui::InputFloat3("center", center_radius);
-				ImGui::InputFloat("radius", &center_radius[3]);
+            	ImGui::InputFloat3(LABEL("center"), center_radius, "%.1f");
+				ImGui::InputFloat(LABEL("radius"), &center_radius[3]);
 
 				if (ImGui::Button("Generate"))
 				{
@@ -419,9 +443,9 @@ namespace ui {
 			if (ImGui::TreeNode("Torus"))
 			{
 				static float center_radius[5] = { 0, 0, 0, 0.5f, 0.1f };
-				ImGui::InputFloat3("center", center_radius);
-				ImGui::InputFloat("main_radius", &center_radius[3]);
-				ImGui::InputFloat("ring_radius", &center_radius[4]);
+				ImGui::InputFloat3(LABEL("center"), center_radius, "%.1f");
+				ImGui::InputFloat(LABEL("main radius"), &center_radius[3]);
+				ImGui::InputFloat(LABEL("ring radius"), &center_radius[4]);
 				if (ImGui::Button("Generate"))
 				{
 					obj_manager.add_rigid_collider(std::make_unique<primitive::Torus>(
@@ -437,8 +461,8 @@ namespace ui {
 			{
 				static float center[3] = { 0.5f, 0.5f, 0.5f };
 				static float xyz[3] = { 0.4f, 0.5f, 0.6f };
-            	ImGui::InputFloat3("center", center);
-            	ImGui::InputFloat3("xyz", xyz);
+            	ImGui::InputFloat3(LABEL("center"), center, "%.1f");
+            	ImGui::InputFloat3(LABEL("xyz"), xyz, "%.1f");
 
 				if (ImGui::Button("Generate"))
 				{
@@ -463,21 +487,21 @@ namespace ui {
 		if (ImGui::TreeNode("Edge Strain"))
 		{
 			// Edge length params
-			ImGui::InputFloat("wc", &physics_params.edge_strain_constraint_wc, 1.f, 10.f, "%.1f");
+			ImGui::InputFloat(LABEL("weight"), &physics_params.edge_strain_constraint_wc, 1.f, 10.f, "%.1f");
 			ImGui::Checkbox("Enable", &enable_edge_strain_constraint);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Bending"))
 		{
-			ImGui::InputFloat("wc", &physics_params.bending_constraint_wc, 1e-9f, 1e-5f, "%.9f");
+			ImGui::InputFloat(LABEL("weight"), &physics_params.bending_constraint_wc, 1e-9f, 1e-5f, "%.9f");
 			ImGui::Checkbox("Enable", &enable_bending_constraint);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Tet Strain"))
 		{
-			ImGui::InputFloat("wc", &physics_params.tet_strain_constraint_wc, 1.f, 10.f, "%.1f");
-			ImGui::InputFloat3("strain min xyz", physics_params.tet_strain_constraint_min_xyz.data());
-			ImGui::InputFloat3("strain max xyz", physics_params.tet_strain_constraint_max_xyz.data());
+			ImGui::InputFloat(LABEL("weight"), &physics_params.tet_strain_constraint_wc, 1.f, 10.f, "%.3f");
+			ImGui::InputFloat3(LABEL("strain min xyz"), physics_params.tet_strain_constraint_min_xyz.data(), "%.2f");
+			ImGui::InputFloat3(LABEL("strain max xyz"), physics_params.tet_strain_constraint_max_xyz.data(), "%.2f");
 			ImGui::Checkbox("Enable", &enable_tet_strain_constraint);
 			ImGui::TreePop();
 		}
@@ -491,7 +515,7 @@ namespace ui {
 			}
 			ImGui::TextWrapped("For mesh %d, Vertex indices to be toggled: %s", user_control.cur_sel_mesh_id, vertices_to_be_toggled.c_str());
 			// Pinned 
-			ImGui::InputFloat("wc", &physics_params.positional_constraint_wc, 10.f, 100.f, "%.1f");
+			ImGui::InputFloat(LABEL("weight"), &physics_params.positional_constraint_wc, 10.f, 100.f, "%.1f");
 			ImGui::Checkbox("Enable", &enable_positional_constraint);
 			ImGui::TreePop();
 		}
@@ -507,7 +531,8 @@ namespace ui {
 				enable_positional_constraint
 			);
 		}
-		ImGui::Text("#Constraints = %d", obj_manager.total_n_constraints);
+		ImGui::Text("Current mesh #Constriants = %d", obj_manager.is_deformable_model(user_control.cur_sel_mesh_id) ? obj_manager.models.at(user_control.cur_sel_mesh_id).n_constraints() : 0);
+		ImGui::Text("Total #Constraints = %d", obj_manager.total_n_constraints);
     }
 
 	void physics_menu(PhysicsParams& physics_params, const UserControl& user_control)
@@ -517,7 +542,7 @@ namespace ui {
 			// physics params
 			ImGui::Checkbox("Enable Gravity", &physics_params.enable_gravity);
 
-			ImGui::InputFloat("mass per vertex", &physics_params.mass_per_vertex, 0.01f, 0.1f, "%.3f");
+			ImGui::InputFloat(LABEL("mass per vertex"), &physics_params.mass_per_vertex, 0.01f, 0.1f, "%.3f");
 
 			ImGui::Separator();
 
@@ -528,12 +553,13 @@ namespace ui {
 				ImGui::Text("Vertex forced: %d", user_control.ext_forced_vertex_idx);
 			}
 
-			ImGui::InputFloat("dragging force", &physics_params.external_force_val, 1.f, 10.f, "%.2f");
+			ImGui::InputFloat(LABEL("dragging force"), &physics_params.external_force_val, 1.f, 10.f, "%.2f");
 		}
 	}
 
 	void visualization_menu(
 		igl::opengl::glfw::Viewer& viewer, 
+		ScreenCapturePlugin& screen_capture_plugin,
 		std::unordered_map<int, pd::DeformableMesh>& models,
 		bool& always_recompute_normal, 
 		int id
@@ -557,7 +583,7 @@ namespace ui {
 				}
 			);
 			ImGui::Checkbox("Double sided lighting", &viewer.data_list[idx].double_sided);
-			ImGui::InputFloat("Point Size", &viewer.data_list[idx].point_size, 1.f, 10.f);
+			ImGui::InputFloat(LABEL("Point Size"), &viewer.data_list[idx].point_size, 1.f, 10.f);
 
 			int n_vertices, n_faces;
 			n_vertices = n_faces = 0;
@@ -569,6 +595,28 @@ namespace ui {
 			ImGui::Text("#Vertex = %d", n_vertices);
 			ImGui::Text("#Face = %d", n_faces);
 			// ImGui::Text("#DOF = %d", model.positions().rows() * 3 - model.n_edges);
+
+			ImGui::Separator();
+
+			if (screen_capture_plugin.is_capturing() == false)
+			{
+				if (ImGui::Button("Start capture", ImVec2(-1, 0))) 
+				{
+					std::string capture_path = igl::file_dialog_save();
+					if (capture_path.empty() == false)
+					{
+						screen_capture_plugin.start_capture(capture_path);
+					}
+				}
+			}
+			else
+			{
+				ImGui::Text("Captured %d frames", screen_capture_plugin.cur_capture_frame_id());
+				if (ImGui::Button("Stop capture", ImVec2(-1, 0)))
+				{
+					screen_capture_plugin.stop_capture();
+				}
+			}
 		}
     }
 
@@ -578,6 +626,7 @@ namespace ui {
 			&instancing::Instantiator::instance_test,
 			&instancing::Instantiator::instance_floor,
 			&instancing::Instantiator::instance_cloth,
+			&instancing::Instantiator::instance_4hanged_cloth,
 			&instancing::Instantiator::instance_bar,
 			&instancing::Instantiator::instance_bending_hemisphere,
 			&instancing::Instantiator::instance_cylinder,
@@ -590,6 +639,7 @@ namespace ui {
 			"Test",
 			"Floor", 
 			"Cloth", 
+			"Corners-pinned cloth",
 			"Bar",
 			"Bending Hemisphere",
 			"Cylinder",
@@ -598,9 +648,11 @@ namespace ui {
 			"Bunny"
 		};
 		static int item_current = 0;
+		ImGui::PushItemWidth(-1);
 		ImGui::Combo("", &item_current, instances, IM_ARRAYSIZE(instances));
+		ImGui::PopItemWidth();
 
-		if (ImGui::Button("Load instance"))
+		if (ImGui::Button("Load instance", ImVec2(-1, 0)))
 		{
 			instantiate_caller.at(item_current)(instantiator);
 		}
@@ -608,7 +660,7 @@ namespace ui {
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-		if (ImGui::Button("Reset all"))
+		if (ImGui::Button("Reset all", ImVec2(-1, 0)))
 		{
 			instantiator.reset_all();
 		}
@@ -633,14 +685,14 @@ namespace ui {
 			ImGui::Text("Solver is %s", solver.dirty ? "not ready." : "ready.");
 
 			ImGui::Checkbox("Use GPU for local step", &solver_params.use_gpu_for_local_step);
-			ImGui::InputFloat("timestep", &solver_params.dt, 0.01f, 0.1f, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
-			ImGui::InputInt("solver #itr", &solver_params.n_itr_solver_iterations);
-			ImGui::InputInt("PD #itr", &solver_params.n_solver_pd_iterations);
+			ImGui::InputFloat(LABEL("timestep"), &solver_params.dt, 0.01f, 0.1f, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
+			ImGui::InputInt(LABEL("solver #itr"), &solver_params.n_itr_solver_iterations);
+			ImGui::InputInt(LABEL("PD #itr"), &solver_params.n_solver_pd_iterations);
 
 			// Solver Selector
 			const char* items[] = { "Direct", "Parallel Jacobi", "A-Jacobi-1", "A-Jacobi-2", "A-Jacobi-3" };
 			static const char* cur_select_item = "Direct";
-			if (ImGui::BeginCombo("cur solver", cur_select_item))
+			if (ImGui::BeginCombo(LABEL("current solver"), cur_select_item))
 			{
 				for (int i = 0; i < IM_ARRAYSIZE(items); i++)
 				{
@@ -683,7 +735,7 @@ namespace ui {
 			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-			if (ImGui::Button("Simulate 1 Step") && viewer.core().is_animating == false)
+			if (ImGui::Button("Simulate Single Step", ImVec2(-1, 0)) && viewer.core().is_animating == false)
 			{
 				pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, always_recompute_normal);
 			}

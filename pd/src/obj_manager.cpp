@@ -91,8 +91,7 @@ namespace ui
 		int idx = viewer.mesh_index(obj_id);
 		viewer.data_list[idx].clear();
 		viewer.data_list[idx].set_mesh(model.positions(), model.faces());
-		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)0x66 / 0xff, (double)0xcc / 0xff, 1.0);
-		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
+		viewer.data_list[idx].set_colors(DEFORMABLE_MESH_TEXTURE_COLOR);
 		viewer.data_list[idx].double_sided = true;
 		viewer.core().align_camera_center(model.positions());
 
@@ -193,8 +192,7 @@ namespace ui
 		int idx = viewer.mesh_index(obj_id);
 		viewer.data_list[idx].clear();
 		viewer.data_list[idx].set_mesh(V, F);
-		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)125 / 255, (double)220 / 255, (double)117 / 255);
-		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
+		viewer.data_list[idx].set_colors(RIGID_COLLIDER_TEXTURE_COLOR);
 		viewer.data_list[idx].show_lines = 0;
 
 		user_control.cur_sel_mesh_id = obj_id;

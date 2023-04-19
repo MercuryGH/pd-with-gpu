@@ -13,6 +13,7 @@
 #include <igl/edges.h>
 #include <igl/is_border_vertex.h>
 #include <igl/adjacency_list.h>
+#include <igl/barycenter.h>
 #include <Eigen/Core>
 
 #include <primitive/primitive.h>
@@ -40,7 +41,7 @@ namespace pd
 			v(p.rows(), p.cols()),
 			fixed_vertices(),
 			obj_id(obj_id),
-			is_tet_mesh(true)
+			tet_mesh(true)
 		{
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
@@ -57,6 +58,7 @@ namespace pd
 
 			// do not construct ordered adj list since the boundary of tet mesh may be non-manifold
 			igl::adjacency_list(boundary_facets, adj_list, false);
+			igl::barycenter(p, e, barycenters);
 		}
 
 		// construct from triangle elements
@@ -69,7 +71,7 @@ namespace pd
 			v(p.rows(), p.cols()),
 			fixed_vertices(),
 			obj_id(obj_id),
-			is_tet_mesh(false)
+			tet_mesh(false)
 		{
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
@@ -111,6 +113,11 @@ namespace pd
 		bool is_vertex_fixed(int vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
 		const std::unordered_set<int>& get_fixed_vertices() const { return fixed_vertices; }
 		const std::vector<std::vector<int>>& get_adj_list() const { return adj_list; }
+		int n_constraints() const { return constraints.size(); }
+		bool is_tet_mesh() const { return tet_mesh; }
+		const Positions& get_element_barycenters() const { return barycenters; }
+		const Elements& get_elements() const { return e; }
+
 		/**
 		 * @brief Get the edges from elements
 		 * @note edges are restored from triangles or tetrahedra data
@@ -163,13 +170,14 @@ namespace pd
 		bool apply_mass_per_vertex(float mass_per_vertex);
 		int n_edges{ 0 };   // #Edges
 
-		void resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit) const;
+		static void resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit);
 
 	private:
 		void add_positional_constraint(int vi, float wc);
 
 		Positions p0;  // Rest positions
 		Positions p;   // Positions
+		Positions barycenters; // barycenter positions (for tetrahedron visualization only)
 		Faces boundary_facets; // for rendering only
 
 		// Indicates the model is of 
@@ -177,7 +185,7 @@ namespace pd
 		// Dimensions may differ between different elements.
 		// We need to restore the edges information from the elements matrix.
 		Elements e; 
-		bool is_tet_mesh{ false };
+		bool tet_mesh{ false };
 
 		Masses m;      // Per-vertex mass
 		Velocities v;  // Per-vertex velocity

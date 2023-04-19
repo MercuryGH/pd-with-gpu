@@ -14,12 +14,11 @@
 #include <ui/user_control.h>
 #include <ui/menus.h>
 #include <ui/input_callbacks.h>
+#include <ui/screen_capture_plugin.h>
 
 #include <meshgen/mesh_generator.h>
 
 #include <primitive/primitive.h>
-
-#include <instancing/instantiator.h>
 
 #include <util/gpu_helper.h>
 
@@ -27,6 +26,8 @@ int main(int argc, char* argv[])
 {
 	// TODO: hide igl::opengl::glfw::Viewer usage
 	igl::opengl::glfw::Viewer viewer;
+	ui::ScreenCapturePlugin screen_capture_plugin;
+	viewer.plugins.push_back(&screen_capture_plugin); // place in front of menu to avoid capturing UI contents
 	igl::opengl::glfw::imgui::ImGuiPlugin menu_plugin;
 	viewer.plugins.push_back(&menu_plugin);
 
@@ -71,12 +72,10 @@ int main(int argc, char* argv[])
 	viewer.callback_mouse_down = ui::mouse_down_handler{ models, user_control };
 	viewer.callback_mouse_move = ui::mouse_move_handler{ models, user_control, physics_params, f_exts };
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
-	viewer.callback_key_pressed = ui::keypress_handler{ gizmo };
+	viewer.callback_key_pressed = ui::keypress_handler{ gizmo, obj_manager, user_control };
 
 	pd::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control, always_recompute_normal };
 	viewer.callback_pre_draw = frame_callback; // frame routine
-
-	instancing::Instantiator instantiator { obj_manager, models };
 
 	const float window_widths[] = {200, 120, 300};
 	const float& viewport_horizontal_start = viewer.core().viewport(0);
@@ -87,18 +86,9 @@ int main(int argc, char* argv[])
 	obj_menu.callback_draw_viewer_window = ui::obj_menu_window_handler{ viewer, obj_manager, user_control };
 	constraint_menu.callback_draw_viewer_window = ui::constraint_menu_window_handler{ viewer, obj_manager, user_control, physics_params };
 	component_menu.callback_draw_viewer_window = ui::component_menu_window_handler{ viewer };
-	instantiator_menu.callback_draw_viewer_window = ui::instantiator_menu_window_handler{ viewer, instantiator };
+	instantiator_menu.callback_draw_viewer_window = ui::instantiator_menu_window_handler{ viewer, obj_manager };
 
-	main_menu.callback_draw_viewer_window = ui::pd_menu_window_handler{ viewer, obj_manager, solver, solver_params, physics_params, user_control, frame_callback, f_exts, gizmo, always_recompute_normal };
-
-	// use only for testing
-	[&]()
-	{
-		instantiator.instance_floor();
-		solver_params.use_gpu_for_local_step = false;
-		// instantiator.instance_cylinder();
-		// instantiator.instance_test();
-	}();
+	main_menu.callback_draw_viewer_window = ui::pd_menu_window_handler{ viewer, screen_capture_plugin, obj_manager, solver, solver_params, physics_params, user_control, frame_callback, f_exts, gizmo, always_recompute_normal };
 
 	viewer.launch(true, false, "Projective Dynamics", 0, 0);
 

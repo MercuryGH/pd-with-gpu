@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <pd/tet_strain_constraint.h>
 
 #include <Eigen/SVD>
@@ -62,14 +64,20 @@ namespace pd
 
 	std::vector<Eigen::Triplet<float>> TetStrainConstraint::get_c_AcTAc(int n_vertex_offset) const
 	{
-		std::vector<Eigen::Triplet<float>> triplets(48); // 3 * 4^2
+		std::vector<Eigen::Triplet<float>> triplets(3 * 4 * 4); // 48
 
-		Eigen::SparseMatrix<float> A_c;
+		int local_max_vertex_idx = 0;
+		for (int i = 0; i < n_vertices; i++)
+		{
+			local_max_vertex_idx = std::max(local_max_vertex_idx, vertices[i]);
+		}
+
+		Eigen::SparseMatrix<float> A_c(3, local_max_vertex_idx + 1); // preallocate space is necessary
 		A_c.setZero();
 
 		for (int i = 0; i < 4; i++)
 		{
-			const int v = 3 * vertices[i];
+			const int v = vertices[i];
 			for (int j = 0; j < 3; j++)
 			{
 				if (i == 0)
@@ -83,29 +91,52 @@ namespace pd
 			}
 		}
 
+		A_c.makeCompressed();
+		// for (int i = 0; i < n_vertices; i++)
+		// {
+		// 	std::cout << vertices[i] << "\n";
+		// }
+
 		Eigen::SparseMatrix<float> AcT_Ac = wc * A_c.transpose() * A_c;
-		for (int i = 0; i < A_c.outerSize(); i++)
+		AcT_Ac.makeCompressed();
+		for (int i = 0; i < AcT_Ac.outerSize(); i++)
 		{
-			for (Eigen::SparseMatrix<float>::InnerIterator itr(A_c, i); itr; ++itr)
+			for (Eigen::SparseMatrix<float>::InnerIterator itr(AcT_Ac, i); itr; ++itr)
 			{
-				triplets.emplace_back(itr.row(), itr.col(), itr.value());
+				for (int j = 0; j < 3; j++)
+				{
+					triplets.emplace_back(3 * n_vertex_offset + 3 * itr.row() + j, 3 * n_vertex_offset + 3 * itr.col() + j, itr.value());
+				}
 			}
 		}
 
-		printf("Debug: %d\n", triplets.size());
-		assert(false);
+		// std::cout << "AcT_Ac = " << AcT_Ac << "\n";
+		// for (int i = 0; i < triplets.size(); i++)
+		// {
+		// 	printf("%d, %d, %f\n", triplets[i].row(), triplets[i].col(), triplets[i].value());
+		// }
+		// printf("triplets.size() = %d\n", triplets.size());
+		// assert(false);
 
 		return triplets;
 	}
 
 	__host__ __device__ void TetStrainConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
 	{
-		// const Eigen::Vector3f center_pos = { q[3 * center_vertex], q[3 * center_vertex + 1], q[3 * center_vertex + 2] };
+		#ifndef __CUDA_ARCH__
+		// for (int i = 0; i < 3 * 8; i += 3)
+		// {
+		// 	printf("vertex %d pos = %f %f %f\n", i / 3, q[i], q[i + 1], q[i + 2]);
+		// }
+		#endif			
 
 		Eigen::Vector3f cur_pos[4];
 		for (int i = 0; i < 4; i++)
 		{
 			cur_pos[i] = { q[3 * vertices[i]], q[3 * vertices[i] + 1], q[3 * vertices[i] + 2] };
+		#ifndef __CUDA_ARCH__
+			// std::cout << "cur_pos[i] = " << cur_pos[i] << "\n";
+		#endif			
 		}
 
 		Eigen::Matrix3f D_s;
@@ -115,6 +146,12 @@ namespace pd
 		}
 
 		Eigen::Matrix3f F = D_s * D_m_inv; // deformation gradient
+
+	#ifndef __CUDA_ARCH__
+		// std::cout << "D_s = " << D_s << "\n";
+		// std::cout << "D_m_inv = " << D_m_inv << "\n";
+		// std::cout << "deformation gradient = " << F << "\n";
+	#endif
 
 		Eigen::Matrix3f Achpc;
 	#ifdef __CUDA_ARCH__
@@ -130,12 +167,13 @@ namespace pd
 			sigma(i) = std::clamp(sigma(i), min_strain_xyz(i), max_strain_xyz(i));
 		}
 
-		if (tet_inverted)
-		{
-			sigma(2) = -sigma(2);
-		}
+		// if (tet_inverted)
+		// {
+		// 	sigma(2) = -sigma(2);
+		// }
 
 		Achpc = U * sigma.asDiagonal() * V.transpose();
+		// std::cout << "Achpc = " << Achpc << "\n";
 	#endif
 
 		// apply A_c^T
@@ -165,6 +203,7 @@ namespace pd
 				atomicAdd(&b[3 * v + j], sum_of_products[j] * wc);
 			#else			
 				b[3 * v + j] += sum_of_products[j] * wc;
+				// std::cout << "write val = " << sum_of_products[j] << ", " << wc << "\n";
 			#endif
 			}
 		}
