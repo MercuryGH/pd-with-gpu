@@ -208,7 +208,7 @@ namespace pd
 	}
 
 	__global__ void gpu_local_step(
-		float *__restrict__ d_b, const float *__restrict__ d_q_nplus1,
+		SimScalar *__restrict__ d_b, const SimScalar *__restrict__ d_q_nplus1,
 		Constraint **__restrict__ d_cloned_constraints, int n_constraints)
 	{
 		for (int idx = blockDim.x * blockIdx.x + threadIdx.x; idx < n_constraints; idx += blockDim.x * gridDim.x)

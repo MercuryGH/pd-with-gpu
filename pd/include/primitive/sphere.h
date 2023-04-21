@@ -6,7 +6,7 @@ namespace primitive
     class Sphere: public Primitive
     {
     public:
-        Sphere(pd::SimVector3 center_point, float radius): Primitive(PrimitiveType::SPHERE), center_point(center_point), radius(radius) {}
+        Sphere(pd::SimVector3 center_point, pd::SimScalar radius): Primitive(PrimitiveType::SPHERE), center_point(center_point), radius(radius) {}
         bool collision_handle(pd::SimVector3& pos) const override;
         void generate_visualized_model(Eigen::MatrixXd& V, Eigen::MatrixXi& F) const override;
         pd::SimVector3 center() const override;

@@ -12,7 +12,7 @@ namespace pd {
 
 		PositionalConstraint(SimScalar wc, VertexIndexType vi, const PositionData& p) :
 			Constraint(wc, 1),
-			p0(p.row(vi).transpose().cast<float>())
+			p0(p.row(vi).transpose().cast<SimScalar>())
 		{
 			cudaMallocManaged(&vertices, sizeof(int) * 1);
 			vertices[0] = vi;
