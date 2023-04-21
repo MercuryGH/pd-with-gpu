@@ -49,14 +49,14 @@ int main(int argc, char* argv[])
 	menu_plugin.widgets.push_back(&gizmo);
 
     // transformation aux
-	std::unordered_map<int, Eigen::MatrixXd> obj_init_pos_map; // obj_id to its initial position matrix
+	std::unordered_map<pd::MeshIDType, Eigen::MatrixXd> obj_init_pos_map; // obj_id to its initial position matrix
 
 	// pd simulatee
-	std::unordered_map<int, pd::DeformableMesh> models;
-	std::unordered_map<int, Eigen::MatrixX3d> f_exts;
+	std::unordered_map<pd::MeshIDType, pd::DeformableMesh> models;
+	std::unordered_map<pd::MeshIDType, pd::DataMatrixX3> f_exts;
 
 	// rigid body colliders
-	std::unordered_map<int, std::unique_ptr<primitive::Primitive>> rigid_colliders;
+	std::unordered_map<pd::MeshIDType, std::unique_ptr<primitive::Primitive>> rigid_colliders;
 
 	pd::Solver solver(models, rigid_colliders);
 
@@ -77,16 +77,10 @@ int main(int argc, char* argv[])
 	pd::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control, always_recompute_normal };
 	viewer.callback_pre_draw = frame_callback; // frame routine
 
-	const float window_widths[] = {200, 120, 300};
-	const float& viewport_horizontal_start = viewer.core().viewport(0);
-	const float& viewport_horizontal_end = viewer.core().viewport(2);
-	const float& viewport_vertical_start = viewer.core().viewport(1);
-	const float& viewport_vertical_end = viewer.core().viewport(3);
-
 	obj_menu.callback_draw_viewer_window = ui::obj_menu_window_handler{ viewer, obj_manager, user_control };
 	constraint_menu.callback_draw_viewer_window = ui::constraint_menu_window_handler{ viewer, obj_manager, user_control, physics_params };
 	component_menu.callback_draw_viewer_window = ui::component_menu_window_handler{ viewer };
-	instantiator_menu.callback_draw_viewer_window = ui::instantiator_menu_window_handler{ viewer, obj_manager };
+	instantiator_menu.callback_draw_viewer_window = ui::instantiator_menu_window_handler{ viewer, obj_manager, physics_params };
 
 	main_menu.callback_draw_viewer_window = ui::pd_menu_window_handler{ viewer, screen_capture_plugin, obj_manager, solver, solver_params, physics_params, user_control, frame_callback, f_exts, gizmo, always_recompute_normal };
 

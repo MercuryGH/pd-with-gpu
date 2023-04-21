@@ -7,10 +7,10 @@ namespace pd {
 	class PositionalConstraint : public Constraint
 	{
 	public:
-		// __host__ __device__ PositionalConstraint(float wc, int vi, float x0, float y0, float z0);
+		// __host__ __device__ PositionalConstraint(SimScalar wc, int vi, float x0, float y0, float z0);
 		PositionalConstraint() = default;
 
-		PositionalConstraint(float wc, int vi, const Positions& p) :
+		PositionalConstraint(SimScalar wc, VertexIndexType vi, const PositionData& p) :
 			Constraint(wc, 1),
 			p0(p.row(vi).transpose().cast<float>())
 		{
@@ -28,10 +28,9 @@ namespace pd {
 			return new PositionalConstraint(*this);
 		}
 
-		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
-		std::vector<Eigen::Triplet<float>> get_c_AcTAc(int n_vertex_offset) const override;
+		std::vector<Eigen::Triplet<SimScalar>> get_c_AcTAc(int n_vertex_offset) const override;
 
-		__host__ __device__ void project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const override;
+		__host__ __device__ void project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const override;
 
 		__host__ __device__ void print_name() const override
 		{
@@ -40,10 +39,10 @@ namespace pd {
 
 		__host__ __device__ ~PositionalConstraint() override { /* printf("Delete PC\n"); */ }
 
-		__host__ __device__ int vi() const { return vertices[0]; }
+		__host__ __device__ VertexIndexType vi() const { return vertices[0]; }
 
 	private:
 		// fixed vertex position
-		Eigen::Vector3f p0;
+		SimVector3 p0;
 	};
 }

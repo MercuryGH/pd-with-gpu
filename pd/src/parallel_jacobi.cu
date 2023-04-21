@@ -5,12 +5,12 @@
 
 namespace pd
 {
-	__global__ void itr_shfl_down(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
+	__global__ void itr_shfl_down(SimScalar* __restrict__ next_x, const SimScalar* __restrict__ A, const SimScalar* __restrict__ x, const SimScalar* __restrict__ b, int n_row, int n_col)
 	{
 		int col_start = threadIdx.x; // indicates i-th thread in a warp, 0 <= i <= 31
 		int row = blockIdx.x;
 		int offset = row * n_col;
-		float sum = 0.0f;
+		SimScalar sum = 0.0f;
 
 		if (row < n_row)
 		{
@@ -32,13 +32,13 @@ namespace pd
 		}
 	}
 
-	__global__ void itr_normal(float* __restrict__ next_x, const float* __restrict__ A, const float* __restrict__ x, const float* __restrict__ b, int n_row, int n_col)
+	__global__ void itr_normal(SimScalar* __restrict__ next_x, const SimScalar* __restrict__ A, const SimScalar* __restrict__ x, const SimScalar* __restrict__ b, int n_row, int n_col)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 		if (idx < n_row)
 		{
-			float sum = 0.0f;
+			SimScalar sum = 0.0f;
 			int row_offset = idx * n_col;
 			for (int j = 0; j < n_col; j++)
 			{
@@ -62,35 +62,35 @@ namespace pd
 	}
 
 	// Make sure A is compressed
-	void ParallelJacobi::set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models)
+	void ParallelJacobi::set_A(const Eigen::SparseMatrix<SimScalar>& A, const std::unordered_map<MeshIDType, DeformableMesh>& models)
 	{
-		Eigen::MatrixXf _A = Eigen::MatrixXf(A);
+		SimMatrixX _A = SimMatrixX(A);
 		n = _A.rows(); // n = 3 * #Vertex
 
-		checkCudaErrors(cudaMalloc((void**)&d_A, sizeof(float) * _A.size()));
-		checkCudaErrors(cudaMalloc((void**)&d_b, sizeof(float) * n));
-		checkCudaErrors(cudaMalloc((void**)&d_x, sizeof(float) * n));
-		checkCudaErrors(cudaMalloc((void**)&d_next_x, sizeof(float) * n));
+		checkCudaErrors(cudaMalloc((void**)&d_A, sizeof(SimScalar) * _A.size()));
+		checkCudaErrors(cudaMalloc((void**)&d_b, sizeof(SimScalar) * n));
+		checkCudaErrors(cudaMalloc((void**)&d_x, sizeof(SimScalar) * n));
+		checkCudaErrors(cudaMalloc((void**)&d_next_x, sizeof(SimScalar) * n));
 		is_allocated = true;
 
-		checkCudaErrors(cudaMemcpy(d_A, _A.data(), sizeof(float) * _A.size(), cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_A, _A.data(), sizeof(SimScalar) * _A.size(), cudaMemcpyHostToDevice));
 	}
 
-	Eigen::VectorXf ParallelJacobi::solve(const Eigen::VectorXf& b)
+	SimVectorX ParallelJacobi::solve(const SimVectorX& b)
 	{
-		Eigen::VectorXf ret;
+		SimVectorX ret;
 		ret.resizeLike(b);
 
 		assert(b.size() == n);
 
-		checkCudaErrors(cudaMemcpy(d_b, b.data(), sizeof(float) * n, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_b, b.data(), sizeof(SimScalar) * n, cudaMemcpyHostToDevice));
 		// set to IEEE-754 zero as iteration initial value
-		cudaMemset(d_x, 0, sizeof(float) * n);
-		cudaMemset(d_next_x, 0, sizeof(float) * n);
+		cudaMemset(d_x, 0, sizeof(SimScalar) * n);
+		cudaMemset(d_next_x, 0, sizeof(SimScalar) * n);
 
 		// The solver iterates for a constant number, not checking error
-		//float diff = 0.0f;
-		//float eps = 1e-4f;
+		//SimScalar diff = 0.0f;
+		//SimScalar eps = 1e-4f;
 		if (false)
 		{
 			const int n_blocks = util::get_n_blocks(n);
@@ -125,13 +125,13 @@ namespace pd
 		}
 		//cudaDeviceSynchronize();  // no need to call since cudaMemcpy is synchronized
 
-		checkCudaErrors(cudaMemcpy(ret.data(), d_x, sizeof(float) * n, cudaMemcpyDeviceToHost));
+		checkCudaErrors(cudaMemcpy(ret.data(), d_x, sizeof(SimScalar) * n, cudaMemcpyDeviceToHost));
 
 		// check if the error is OK
-		Eigen::VectorXf err_checker;
+		SimVectorX err_checker;
 		err_checker.resizeLike(ret);
-		checkCudaErrors(cudaMemcpy(err_checker.data(), d_next_x, sizeof(float) * n, cudaMemcpyDeviceToHost));
-		constexpr float eps = 1e-3f;
+		checkCudaErrors(cudaMemcpy(err_checker.data(), d_next_x, sizeof(SimScalar) * n, cudaMemcpyDeviceToHost));
+		constexpr SimScalar eps = 1e-3f;
 		for (int i = 0; i < n; i++)
 		{
 			if (std::abs(err_checker[i] - ret[i]) > eps)

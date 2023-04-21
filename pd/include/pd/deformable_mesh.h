@@ -32,7 +32,7 @@ namespace pd
 		DeformableMesh() = default;
 
 		// construct from tetrahedron elements
-		DeformableMesh(const Positions &p, const Elements &t, const Faces &boundary_facets, int obj_id) :
+		DeformableMesh(const PositionData &p, const ElementData &t, const FaceData &boundary_facets, MeshIDType obj_id) :
 			p0(p),
 			p(p),
 			e(t),
@@ -62,7 +62,7 @@ namespace pd
 		}
 
 		// construct from triangle elements
-		DeformableMesh(const Positions &p, const Elements &f, int obj_id) :
+		DeformableMesh(const PositionData &p, const ElementData &f, MeshIDType obj_id) :
 			p0(p),
 			p(p),
 			e(f),
@@ -107,29 +107,31 @@ namespace pd
 
 		// getters
 		bool empty() const { return p.rows() == 0; }
-		const Positions& positions() const { return p; }
-		const Faces& faces() const { return boundary_facets; }
+		const PositionData& positions() const { return p; }
+		const FaceData& faces() const { return boundary_facets; }
 		const thrust::host_vector<pd::Constraint*>& get_all_constraints() const { return constraints; }
-		bool is_vertex_fixed(int vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
+		bool is_vertex_fixed(VertexIndexType vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
 		const std::unordered_set<int>& get_fixed_vertices() const { return fixed_vertices; }
 		const std::vector<std::vector<int>>& get_adj_list() const { return adj_list; }
 		int n_constraints() const { return constraints.size(); }
 		bool is_tet_mesh() const { return tet_mesh; }
-		const Positions& get_element_barycenters() const { return barycenters; }
-		const Elements& get_elements() const { return e; }
+		const PositionData& get_element_barycenters() const { return barycenters; }
+		const ElementData& get_elements() const { return e; }
+
+		void set_vertex_mass(VertexIndexType vid, DataScalar mass) { m(vid) = mass; }
 
 		/**
 		 * @brief Get the edges from elements
 		 * @note edges are restored from triangles or tetrahedra data
 		 * @return Eigen::MatrixXi #edges*2 array of integers
 		 */
-		Eigen::MatrixXi get_edges() const 
+		Eigen::MatrixX2i get_edges() const 
 		{ 
-			Eigen::MatrixXi edges; 
+			Eigen::MatrixX2i edges; 
 			igl::edges(e, edges); 
 			return edges; 
 		}
-		const Eigen::VectorXd& get_masses() const { return m; }
+		const MassData& get_masses() const { return m; }
 
 		// setters
 		void reset_constraints()
@@ -139,18 +141,18 @@ namespace pd
 			fixed_vertices.clear();
 		}
 
-		void update_positions_and_velocities(const Positions& p, const Velocities& v)
+		void update_positions_and_velocities(const PositionData& p, const VelocityData& v)
 		{
 			this->p = p;
 			this->v = v;
 		}
 
-		void set_positions(const Positions& p)
+		void set_positions(const PositionData& p)
 		{
 			this->p = p;
 		}
 
-		void apply_translation(Eigen::Vector3d translate)
+		void apply_translation(DataVector3 translate)
 		{
 			for (int i = 0; i < p.rows(); i++)
 			{
@@ -158,41 +160,41 @@ namespace pd
 			}
 		}
 
-		int obj_id{ -1 };
+		MeshIDType obj_id{ -1 };
 
 	    // methods
-		void toggle_vertices_fixed(const std::unordered_set<int>& v, float wc);
-		void set_edge_strain_constraints(float wc);
-		void set_bending_constraints(float wc);
-		void set_tet_strain_constraints(float wc, Eigen::Vector3f min_strain_xyz=Eigen::Vector3f::Ones(), Eigen::Vector3f max_strain_xyz=Eigen::Vector3f::Ones());
+		void toggle_vertices_fixed(const std::unordered_set<VertexIndexType>& v, SimScalar wc);
+		void set_edge_strain_constraints(SimScalar wc);
+		void set_bending_constraints(SimScalar wc);
+		void set_tet_strain_constraints(SimScalar wc, SimVector3 min_strain_xyz=SimVector3::Ones(), SimVector3 max_strain_xyz=SimVector3::Ones());
 
 		// TODO: use area weighted method to apply mass
-		bool apply_mass_per_vertex(float mass_per_vertex);
+		bool apply_mass_per_vertex(DataScalar mass_per_vertex);
 		int n_edges{ 0 };   // #Edges
 
-		static void resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit);
+		static void resolve_collision(const std::unordered_map<pd::MeshIDType, std::unique_ptr<primitive::Primitive>>& rigid_colliders, SimMatrixX3& q_explicit);
 
 	private:
-		void add_positional_constraint(int vi, float wc);
+		void add_positional_constraint(VertexIndexType vi, SimScalar wc);
 
-		Positions p0;  // Rest positions
-		Positions p;   // Positions
-		Positions barycenters; // barycenter positions (for tetrahedron visualization only)
-		Faces boundary_facets; // for rendering only
+		PositionData p0;  // Rest positions
+		PositionData p;   // Positions
+		PositionData barycenters; // barycenter positions (for tetrahedron visualization only)
+		FaceData boundary_facets; // for rendering only
 
 		// Indicates the model is of 
 		// triangle elements (=faces) or tetrahedra elements.
 		// Dimensions may differ between different elements.
 		// We need to restore the edges information from the elements matrix.
-		Elements e; 
+		ElementData e; 
 		bool tet_mesh{ false };
 
-		Masses m;      // Per-vertex mass
-		Velocities v;  // Per-vertex velocity
+		MassData m;      // Per-vertex mass
+		VelocityData v;  // Per-vertex velocity
 		thrust::host_vector<pd::Constraint*> constraints; // Vector of constraints
 
-		std::vector<std::vector<int>> adj_list; // sorted adjancecy list
+		std::vector<std::vector<VertexIndexType>> adj_list; // sorted adjancecy list
 
-		std::unordered_set<int> fixed_vertices; // store all fixed vertex
+		std::unordered_set<VertexIndexType> fixed_vertices; // store all fixed vertex
 	};
 }

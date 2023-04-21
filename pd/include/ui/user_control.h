@@ -20,6 +20,7 @@ namespace ui
 		int cur_sel_mesh_id{ -1 };
 		bool toggle_vertex_fix{ false };
 		std::unordered_set<int> toggle_fixed_vertex_idxs;
+		std::unordered_set<int> vertex_idxs_memory;
 
 		// debug draw (adj vertex)
 		bool enable_debug_draw{ true };

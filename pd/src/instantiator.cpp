@@ -182,10 +182,38 @@ namespace instancing {
         int id = obj_manager.add_model(V, T, boundary_facets);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         
-        model.set_tet_strain_constraints(0.01f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
+        model.set_tet_strain_constraints(100.f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
 
         std::unordered_set<int> toggle_vertices;
         for (int i = 0; i <= (w + 1) * (h + 1) * (d + 1) - (d + 1); i += d + 1)
+        {
+            toggle_vertices.insert(i);
+        }
+        model.toggle_vertices_fixed(toggle_vertices, 100.f);
+        obj_manager.user_control.vertex_idxs_memory = toggle_vertices;
+
+		obj_manager.recalc_total_n_constraints();
+    }
+
+    void Instantiator::instance_bridge()
+    {
+        constexpr int w = 2;
+        constexpr int h = 2;
+        constexpr int d = 20;
+        auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
+        int id = obj_manager.add_model(V, T, boundary_facets);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        // model.set_tet_strain_constraints(400.f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
+
+        model.set_tet_strain_constraints(1000.f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
+
+        std::unordered_set<int> toggle_vertices;
+        for (int i = 0; i <= (w + 1) * (h + 1) * (d + 1) - (d + 1); i += d + 1)
+        {
+            toggle_vertices.insert(i);
+        }
+        for (int i = d; i <= (w + 1) * (h + 1) * (d + 1) - 1; i += d + 1)
         {
             toggle_vertices.insert(i);
         }
@@ -229,5 +257,51 @@ namespace instancing {
 
     void Instantiator::instance_test()
     {
+        physics_params.mass_per_vertex = 10.0;
+
+        constexpr int w = 1;
+        constexpr int h = 1;
+        // constexpr int d = 7;
+        constexpr int d = 7;
+
+        auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
+        int id = obj_manager.add_model(V, T, boundary_facets);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        physics_params.enable_gravity = false;
+        
+        model.set_tet_strain_constraints(10000000.0f, Eigen::Vector3f(0.99f, 0.99f, 0.99f), Eigen::Vector3f(1.01f, 1.01f, 1.01f));
+
+        std::unordered_set<int> toggle_vertices;
+        for (int i = d; i <= (w + 1) * (h + 1) * (d + 1) - 1; i += d + 1)
+        {
+            toggle_vertices.insert(i);
+            model.set_vertex_mass(i, 1e10);
+        }
+        model.toggle_vertices_fixed(toggle_vertices, 1000000000.0f);
+
+		obj_manager.recalc_total_n_constraints();   
+
+        return;
+
+        /*
+
+        physics_params.mass_per_vertex = 10.0;
+        physics_params.enable_gravity = false;
+
+        float weight = 10000000.0;
+        Eigen::Vector3f min_strain(0.990, 0.990, 0.990);
+        Eigen::Vector3f max_strain(1.010, 1.010, 1.010);
+
+        auto [V, T, boundary_facets] = meshgen::generate_bar(3, 3, 12);
+
+        int id = obj_manager.add_model(V, T, boundary_facets);
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+        
+        model.set_tet_strain_constraints(weight, min_strain, max_strain);
+
+        // model.toggle_vertices_fixed({ 3 }, 1000000000.0);
+
+		obj_manager.recalc_total_n_constraints();*/
     }
 }

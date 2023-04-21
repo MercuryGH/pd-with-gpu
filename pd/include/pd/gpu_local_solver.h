@@ -37,8 +37,8 @@ namespace pd
 		 * @remark First clone all objects serially, then fix their vtables parallelly
 		 * @param models all deformable meshes
 		 */
-		void gpu_object_creation_parallel(const std::unordered_map<int, DeformableMesh>& models);
-		void gpu_local_step_entry(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b);
+		void gpu_object_creation_parallel(const std::unordered_map<MeshIDType, DeformableMesh>& models);
+		void gpu_local_step_entry(const SimPositions& q_nplus1, SimVectorX& b);
 
 	private:
 		int n_constraints{ 0 };
@@ -56,8 +56,8 @@ namespace pd
 		thrust::host_vector<const pd::TetStrainConstraint*> tscs;
 
 		int* d_local_cnt; // GPU counter for objects (use in serial creation only)
-		float* d_q_nplus1;
-		float* d_b;
+		SimScalar* d_q_nplus1;
+		SimScalar* d_b;
 	};
 
 	// virtual table handling
@@ -102,7 +102,7 @@ namespace pd
 	 * @param n_constraints #constraints
 	 */
 	__global__ void gpu_local_step(
-		float* __restrict__ d_b, const float* __restrict__ d_q_nplus1,
+		SimScalar* __restrict__ d_b, const SimScalar* __restrict__ d_q_nplus1,
 		Constraint** __restrict__ d_cloned_constraints, int n_constraints);
 
 	__global__ void test_kernel();

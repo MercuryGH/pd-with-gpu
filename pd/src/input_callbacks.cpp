@@ -172,7 +172,7 @@ namespace ui {
             return;
         }
 
-        const int obj_id = user_control.cur_sel_mesh_id;
+        const pd::MeshIDType obj_id = user_control.cur_sel_mesh_id;
         // disable user manipulation on deformable mesh while animating to avoid weird visual problem
         if (obj_manager.is_deformable_model(obj_id) && is_animating) 
         {
@@ -192,8 +192,8 @@ namespace ui {
         }
         else if (rigid_colliders.find(obj_id) != rigid_colliders.end())
         {
-            Eigen::Vector3f center = 0.5 * (positions.colwise().maxCoeff() + positions.colwise().minCoeff()).transpose().cast<float>();
-            rigid_colliders[obj_id]->set_center(center);
+            const auto center = 0.5 * (positions.colwise().maxCoeff() + positions.colwise().minCoeff()).transpose();
+            rigid_colliders[obj_id]->set_center(center.cast<pd::SimScalar>());
         }
         else
         {
@@ -220,7 +220,7 @@ namespace ui {
         if (button >= '1' && button <= '9')
         {
             const double t = double((button - '1') + 1) / 9;
-            const int obj_id = user_control.cur_sel_mesh_id;
+            const pd::MeshIDType obj_id = user_control.cur_sel_mesh_id;
             if (obj_manager.is_deformable_model(obj_id))
             {
                 const pd::DeformableMesh& model = obj_manager.models.at(obj_id);
@@ -266,6 +266,7 @@ namespace ui {
 		        int idx = viewer.mesh_index(obj_id);
                 viewer.data_list[idx].clear();
                 viewer.data_list[idx].set_mesh(V_tmp, F_tmp);
+                viewer.data_list[idx].set_colors(obj_manager.DEFORMABLE_TET_MESH_TEXTURE_COLOR);
                 user_control.enable_debug_draw = false;
                 user_control.enable_tetrahedra_visualization = true;
             }
@@ -275,7 +276,7 @@ namespace ui {
         {
             if (user_control.enable_tetrahedra_visualization)
             {
-                const int obj_id = user_control.cur_sel_mesh_id;
+                const pd::MeshIDType obj_id = user_control.cur_sel_mesh_id;
                 if (obj_manager.is_deformable_model(obj_id))
                 {
                     const pd::DeformableMesh& model = obj_manager.models.at(obj_id);
@@ -287,6 +288,7 @@ namespace ui {
                     int idx = viewer.mesh_index(obj_id);
                     viewer.data_list[idx].clear();
                     viewer.data_list[idx].set_mesh(model.positions(), model.faces());
+                    viewer.data_list[idx].set_colors(obj_manager.DEFORMABLE_TET_MESH_TEXTURE_COLOR);
                     user_control.enable_debug_draw = true;
                     user_control.enable_tetrahedra_visualization = false;
                 }

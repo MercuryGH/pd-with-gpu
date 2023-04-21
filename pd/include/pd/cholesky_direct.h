@@ -8,11 +8,11 @@ namespace pd
 	class CholeskyDirect : public LinearSystemSolver
 	{
 	public:
-		void set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models) override;
-		Eigen::VectorXf solve(const Eigen::VectorXf& b) override;
+		void set_A(const Eigen::SparseMatrix<SimScalar>& A, const std::unordered_map<MeshIDType, DeformableMesh>& models) override;
+		SimVectorX solve(const SimVectorX& b) override;
 		void clear() override;
 
 	private:
-		Eigen::SimplicialCholesky<Eigen::SparseMatrix<float>> A_cholesky_decomp;
+		Eigen::SimplicialCholesky<Eigen::SparseMatrix<SimScalar>> A_cholesky_decomp;
 	};
 }

@@ -24,11 +24,11 @@ namespace pd
 	public:
 		Solver() = delete;
 		Solver(
-			std::unordered_map<int, DeformableMesh>& models, 
-			std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders
+			std::unordered_map<MeshIDType, DeformableMesh>& models, 
+			std::unordered_map<pd::MeshIDType, std::unique_ptr<primitive::Primitive>>& rigid_colliders
 		);
 
-		void set_dt(float dt)
+		void set_dt(SimScalar dt)
 		{
 			this->dt = dt;
 		}
@@ -37,7 +37,8 @@ namespace pd
 		// Precompute A products and A coefficients in A-Jacobi
 		void precompute_A();
 		void precompute();
-		void step(const std::unordered_map<int, Eigen::MatrixX3d>& f_exts, int n_itr, int itr_solver_n_itr);
+		void step(const std::unordered_map<MeshIDType, DataMatrixX3>& f_exts, int n_itr, int itr_solver_n_itr);
+		void test_step(const std::unordered_map<MeshIDType, DataMatrixX3>& f_exts, int n_itr, int itr_solver_n_itr);
 		void set_solver(ui::LinearSysSolver sel);
 		void clear_solver();
 
@@ -59,19 +60,19 @@ namespace pd
 
 	private:
 		// solver params
-		float dt;
+		SimScalar dt;
 
 		// model
-		std::unordered_map<int, DeformableMesh>& models;
-		const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders;
-		Eigen::SparseMatrix<float> A;
+		std::unordered_map<MeshIDType, DeformableMesh>& models;
+		const std::unordered_map<pd::MeshIDType, std::unique_ptr<primitive::Primitive>>& rigid_colliders;
+		Eigen::SparseMatrix<SimScalar> A;
 
 		constexpr static int N_SOLVERS = 5;
 		std::array<std::unique_ptr<LinearSystemSolver>, N_SOLVERS> solvers;
 		std::array<std::unique_ptr<LinearSystemSolver>, N_SOLVERS>::iterator linear_sys_solver;
 
 		// local step
-		void local_step_cpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b);
-		void local_step_gpu(const Eigen::VectorXf& q_nplus1, Eigen::VectorXf& b);
+		void local_step_cpu(const SimPositions& q_nplus1, SimVectorX& b);
+		void local_step_gpu(const SimPositions& q_nplus1, SimVectorX& b);
 	};
 }

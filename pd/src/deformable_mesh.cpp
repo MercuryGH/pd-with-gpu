@@ -6,7 +6,7 @@
 
 namespace pd
 {
-	void DeformableMesh::toggle_vertices_fixed(const std::unordered_set<int> &v, float wc)
+	void DeformableMesh::toggle_vertices_fixed(const std::unordered_set<VertexIndexType> &v, SimScalar wc)
 	{
 		for (const int vi : v)
 		{
@@ -22,16 +22,16 @@ namespace pd
 		}
 	}
 
-	void DeformableMesh::add_positional_constraint(int vi, float wc)
+	void DeformableMesh::add_positional_constraint(VertexIndexType vi, SimScalar wc)
 	{
 		constraints.push_back(new PositionalConstraint(
 			wc, vi, p
 		));
 	}
 
-	void DeformableMesh::set_edge_strain_constraints(float wc)
+	void DeformableMesh::set_edge_strain_constraints(SimScalar wc)
 	{
-		Eigen::MatrixXi edges = get_edges();
+		Eigen::MatrixX2i edges = get_edges();
 
 		for (int i = 0; i < edges.rows(); i++)
 		{
@@ -39,8 +39,8 @@ namespace pd
 			const auto e0 = edge(0);
 			const auto e1 = edge(1);
 
-			const double rest_length = (p.row(e0) - p.row(e1)).norm();
-			constexpr double EPS = 1e-5;
+			const DataScalar rest_length = (p.row(e0) - p.row(e1)).norm();
+			constexpr DataScalar EPS = 1e-5;
 
 			// discard very short edge
 			if (rest_length < EPS)
@@ -54,7 +54,7 @@ namespace pd
 		}
 	}
 
-	void DeformableMesh::set_bending_constraints(float wc)
+	void DeformableMesh::set_bending_constraints(SimScalar wc)
 	{
 		std::vector<bool> borders = igl::is_border_vertex(boundary_facets);
 		for (int i = 0; i < positions().rows(); i++)
@@ -66,11 +66,11 @@ namespace pd
 				discard_flag = true;
 			}
 
-			std::vector<int> neighbor_vertices;
-			for (const int v : adj_list.at(i))
+			std::vector<VertexIndexType> neighbor_vertices;
+			for (const VertexIndexType v : adj_list.at(i))
 			{
-				const double edge_length = (p.row(i) - p.row(v)).norm();
-				constexpr double EPS = 1e-5;
+				const DataScalar edge_length = (p.row(i) - p.row(v)).norm();
+				constexpr DataScalar EPS = 1e-5;
 				if (edge_length < EPS) // vertex that adj to a very short edge is not considered
 				{
 					discard_flag = true;
@@ -92,7 +92,7 @@ namespace pd
 		}
 	}
 
-	void DeformableMesh::set_tet_strain_constraints(float wc, Eigen::Vector3f min_strain_xyz, Eigen::Vector3f max_strain_xyz)
+	void DeformableMesh::set_tet_strain_constraints(SimScalar wc, SimVector3 min_strain_xyz, SimVector3 max_strain_xyz)
 	{
 		if (is_tet_mesh() == false)
 		{
@@ -101,7 +101,7 @@ namespace pd
 
 		for (int i = 0; i < e.rows(); i++)
 		{
-			const Eigen::RowVector4i tet_vertices = e.row(i);
+			const IndexRowVector4 tet_vertices = e.row(i);
 
 			constraints.push_back(new TetStrainConstraint(
 				wc, p, tet_vertices, min_strain_xyz, max_strain_xyz
@@ -109,22 +109,25 @@ namespace pd
 		}
 	}
 
-	bool DeformableMesh::apply_mass_per_vertex(float mass_per_vertex)
+	bool DeformableMesh::apply_mass_per_vertex(DataScalar mass_per_vertex)
 	{
 		bool need_modify = false;
 		
-		const auto eq = [](float a, float b)
+		const auto eq = [](DataScalar a, DataScalar b)
 		{
-			constexpr float eps = 1e-5;
-			float diff = std::abs(a - b);
+			constexpr DataScalar eps = 1e-5;
+			DataScalar diff = std::abs(a - b);
 			return diff <= eps;
 		};
 
 		for (int i = 0; i < p.rows(); i++)
 		{
-			if (eq(static_cast<float>(m(i)), mass_per_vertex) == false)
+			// TODO: remove this debug statement
+			if (fixed_vertices.find(i) != fixed_vertices.end()) continue;
+
+			if (eq(static_cast<DataScalar>(m(i)), mass_per_vertex) == false)
 			{
-				m(i) = static_cast<double>(mass_per_vertex);
+				m(i) = static_cast<DataScalar>(mass_per_vertex);
 				need_modify = true;
 			}
 		}
@@ -132,12 +135,12 @@ namespace pd
 		return need_modify;
 	}
 
-	void DeformableMesh::resolve_collision(const std::unordered_map<int, std::unique_ptr<primitive::Primitive>>& rigid_colliders, Eigen::MatrixX3f& q_explicit)
+	void DeformableMesh::resolve_collision(const std::unordered_map<pd::MeshIDType, std::unique_ptr<primitive::Primitive>>& rigid_colliders, SimMatrixX3& q_explicit)
 	{
 		static int collision_cnt = 0;
 		for (int i = 0; i < q_explicit.rows(); i++)
 		{
-			Eigen::Vector3f pos = q_explicit.row(i).transpose();
+			SimVector3 pos = q_explicit.row(i).transpose();
 			for (const auto& [id, collider] : rigid_colliders)
 			{
 				bool flag = collider->collision_handle(pos);

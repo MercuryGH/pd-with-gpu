@@ -17,29 +17,29 @@ namespace pd {
     // Physical frame calculation
 	void tick(
 		igl::opengl::glfw::Viewer& viewer,
-		std::unordered_map<int, pd::DeformableMesh>& models,
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		const ui::PhysicsParams& physics_params,
 		const ui::SolverParams& solver_params,
 		pd::Solver& solver,
-		std::unordered_map<int, Eigen::MatrixX3d>& f_exts,
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
 		bool always_recompute_normal
 	);
 
 	void draw_debug_info(
 		igl::opengl::glfw::Viewer& viewer,
-		std::unordered_map<int, pd::DeformableMesh>& models,
-		int sel_mesh_id,
-		int sel_vertex_idx
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
+		pd::MeshIDType sel_mesh_id,
+		pd::VertexIndexType sel_vertex_idx
 	);
 
 	// Frame routine before rendering
 	struct pre_draw_handler
 	{
 		pd::Solver& solver;
-		std::unordered_map<int, pd::DeformableMesh>& models;
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models;
 
 		ui::PhysicsParams& physics_params;
-		std::unordered_map<int, Eigen::MatrixX3d>& f_exts;
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts;
 		ui::SolverParams& solver_params;
 		const ui::UserControl& user_control;
 		const bool& always_recompute_normal;

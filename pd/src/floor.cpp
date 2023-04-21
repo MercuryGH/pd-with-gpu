@@ -4,9 +4,9 @@
 
 namespace primitive
 {
-    bool Floor::collision_handle(Eigen::Vector3f& pos) const 
+    bool Floor::collision_handle(pd::SimVector3& pos) const 
     {
-		constexpr static float EPS = 0.01;
+		constexpr static pd::SimScalar EPS = 0.01;
         if (pos.y() < center_point.y() + EPS)
         {
             pos.y() = center_point.y() + EPS;
@@ -21,12 +21,12 @@ namespace primitive
 		V = ret.first, F = ret.second;
     }
 
-    Eigen::Vector3f Floor::center() const 
+    pd::SimVector3 Floor::center() const 
 	{
 		return center_point;
 	}
 	
-	void Floor::set_center(Eigen::Vector3f center)
+	void Floor::set_center(pd::SimVector3 center)
 	{
 		center_point.y() = center.y();
 	}

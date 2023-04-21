@@ -3,9 +3,9 @@
 
 namespace pd
 {
-	BendingConstraint::BendingConstraint(float wc, int center_vertex, const std::vector<int>& neighbor_vertices, const Positions& positions) : Constraint(wc, 1 + neighbor_vertices.size())
+	BendingConstraint::BendingConstraint(SimScalar wc, int center_vertex, const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& positions) : Constraint(wc, 1 + neighbor_vertices.size())
 	{
-		cudaMallocManaged(&vertices, sizeof(int) * n_vertices);
+		cudaMallocManaged(&vertices, sizeof(VertexIndexType) * n_vertices);
 
 		vertices[0] = center_vertex;
 		for (int i = 0; i < n_vertices - 1; i++)
@@ -21,7 +21,7 @@ namespace pd
 	Constraint(rhs), rest_mean_curvature(rhs.rest_mean_curvature)
 	{
 		realloc_laplacian_weights();
-        memcpy(laplacian_weights, rhs.laplacian_weights, sizeof(float) * n_vertices);
+        memcpy(laplacian_weights, rhs.laplacian_weights, sizeof(SimScalar) * n_vertices);
 	}
 
 	BendingConstraint::BendingConstraint(BendingConstraint&& rhs) noexcept: 
@@ -39,7 +39,7 @@ namespace pd
 		if (this != &rhs)
 		{
 			realloc_laplacian_weights();
-			memcpy(laplacian_weights, rhs.laplacian_weights, sizeof(float) * n_vertices);
+			memcpy(laplacian_weights, rhs.laplacian_weights, sizeof(SimScalar) * n_vertices);
 			rest_mean_curvature = rhs.rest_mean_curvature;
 		}
 		return *this;
@@ -64,35 +64,24 @@ namespace pd
 	void BendingConstraint::realloc_laplacian_weights()
 	{
 		cudaFree(laplacian_weights);
-        cudaMallocManaged(&laplacian_weights, sizeof(float) * n_vertices);
+        cudaMallocManaged(&laplacian_weights, sizeof(SimScalar) * n_vertices);
 	}
 
-	Eigen::VectorXf BendingConstraint::local_solve(const Eigen::VectorXf& q) const
+	std::vector<Eigen::Triplet<SimScalar>> BendingConstraint::get_c_AcTAc(int n_vertex_offset) const
 	{
-		Eigen::VectorXf ret;
-		ret.resize(3);
+		std::vector<Eigen::Triplet<SimScalar>> triplets(3 * n_vertices - 1);
 
-		// for unit test only
-
-
-		return ret;
-	}
-
-	std::vector<Eigen::Triplet<float>> BendingConstraint::get_c_AcTAc(int n_vertex_offset) const
-	{
-		std::vector<Eigen::Triplet<float>> triplets(3 * n_vertices - 1);
-
-		const int center_vertex = vertices[0];
+		const VertexIndexType center_vertex = vertices[0];
 
 		for (int i = 0; i < n_vertices; i++)
 		{
-			const int v = vertices[i];
+			const VertexIndexType v = vertices[i];
 
 			// discard terms between adjacent vertices since they are rather too small
 			// this is an approximation and also an optimization
 			for (int j = 0; j < 3; j++)
 			{
-				const float val = laplacian_weights[0] * laplacian_weights[i] * wc;
+				const SimScalar val = laplacian_weights[0] * laplacian_weights[i] * wc;
 				// printf("%f, %f, %f\n", laplacian_weights[0], laplacian_weights[i], wc);
 				// printf("%d-%d adds %f\n", center_vertex, v, val);
 				triplets.emplace_back(
@@ -114,27 +103,27 @@ namespace pd
 		return triplets;
 	}
 
-	__host__ void BendingConstraint::precompute_laplacian_weights(const std::vector<int>& neighbor_vertices, const Positions& positions)
+	__host__ void BendingConstraint::precompute_laplacian_weights(const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& positions)
 	{
 		const int neighbor_size = neighbor_vertices.size();
 		assert(neighbor_size >= 3); // avoid singular vertex
 
-		cudaMallocManaged(&laplacian_weights, sizeof(float) * n_vertices);
+		cudaMallocManaged(&laplacian_weights, sizeof(SimScalar) * n_vertices);
 
 		laplacian_weights[0] = 0.0f; // init value
 
-		const int center_vertex = vertices[0];
+		const VertexIndexType center_vertex = vertices[0];
 
-		const Eigen::Vector3d center_pos = positions.row(center_vertex).transpose();
+		const DataVector3 center_pos = positions.row(center_vertex).transpose();
 		// traverse in counter-clockwise order
 		for (int i = 0; i < neighbor_size; i++)
 		{
-			const int cur_pos_idx = neighbor_vertices[i];
-			const int counter_clockwise_next_pos_idx = neighbor_vertices[(i + 1) % neighbor_size];
-			const int clockwise_next_pos_idx = neighbor_vertices[(i + neighbor_size - 1) % neighbor_size];
-			const Eigen::Vector3d cur_pos = positions.row(cur_pos_idx).transpose();
-			const Eigen::Vector3d counter_clockwise_next_pos = positions.row(counter_clockwise_next_pos_idx).transpose();
-			const Eigen::Vector3d clockwise_next_pos = positions.row(clockwise_next_pos_idx).transpose();
+			const VertexIndexType cur_pos_idx = neighbor_vertices[i];
+			const VertexIndexType counter_clockwise_next_pos_idx = neighbor_vertices[(i + 1) % neighbor_size];
+			const VertexIndexType clockwise_next_pos_idx = neighbor_vertices[(i + neighbor_size - 1) % neighbor_size];
+			const DataVector3 cur_pos = positions.row(cur_pos_idx).transpose();
+			const DataVector3 counter_clockwise_next_pos = positions.row(counter_clockwise_next_pos_idx).transpose();
+			const DataVector3 clockwise_next_pos = positions.row(clockwise_next_pos_idx).transpose();
 
 			bool cc_collinear_flag = false;
 			if (is_collinear(cur_pos, center_pos, counter_clockwise_next_pos))
@@ -149,15 +138,15 @@ namespace pd
 				c_collinear_flag = true;
 			}
 
-			const double dis = (cur_pos - center_pos).norm();
+			const DataScalar dis = (cur_pos - center_pos).norm();
 
-			const double tan_alpha = cc_collinear_flag ? 0 : get_half_tan(cur_pos, center_pos, counter_clockwise_next_pos);
-			const double tan_beta = c_collinear_flag ? 0 : get_half_tan(cur_pos, center_pos, clockwise_next_pos);
+			const DataScalar tan_alpha = cc_collinear_flag ? 0 : get_half_tan(cur_pos, center_pos, counter_clockwise_next_pos);
+			const DataScalar tan_beta = c_collinear_flag ? 0 : get_half_tan(cur_pos, center_pos, clockwise_next_pos);
 
-			const double coefficient = (tan_alpha + tan_beta) / dis;
+			const DataScalar coefficient = (tan_alpha + tan_beta) / dis;
 
-			laplacian_weights[i + 1] = static_cast<float>(-coefficient);
-			laplacian_weights[0] += static_cast<float>(coefficient);
+			laplacian_weights[i + 1] = static_cast<SimScalar>(-coefficient);
+			laplacian_weights[0] += static_cast<SimScalar>(coefficient);
 		}
 
 		// Debug only
@@ -166,59 +155,59 @@ namespace pd
 		// 	printf("vertices %d, weights = %f\n", vertices[0], laplacian_weights[i]);
 		// }
 
-		Eigen::Vector3f rest_mean_curvature_vector = apply_laplacian(positions).cast<float>();
+		SimVector3 rest_mean_curvature_vector = apply_laplacian(positions).cast<SimScalar>();
 		// std::cout << rest_mean_curvature_vector << "\n";
 		rest_mean_curvature = rest_mean_curvature_vector.norm();
 	}
 
-	__host__ Eigen::Vector3d BendingConstraint::apply_laplacian(const Positions& positions) const
+	__host__ DataVector3 BendingConstraint::apply_laplacian(const PositionData& positions) const
 	{
-		const int center_vertex = vertices[0];
-		const Eigen::Vector3d center_pos = positions.row(center_vertex).transpose();
+		const VertexIndexType center_vertex = vertices[0];
+		const DataVector3 center_pos = positions.row(center_vertex).transpose();
 
-		Eigen::Vector3d ret;
+		DataVector3 ret;
 		ret.setZero();
 		for (int i = 0; i < n_vertices; i++)
 		{
-			const int cur_pos_idx = vertices[i];
-			const Eigen::Vector3d cur_pos = positions.row(cur_pos_idx).transpose();
+			const VertexIndexType cur_pos_idx = vertices[i];
+			const DataVector3 cur_pos = positions.row(cur_pos_idx).transpose();
 			ret += cur_pos * laplacian_weights[i];
 		}
 
 		return ret;
 	}
 
-	__host__ __device__ Eigen::Vector3f BendingConstraint::apply_laplacian(const float* __restrict__ q) const
+	__host__ __device__ SimVector3 BendingConstraint::apply_laplacian(const SimScalar* __restrict__ q) const
 	{
-		Eigen::Vector3f ret;
+		SimVector3 ret;
 		ret.setZero();
 
-		const int center_vertex = vertices[0];
-		const Eigen::Vector3f center_pos = { q[3 * center_vertex], q[3 * center_vertex + 1], q[3 * center_vertex + 2] };
+		const VertexIndexType center_vertex = vertices[0];
+		const SimVector3 center_pos = { q[3 * center_vertex], q[3 * center_vertex + 1], q[3 * center_vertex + 2] };
 
 		for (int i = 0; i < n_vertices; i++)
 		{
-			const int cur_pos_idx = vertices[i];
-			const Eigen::Vector3f cur_pos = { q[3 * cur_pos_idx], q[3 * cur_pos_idx + 1], q[3 * cur_pos_idx + 2] };
+			const VertexIndexType cur_pos_idx = vertices[i];
+			const SimVector3 cur_pos = { q[3 * cur_pos_idx], q[3 * cur_pos_idx + 1], q[3 * cur_pos_idx + 2] };
 			ret += cur_pos * laplacian_weights[i];
 		}
 		return ret;
 	}
 
-	__host__ __device__ void BendingConstraint::project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const
+	__host__ __device__ void BendingConstraint::project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const
 	{
-		const float EPS = 1e-5;
+		const SimScalar EPS = 1e-5;
 	
 		if (std::abs(rest_mean_curvature) < EPS)
 		{
 			return; // no constraint indeed
 		}
 
-		Eigen::Vector3f deformed_laplace = apply_laplacian(q);
-		const float deformed_laplace_norm = deformed_laplace.norm();
+		SimVector3 deformed_laplace = apply_laplacian(q);
+		const SimScalar deformed_laplace_norm = deformed_laplace.norm();
 		// printf("Vertex %d, Rest mean curvature = %f, deformed_laplace = %f, %f, %f\n", vertices[0], rest_mean_curvature, deformed_laplace.x(), deformed_laplace.y(), deformed_laplace.z());
 
-		Eigen::Vector3f Achpc;
+		SimVector3 Achpc;
 		if (deformed_laplace_norm < EPS)
 		// if (true)
 		{
@@ -232,7 +221,7 @@ namespace pd
 
 		for (int i = 0; i < n_vertices; i++)
 		{
-			const int v = vertices[i];
+			const VertexIndexType v = vertices[i];
 			for (int j = 0; j < 3; j++)
 			{
 			#ifdef __CUDA_ARCH__
@@ -244,22 +233,22 @@ namespace pd
 		}
 	}
 
-	__host__ __device__ Eigen::Vector3f BendingConstraint::get_center_vertex_normal(const float* __restrict__ q) const
+	__host__ __device__ SimVector3 BendingConstraint::get_center_vertex_normal(const SimScalar* __restrict__ q) const
 	{
 		const int neighbor_size = n_vertices - 1;
 
 		const int center_vertex = vertices[0];
 
-		const Eigen::Vector3f center_pos = { q[3 * center_vertex], q[3 * center_vertex + 1], q[3 * center_vertex + 2] };
+		const SimVector3 center_pos = { q[3 * center_vertex], q[3 * center_vertex + 1], q[3 * center_vertex + 2] };
 
-		Eigen::Vector3f normal;
+		SimVector3 normal;
 		normal.setZero();
 		for (int i = 0; i < neighbor_size; i++)
 		{
-			const int cur_pos_idx = vertices[i + 1];
-			const int counter_clockwise_next_pos_idx = vertices[((i + 1) % neighbor_size) + 1];
-			const Eigen::Vector3f cur_pos = { q[3 * cur_pos_idx], q[3 * cur_pos_idx + 1], q[3 * cur_pos_idx + 2] };
-			const Eigen::Vector3f counter_clockwise_next_pos = { q[3 * counter_clockwise_next_pos_idx], q[3 * counter_clockwise_next_pos_idx + 1], q[3 * counter_clockwise_next_pos_idx + 2] };
+			const VertexIndexType cur_pos_idx = vertices[i + 1];
+			const VertexIndexType counter_clockwise_next_pos_idx = vertices[((i + 1) % neighbor_size) + 1];
+			const SimVector3 cur_pos = { q[3 * cur_pos_idx], q[3 * cur_pos_idx + 1], q[3 * cur_pos_idx + 2] };
+			const SimVector3 counter_clockwise_next_pos = { q[3 * counter_clockwise_next_pos_idx], q[3 * counter_clockwise_next_pos_idx + 1], q[3 * counter_clockwise_next_pos_idx + 2] };
 
 			normal += get_triangle_normal(counter_clockwise_next_pos - center_pos, cur_pos - center_pos);
 		}
@@ -273,7 +262,7 @@ namespace pd
 		return normal;
 	}
 
-	__host__ __device__ Eigen::Vector3f BendingConstraint::get_triangle_normal(Eigen::Vector3f p21, Eigen::Vector3f p31)
+	__host__ __device__ SimVector3 BendingConstraint::get_triangle_normal(SimVector3 p21, SimVector3 p31)
 	{
 		return p21.cross(p31).normalized();
 	}

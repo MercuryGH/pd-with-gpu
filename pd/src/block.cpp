@@ -2,20 +2,20 @@
 
 namespace primitive
 {
-    bool Block::collision_handle(Eigen::Vector3f& pos) const 
+    bool Block::collision_handle(pd::SimVector3& pos) const 
     {
-        const auto is_minimum_3 = [](float cmp, float y, float z)
+        const auto is_minimum_3 = [](pd::SimScalar cmp, pd::SimScalar y, pd::SimScalar z)
         {
             return cmp <= y && cmp <= z;
         };
 
-        constexpr static float EPS = 0.05f;
-        Eigen::Vector3f tmp_half_xyz = half_xyz + Eigen::Vector3f(EPS, EPS, EPS);
+        constexpr static pd::SimScalar EPS = 0.05f;
+        pd::SimVector3 tmp_half_xyz = half_xyz + pd::SimVector3(EPS, EPS, EPS);
 
         // AABB detection
-        Eigen::Vector3f min_xyz_point = center_point - tmp_half_xyz;
-        Eigen::Vector3f relative_pos = pos - min_xyz_point;
-        Eigen::Vector3f xyz = tmp_half_xyz * 2.f;
+        pd::SimVector3 min_xyz_point = center_point - tmp_half_xyz;
+        pd::SimVector3 relative_pos = pos - min_xyz_point;
+        pd::SimVector3 xyz = tmp_half_xyz * 2.f;
 
         // check if point in AABB
         if (relative_pos.x() > 0 && relative_pos.x() < xyz.x())
@@ -25,7 +25,7 @@ namespace primitive
                 if (relative_pos.z() > 0 && relative_pos.z() < xyz.z())
                 {
                     // find the delta to the nearest point 
-                    Eigen::Vector3f delta_xyz;
+                    pd::SimVector3 delta_xyz;
                     for (int i = 0; i < 3; i++)
                     {
                         if (relative_pos[i] < xyz[i] - relative_pos[i])
@@ -107,12 +107,12 @@ namespace primitive
         F.row(11) = Eigen::Vector3i(3, 1, 2);
     }
 
-    Eigen::Vector3f Block::center() const 
+    pd::SimVector3 Block::center() const 
     {
         return center_point;
     }
 
-    void Block::set_center(Eigen::Vector3f center)
+    void Block::set_center(pd::SimVector3 center)
 	{
         center_point = center;
 	}

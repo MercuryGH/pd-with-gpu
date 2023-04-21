@@ -5,6 +5,8 @@
 #include <Eigen/SparseCore>
 #include <cuda_runtime.h>
 
+#include <pd/types.h>
+
 #include <util/cuda_managed.h>
 
 namespace pd {
@@ -16,7 +18,7 @@ namespace pd {
 	public:
 		Constraint() = default;
 
-		__host__ __device__ Constraint(float wc, int n_vertices) : wc(wc), n_vertices(n_vertices) {}
+		__host__ __device__ Constraint(SimScalar wc, int n_vertices) : wc(wc), n_vertices(n_vertices) {}
 
 		/**
 		 * @brief Copy constructor
@@ -46,14 +48,14 @@ namespace pd {
 		// Local solve for A_c'p_c
 		// q: 3n * 1 vector indicating positions
 		// return: A_c'p_c
-		virtual Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const = 0;
+		// deprecated
 
 		// For global solve linear system A precomputing (prefactoring)
 		// return: triplets indicate several entry value in linear system A
-		virtual std::vector<Eigen::Triplet<float>> get_c_AcTAc(int n_vertex_offset) const = 0;
+		virtual std::vector<Eigen::Triplet<SimScalar>> get_c_AcTAc(int n_vertex_offset) const = 0;
 
 		// project_c_AcTAchpc. Local step optimization
-		__host__ __device__ virtual void project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const = 0;
+		__host__ __device__ virtual void project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const = 0;
 
 		__host__ __device__ virtual void print_name() const = 0;
 
@@ -71,9 +73,9 @@ namespace pd {
 		void realloc_vertices(int size);
 
 	protected:
-		float wc{ 0.0f };
+		SimScalar wc{ 0.0f };
 
 		int n_vertices{ 0 };
-		int* vertices{ nullptr };
+		VertexIndexType* vertices{ nullptr };
 	};
 }

@@ -10,18 +10,18 @@ namespace pd
     public:
 		TetStrainConstraint() = default;
 
-		TetStrainConstraint(float wc, const Positions& p, Eigen::RowVector4i vertices);
-		TetStrainConstraint(float wc, const Positions& p, Eigen::RowVector4i vertices, Eigen::Vector3f min_strain_xyz, Eigen::Vector3f max_strain_xyz);
+		TetStrainConstraint(SimScalar wc, const PositionData& p, IndexRowVector4 vertices);
+		TetStrainConstraint(SimScalar wc, const PositionData& p, IndexRowVector4 vertices, SimVector3 min_strain_xyz, SimVector3 max_strain_xyz);
 
 		Constraint* clone() const override
 		{
 			return new TetStrainConstraint(*this);
 		}
 
-		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
-		std::vector<Eigen::Triplet<float>> get_c_AcTAc(int n_vertex_offset) const override;
+		std::vector<Eigen::Triplet<SimScalar>> get_c_AcTAc(int n_vertex_offset) const override;
 
-		__host__ __device__ void project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const override;
+		__host__ __device__ void test_local_step_tet_strain(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const;
+		__host__ __device__ void project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const override;
 
 		__host__ __device__ void print_name() const override
 		{
@@ -31,13 +31,13 @@ namespace pd
 		__host__ __device__ ~TetStrainConstraint() override {}
 
 	private:
-		void precompute_D_m_inv(const Positions& positions, float wc);
+		void precompute_D_m_inv(const PositionData& positions);
 
 		// Eigen::SparseMatrix<float, Eigen::ColMajor> A_c;
 		// Eigen::SparseMatrix<float, Eigen::RowMajor> A_c_transpose;
 
-		Eigen::Vector3f min_strain_xyz{ Eigen::Vector3f::Ones() };
-		Eigen::Vector3f max_strain_xyz{ Eigen::Vector3f::Ones() };
-		Eigen::Matrix3f D_m_inv{ Eigen::Matrix3f::Identity() };
+		SimVector3 min_strain_xyz{ SimVector3::Ones() };
+		SimVector3 max_strain_xyz{ SimVector3::Ones() };
+		SimMatrix3 D_m_inv{ SimMatrix3::Identity() };
     };
 }

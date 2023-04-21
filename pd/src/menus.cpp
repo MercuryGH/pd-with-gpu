@@ -7,6 +7,7 @@
 #include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
 
 #include <igl/png/writePNG.h>
+#include <igl/copyleft/tetgen/tetrahedralize.h>
 
 #include <ui/input_callbacks.h>
 
@@ -99,7 +100,7 @@ namespace ui {
 		set_window_position_size(viewer.core().viewport, instantiator_menu_wps);
 		ImGui::Begin("Instantiator");
 
-		instancing::Instantiator instantiator{ obj_manager };
+		instancing::Instantiator instantiator{ obj_manager, physics_params };
 		ui::instantiator_menu(instantiator);
 
 		ImGui::End();
@@ -359,6 +360,8 @@ namespace ui {
 			}
 			if (ImGui::TreeNode(".obj File"))
 			{
+				static bool tetrahedrize = false;
+				ImGui::Checkbox("Tetrahedrize", &tetrahedrize);
 				if (ImGui::Button("Load .obj file"))
 				{
 					std::string file_name = igl::file_dialog_open();
@@ -371,6 +374,23 @@ namespace ui {
 						bool flag = igl::read_triangle_mesh(file_name, V, F);
 						if (flag)
 						{
+							if (tetrahedrize == true)
+							{
+								Eigen::MatrixXd TV;
+								Eigen::MatrixXi TT;
+								Eigen::MatrixXi TF;
+								// tetgen
+								igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
+								if (add_or_reset == OP_ADD)
+								{
+									obj_manager.add_model(TV, TT, F);
+								}
+								if (add_or_reset == OP_RESET)
+								{
+									obj_manager.reset_model(id, TV, TT, F);
+								}
+							}
+
 							if (add_or_reset == OP_ADD)
 							{
 								obj_manager.add_model(V, F);
@@ -391,13 +411,18 @@ namespace ui {
 					Eigen::MatrixXd V;
 					Eigen::MatrixXi F;
 					igl::read_triangle_mesh("../assets/meshes/armadillo.obj", V, F);
+					Eigen::MatrixXd TV;
+					Eigen::MatrixXi TT;
+					Eigen::MatrixXi TF;
+					// tetgen
+					igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
 					if (add_or_reset == OP_ADD)
 					{
-						obj_manager.add_model(V, F);
+						obj_manager.add_model(TV, TT, F);
 					}
 					if (add_or_reset == OP_RESET)
 					{
-						obj_manager.reset_model(id, V, F);
+						obj_manager.reset_model(id, TV, TT, F);
 					}
 				}
 
@@ -432,7 +457,7 @@ namespace ui {
 				if (ImGui::Button("Generate"))
 				{
 					obj_manager.add_rigid_collider(std::make_unique<primitive::Sphere>(
-						Eigen::Vector3f(center_radius),
+						pd::SimVector3(center_radius),
 						center_radius[3]
 					));
 				}
@@ -449,7 +474,7 @@ namespace ui {
 				if (ImGui::Button("Generate"))
 				{
 					obj_manager.add_rigid_collider(std::make_unique<primitive::Torus>(
-						Eigen::Vector3f(center_radius),
+						pd::SimVector3(center_radius),
 						center_radius[3],
 						center_radius[4]
 					));
@@ -467,8 +492,8 @@ namespace ui {
 				if (ImGui::Button("Generate"))
 				{
 					obj_manager.add_rigid_collider(std::make_unique<primitive::Block>(
-						Eigen::Vector3f(center),
-						Eigen::Vector3f(xyz)
+						pd::SimVector3(center),
+						pd::SimVector3(xyz)
 					));
 				}
 
@@ -477,7 +502,7 @@ namespace ui {
 		}
     }
 
-    void set_constraints_menu(ObjManager& obj_manager, PhysicsParams& physics_params, const UserControl& user_control)
+    void set_constraints_menu(ObjManager& obj_manager, PhysicsParams& physics_params, UserControl& user_control)
     {
 		static bool enable_edge_strain_constraint = false;
 		static bool enable_bending_constraint = false;
@@ -516,6 +541,18 @@ namespace ui {
 			ImGui::TextWrapped("For mesh %d, Vertex indices to be toggled: %s", user_control.cur_sel_mesh_id, vertices_to_be_toggled.c_str());
 			// Pinned 
 			ImGui::InputFloat(LABEL("weight"), &physics_params.positional_constraint_wc, 10.f, 100.f, "%.1f");
+
+			if (ImGui::Button("Save vertex group"))
+			{
+				user_control.vertex_idxs_memory = user_control.toggle_fixed_vertex_idxs;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Load vertex group"))
+			{
+				user_control.toggle_fixed_vertex_idxs = user_control.vertex_idxs_memory;
+				user_control.toggle_vertex_fix = true;
+			}
+
 			ImGui::Checkbox("Enable", &enable_positional_constraint);
 			ImGui::TreePop();
 		}
@@ -542,7 +579,7 @@ namespace ui {
 			// physics params
 			ImGui::Checkbox("Enable Gravity", &physics_params.enable_gravity);
 
-			ImGui::InputFloat(LABEL("mass per vertex"), &physics_params.mass_per_vertex, 0.01f, 0.1f, "%.3f");
+			ImGui::InputDouble(LABEL("mass per vertex"), &physics_params.mass_per_vertex, 0.01, 0.1, "%.3f");
 
 			ImGui::Separator();
 
@@ -560,7 +597,7 @@ namespace ui {
 	void visualization_menu(
 		igl::opengl::glfw::Viewer& viewer, 
 		ScreenCapturePlugin& screen_capture_plugin,
-		std::unordered_map<int, pd::DeformableMesh>& models,
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		bool& always_recompute_normal, 
 		int id
 	)
@@ -624,10 +661,11 @@ namespace ui {
 	{
 		std::vector<std::function<void(instancing::Instantiator&)>> instantiate_caller = {
 			&instancing::Instantiator::instance_test,
+			&instancing::Instantiator::instance_bar,
+			&instancing::Instantiator::instance_bridge,
 			&instancing::Instantiator::instance_floor,
 			&instancing::Instantiator::instance_cloth,
 			&instancing::Instantiator::instance_4hanged_cloth,
-			&instancing::Instantiator::instance_bar,
 			&instancing::Instantiator::instance_bending_hemisphere,
 			&instancing::Instantiator::instance_cylinder,
 			&instancing::Instantiator::instance_cone,
@@ -637,10 +675,11 @@ namespace ui {
 
 		const char* instances[] = { 
 			"Test",
+			"Bar",
+			"Bridge",
 			"Floor", 
 			"Cloth", 
 			"Corners-pinned cloth",
-			"Bar",
 			"Bending Hemisphere",
 			"Cylinder",
 			"Cone",
@@ -675,7 +714,7 @@ namespace ui {
         const PhysicsParams& physics_params,
         igl::opengl::glfw::Viewer& viewer,
         pd::pre_draw_handler& frame_callback,
-	    std::unordered_map<int, Eigen::MatrixX3d>& f_exts,
+	    std::unordered_map<pd::MeshIDType, pd::DataMatrixX3>& f_exts,
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo,
         bool always_recompute_normal
     )
@@ -685,7 +724,7 @@ namespace ui {
 			ImGui::Text("Solver is %s", solver.dirty ? "not ready." : "ready.");
 
 			ImGui::Checkbox("Use GPU for local step", &solver_params.use_gpu_for_local_step);
-			ImGui::InputFloat(LABEL("timestep"), &solver_params.dt, 0.01f, 0.1f, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
+			ImGui::InputDouble(LABEL("timestep"), &solver_params.dt, 0.01, 0.1, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
 			ImGui::InputInt(LABEL("solver #itr"), &solver_params.n_itr_solver_iterations);
 			ImGui::InputInt(LABEL("PD #itr"), &solver_params.n_solver_pd_iterations);
 

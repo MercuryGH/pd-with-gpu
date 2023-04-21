@@ -7,7 +7,7 @@ namespace pd
         // printf("Call Base cpy constructor\n");
 
         realloc_vertices(rhs.n_vertices);
-        memcpy(vertices, rhs.vertices, sizeof(int) * n_vertices);
+        memcpy(vertices, rhs.vertices, sizeof(VertexIndexType) * n_vertices);
     }
 
     Constraint::Constraint(Constraint&& rhs) noexcept: wc(rhs.wc)
@@ -27,7 +27,7 @@ namespace pd
         if (this != &rhs)
         {
             realloc_vertices(rhs.n_vertices);
-            memcpy(vertices, rhs.vertices, sizeof(int) * n_vertices);
+            memcpy(vertices, rhs.vertices, sizeof(VertexIndexType) * n_vertices);
 
             wc = rhs.wc;
         }
@@ -51,7 +51,7 @@ namespace pd
         return *this;
     }
 
-    int Constraint::get_involved_vertices(int** vertices) const
+    int Constraint::get_involved_vertices(VertexIndexType** vertices) const
     {
         *vertices = this->vertices;
         return n_vertices;
@@ -69,6 +69,6 @@ namespace pd
     {
         cudaFree(vertices);
         n_vertices = size;
-        cudaMallocManaged(&vertices, sizeof(int) * n_vertices);
+        cudaMallocManaged(&vertices, sizeof(VertexIndexType) * n_vertices);
     }
 }

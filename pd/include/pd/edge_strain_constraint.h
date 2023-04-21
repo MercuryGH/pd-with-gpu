@@ -7,16 +7,16 @@ namespace pd {
 	class EdgeStrainConstraint : public Constraint
 	{
 	public:
-		// __host__ __device__ EdgeStrainConstraint(float wc, int vi, int vj, float rest_length);
+		// __host__ __device__ EdgeStrainConstraint(SimScalar wc, int vi, int vj, float rest_length);
 		EdgeStrainConstraint() = default;
 
-		EdgeStrainConstraint(float wc, int vi, int vj, const Positions& p):
+		EdgeStrainConstraint(SimScalar wc, VertexIndexType vi, VertexIndexType vj, const PositionData& p):
 			Constraint(wc, 2),
 			rest_length((p.row(vi) - p.row(vj)).norm())
 		{
 			assert(vi != vj);
 
-            cudaMallocManaged(&vertices, sizeof(int) * 2);
+            cudaMallocManaged(&vertices, sizeof(VertexIndexType) * 2);
 			vertices[0] = vi;
 			vertices[1] = vj;
 		}
@@ -26,10 +26,9 @@ namespace pd {
 			return new EdgeStrainConstraint(*this);
 		}
 
-		Eigen::VectorXf local_solve(const Eigen::VectorXf& q) const override;
-		std::vector<Eigen::Triplet<float>> get_c_AcTAc(int n_vertex_offset) const override;
+		std::vector<Eigen::Triplet<SimScalar>> get_c_AcTAc(int n_vertex_offset) const override;
 
-		__host__ __device__ void project_c_AcTAchpc(float* __restrict__ b, const float* __restrict__ q) const override;
+		__host__ __device__ void project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const override;
 
 		__host__ __device__ void print_name() const override
 		{
@@ -39,10 +38,10 @@ namespace pd {
 		__host__ __device__ ~EdgeStrainConstraint() override {}
 
 		// getters
-		__host__ __device__ int vi() const { return vertices[0]; }
-		__host__ __device__ int vj() const { return vertices[1]; }
+		__host__ __device__ VertexIndexType vi() const { return vertices[0]; }
+		__host__ __device__ VertexIndexType vj() const { return vertices[1]; }
 
 	private:
-		float rest_length;
+		SimScalar rest_length;
 	};
 }

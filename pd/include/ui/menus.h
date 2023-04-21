@@ -51,6 +51,7 @@ namespace ui {
 	{
 		igl::opengl::glfw::Viewer& viewer;
 		ObjManager& obj_manager;
+		PhysicsParams& physics_params;
 
 		void operator()();
 	};
@@ -72,7 +73,7 @@ namespace ui {
         PhysicsParams& physics_params;
 		const UserControl& user_control;
         pd::pre_draw_handler& frame_callback;
-	    std::unordered_map<int, Eigen::MatrixX3d>& f_exts;
+	    std::unordered_map<pd::MeshIDType, pd::DataMatrixX3>& f_exts;
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo;
         bool& always_recompute_normal;
 
@@ -93,14 +94,14 @@ namespace ui {
 
     void deformable_mesh_generate_menu(ObjManager& obj_manager, int id);
     void collider_generate_menu(ObjManager& obj_manager, int id);
-    void set_constraints_menu(ObjManager& obj_manager, PhysicsParams& physics_params, const UserControl& user_control);
+    void set_constraints_menu(ObjManager& obj_manager, PhysicsParams& physics_params, UserControl& user_control);
 
 	void physics_menu(PhysicsParams& physics_params, const UserControl& user_control);
 
 	void visualization_menu(
 		igl::opengl::glfw::Viewer& viewer, 
 		ScreenCapturePlugin& screen_capture_plugin,
-		std::unordered_map<int, pd::DeformableMesh>& models,
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		bool& always_recompute_normal, 
 		int id
 	);
@@ -115,7 +116,7 @@ namespace ui {
         const PhysicsParams& physics_params,
         igl::opengl::glfw::Viewer& viewer,
         pd::pre_draw_handler& frame_callback,
-	    std::unordered_map<int, Eigen::MatrixX3d>& f_exts,
+	    std::unordered_map<pd::MeshIDType, pd::DataMatrixX3>& f_exts,
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo,
         bool always_recompute_normal
     );

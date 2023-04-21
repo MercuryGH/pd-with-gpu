@@ -4,11 +4,11 @@ namespace pd {
         // Physical frame calculation
 	void tick(
 		igl::opengl::glfw::Viewer& viewer,
-		std::unordered_map<int, pd::DeformableMesh>& models,
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		const ui::PhysicsParams& physics_params,
 		const ui::SolverParams& solver_params,
 		pd::Solver& solver,
-		std::unordered_map<int, Eigen::MatrixX3d>& f_exts,
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
 		bool always_recompute_normal
 	)
 	{
@@ -19,7 +19,7 @@ namespace pd {
 
 		if (physics_params.enable_gravity == true)
 		{
-			constexpr double GRAVITY = 9.8;
+			constexpr DataScalar GRAVITY = 9.8;
 			for (auto& [id, f_ext] : f_exts)
 			{
 				// apply gravity at y direction on all vertices
@@ -47,7 +47,8 @@ namespace pd {
 			solver.precompute();
 			solver.dirty = false;
 		}
-		solver.step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
+		// solver.step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
+		solver.test_step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
 
 		for (const auto& [id, model] : models)
 		{
@@ -66,9 +67,9 @@ namespace pd {
 
     void draw_debug_info(
 		igl::opengl::glfw::Viewer& viewer,
-		std::unordered_map<int, pd::DeformableMesh>& models,
-		int sel_mesh_id,
-		int sel_vertex_idx
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
+		pd::MeshIDType sel_mesh_id,
+		pd::VertexIndexType sel_vertex_idx
 	)
 	{
 		// visualzie points
@@ -87,20 +88,20 @@ namespace pd {
 
             if (sel_mesh_id == id)
             {
-                Eigen::RowVector3d pos = model.positions().row(sel_vertex_idx);
+                pd::DataRowVector3 pos = model.positions().row(sel_vertex_idx);
                 viewer.data_list[idx].add_points(pos, YELLOW_COLOR);
 
-                const Eigen::RowVector3d normal = viewer.data_list[idx].V_normals.row(sel_vertex_idx);
-                const Eigen::RowVector3d offset = 0.01 * normal;
+                const pd::DataRowVector3 normal = viewer.data_list[idx].V_normals.row(sel_vertex_idx);
+                const pd::DataRowVector3 offset = 0.01 * normal;
                 viewer.data_list[idx].add_label(pos + offset, std::to_string(sel_vertex_idx));
 
                 int cnt = 1;
                 for (const int v : model.get_adj_list().at(sel_vertex_idx))
                 {
-                    const Eigen::RowVector3d normal = viewer.data_list[idx].V_normals.row(v);
-                    const Eigen::RowVector3d offset = 0.01 * normal;
+                    const pd::DataRowVector3 normal = viewer.data_list[idx].V_normals.row(v);
+                    const pd::DataRowVector3 offset = 0.01 * normal;
 
-                    Eigen::RowVector3d v_p = model.positions().row(v);
+                    pd::DataRowVector3 v_p = model.positions().row(v);
                     viewer.data_list[idx].add_points(v_p, SUB_YELLOW_COLOR);
                     std::string neighbor_vertex_prompt = std::to_string(cnt) + "-" + std::to_string(v);
                     cnt++;

@@ -24,7 +24,7 @@ namespace ui
 		rescale(V);
 
 		// create a new mesh
-		int obj_id = viewer.append_mesh();
+		pd::MeshIDType obj_id = viewer.append_mesh();
 		models.emplace(obj_id, pd::DeformableMesh(V, F, obj_id));
 
 		add_simulation_model_info(obj_id);
@@ -37,7 +37,7 @@ namespace ui
 		rescale(V);
 
 		// create a new mesh
-		int obj_id = viewer.append_mesh();
+		pd::MeshIDType obj_id = viewer.append_mesh();
 		models.emplace(obj_id, pd::DeformableMesh(V, T, boundray_facets, obj_id));
 
 		add_simulation_model_info(obj_id);
@@ -45,7 +45,7 @@ namespace ui
 		return obj_id;
 	}
 
-	void ObjManager::add_simulation_model_info(int obj_id)
+	void ObjManager::add_simulation_model_info(pd::MeshIDType obj_id)
 	{
 		const pd::DeformableMesh& model = models[obj_id];
 
@@ -58,8 +58,7 @@ namespace ui
 		// reset viewer
 		int idx = viewer.mesh_index(obj_id);
 		viewer.data_list[idx].set_mesh(model.positions(), model.faces());
-		const Eigen::RowVector3d TEXTURE_COLOR = Eigen::RowVector3d((double)0x66 / 0xff, (double)0xcc / 0xff, 1.0);
-		viewer.data_list[idx].set_colors(TEXTURE_COLOR);
+		viewer.data_list[idx].set_colors(model.is_tet_mesh() ? DEFORMABLE_TET_MESH_TEXTURE_COLOR : DEFORMABLE_TRI_MESH_TEXTURE_COLOR);
 		viewer.core().align_camera_center(model.positions());
 		viewer.data_list[idx].point_size = 10.f;
 		// viewer.data_list[idx].label_size = 2.f;
@@ -78,7 +77,7 @@ namespace ui
 		}
 	}
 
-	void ObjManager::reset_simulation_model_info(int obj_id)
+	void ObjManager::reset_simulation_model_info(pd::MeshIDType obj_id)
 	{
 		const pd::DeformableMesh& model = models[obj_id];
 		obj_init_pos_map[obj_id] = model.positions();
@@ -91,7 +90,7 @@ namespace ui
 		int idx = viewer.mesh_index(obj_id);
 		viewer.data_list[idx].clear();
 		viewer.data_list[idx].set_mesh(model.positions(), model.faces());
-		viewer.data_list[idx].set_colors(DEFORMABLE_MESH_TEXTURE_COLOR);
+		viewer.data_list[idx].set_colors(model.is_tet_mesh() ? DEFORMABLE_TET_MESH_TEXTURE_COLOR : DEFORMABLE_TRI_MESH_TEXTURE_COLOR);
 		viewer.data_list[idx].double_sided = true;
 		viewer.core().align_camera_center(model.positions());
 
@@ -101,7 +100,7 @@ namespace ui
 		recalc_total_n_constraints();
 	}
 
-	void ObjManager::reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+	void ObjManager::reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 	{
 		// check if obj_id corresponods to a deformable mesh
 		if (is_deformable_model(obj_id) == false)
@@ -119,7 +118,7 @@ namespace ui
 		reset_simulation_model_info(obj_id);
 	}
 
-	void ObjManager::reset_model(int obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
+	void ObjManager::reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
 	{
 		// check if obj_id corresponods to a deformable mesh
 		if (is_deformable_model(obj_id) == false)
@@ -146,7 +145,7 @@ namespace ui
 		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
 
-	bool ObjManager::remove_model(int obj_id, bool recalc)
+	bool ObjManager::remove_model(pd::MeshIDType obj_id, bool recalc)
 	{
 		if (is_deformable_model(obj_id) == false || models.size() <= 1)
 		{
@@ -178,7 +177,7 @@ namespace ui
 		primitive->generate_visualized_model(V, F);
 
 		// create a new mesh
-		int obj_id = viewer.append_mesh();
+		pd::MeshIDType obj_id = viewer.append_mesh();
 		rigid_colliders.emplace(obj_id, std::move(primitive));
 		obj_init_pos_map[obj_id] = V;
 
@@ -206,7 +205,7 @@ namespace ui
 		return obj_id;
 	}
 
-	bool ObjManager::remove_rigid_collider(int obj_id, bool recalc)
+	bool ObjManager::remove_rigid_collider(pd::MeshIDType obj_id, bool recalc)
 	{
 		if (is_rigid_collider(obj_id) == false || rigid_colliders.size() <= 1)
 		{
@@ -226,7 +225,7 @@ namespace ui
 	}
 
 	void ObjManager::apply_constraints(
-		int obj_id,
+		pd::MeshIDType obj_id,
 		const PhysicsParams& physics_params,
 		bool enable_edge_strain_constraint,
 		bool enable_bending_constraint,
@@ -274,7 +273,7 @@ namespace ui
 		return true;
 	}
 
-	void ObjManager::bind_gizmo(int obj_id)
+	void ObjManager::bind_gizmo(pd::MeshIDType obj_id)
 	{
 		if (is_deformable_model(obj_id))
 		{
@@ -287,7 +286,7 @@ namespace ui
 		{
 			// Note: only translation is available for rigid colliders.
 			// For floor, only vertical translation is allowed.
-			const Eigen::Vector3f center = rigid_colliders[obj_id]->center();
+			const pd::SimVector3 center = rigid_colliders[obj_id]->center();
 			gizmo.T.block<3, 1>(0, 3) = center;
 		}
 		else

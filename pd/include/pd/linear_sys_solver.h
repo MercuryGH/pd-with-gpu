@@ -17,10 +17,10 @@ namespace pd
 
 		// Setting any value from coefficient matrix A that can be precomputed.
 		// Precompute A-coefficient for A-Jacobi.
-		virtual void set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models) = 0;
+		virtual void set_A(const Eigen::SparseMatrix<SimScalar>& A, const std::unordered_map<MeshIDType, DeformableMesh>& models) = 0;
 
 		// Solve the linear system Ax = b, returns x.
-		virtual Eigen::VectorXf solve(const Eigen::VectorXf& b) = 0;
+		virtual SimVectorX solve(const SimVectorX& b) = 0;
 
 		// free memories when system changes
 		virtual void clear() = 0;

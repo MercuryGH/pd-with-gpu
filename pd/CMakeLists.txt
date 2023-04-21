@@ -3,7 +3,8 @@ include(FetchContent)
 
 set(LIBIGL_OPENGL ON  CACHE INTERNAL "libigl with opengl"  )
 set(LIBIGL_GLFW   ON  CACHE INTERNAL "libigl with glfw"    )
-set(LIBIGL_PNG    ON  CACHE INTERNAL "libigl with png"   )
+set(LIBIGL_PNG    ON  CACHE INTERNAL "libigl with png"     )
+set(LIBIGL_COPYLEFT_TETGEN   ON  CACHE INTERNAL "libigl with tetgen"  )
 set(LIBIGL_IMGUI  ON  CACHE INTERNAL "libigl with imgui"   )
 
 set(FETCHCONTENT_QUIET FALSE)
@@ -37,6 +38,7 @@ PRIVATE
     igl::core 
     igl::imgui
     igl::png
+    igl_copyleft::tetgen
     util
 )
 

@@ -1,15 +1,15 @@
+#include <array>
+
 #include <pd/a_jacobi.h>
-#include <pd/types.h>
 #include <util/gpu_helper.h>
 #include <util/adj_list_graph.h>
-#include <array>
 
 namespace pd
 {
 	__global__ void precompute_b_term_1(
-		float* __restrict__ d_b_term,
-		const float* __restrict__ d_b,
-		const float* __restrict__ d_diagonals,
+		SimScalar* __restrict__ d_b_term,
+		const SimScalar* __restrict__ d_b,
+		const SimScalar* __restrict__ d_diagonals,
 		int n_vertex
 	)
 	{
@@ -17,7 +17,7 @@ namespace pd
 
 		if (idx < n_vertex)
 		{
-			float D_ii_inv = d_diagonals[idx];
+			SimScalar D_ii_inv = d_diagonals[idx];
 
 			d_b_term[3 * idx] = d_b[3 * idx] * D_ii_inv;
 			d_b_term[3 * idx + 1] = d_b[3 * idx + 1] * D_ii_inv;
@@ -26,13 +26,13 @@ namespace pd
 	}
 
 	__global__ void itr_order_1(
-		float* __restrict__ next_x,
-		const float* __restrict__ x,
-		float** __restrict__ d_1_ring_neighbors,
+		SimScalar* __restrict__ next_x,
+		const SimScalar* __restrict__ x,
+		SimScalar** __restrict__ d_1_ring_neighbors,
 		int** __restrict__ d_1_ring_neighbor_indices,
 		const int* __restrict__ d_1_ring_neighbor_sizes,
-		const float* __restrict__ d_diagonals,
-		const float* __restrict__ d_b_term,
+		const SimScalar* __restrict__ d_diagonals,
+		const SimScalar* __restrict__ d_b_term,
 		int n_vertex  // #Vertex, parallelism is n but not 3n
 	)
 	{
@@ -40,17 +40,17 @@ namespace pd
 
 		if (idx < n_vertex)
 		{
-			const float* B_ijs = d_1_ring_neighbors[idx];
+			const SimScalar* B_ijs = d_1_ring_neighbors[idx];
 			const int* js = d_1_ring_neighbor_indices[idx];
 
-			float sum_0 = 0.0f;
-			float sum_1 = 0.0f;
-			float sum_2 = 0.0f;
+			SimScalar sum_0 = 0.0f;
+			SimScalar sum_1 = 0.0f;
+			SimScalar sum_2 = 0.0f;
 
 			int j_cnt = d_1_ring_neighbor_sizes[idx];
 			for (int k = 0; k < j_cnt; k++)
 			{
-				float B_ij = B_ijs[k];
+				SimScalar B_ij = B_ijs[k];
 				int j = js[k];
 
 				sum_0 += B_ij * x[3 * j];
@@ -58,7 +58,7 @@ namespace pd
 				sum_2 += B_ij * x[3 * j + 2];
 			}
 
-			float D_ii_inv = d_diagonals[idx];
+			SimScalar D_ii_inv = d_diagonals[idx];
 
 			next_x[3 * idx] = sum_0 * D_ii_inv + d_b_term[3 * idx];
 			next_x[3 * idx + 1] = sum_1 * D_ii_inv + d_b_term[3 * idx + 1];
@@ -67,14 +67,14 @@ namespace pd
 	}
 
 	__global__ void precompute_b_term_2(
-		float* __restrict__ d_b_term,
-		const float* __restrict__ d_b,
+		SimScalar* __restrict__ d_b_term,
+		const SimScalar* __restrict__ d_b,
 
-		float** __restrict__ d_1_ring_neighbors,
+		SimScalar** __restrict__ d_1_ring_neighbors,
 		int** __restrict__ d_1_ring_neighbor_indices,
 		const int* __restrict__ d_1_ring_neighbor_sizes,
 
-		const float* __restrict__ d_diagonals,
+		const SimScalar* __restrict__ d_diagonals,
 		int n_vertex
 	)
 	{
@@ -83,17 +83,17 @@ namespace pd
 		if (idx < n_vertex)
 		{
 			// b_terms:
-			const float* B_ijs_b = d_1_ring_neighbors[idx];
+			const SimScalar* B_ijs_b = d_1_ring_neighbors[idx];
 			const int* js_b = d_1_ring_neighbor_indices[idx];
 
-			float b_term_0 = 0.0f;
-			float b_term_1 = 0.0f;
-			float b_term_2 = 0.0f;
+			SimScalar b_term_0 = 0.0f;
+			SimScalar b_term_1 = 0.0f;
+			SimScalar b_term_2 = 0.0f;
 
 			int j_cnt_b = d_1_ring_neighbor_sizes[idx];
 			for (int k = 0; k < j_cnt_b; k++)
 			{
-				float B_ij = B_ijs_b[k];
+				SimScalar B_ij = B_ijs_b[k];
 				int j = js_b[k];
 
 				b_term_0 += B_ij * d_b[3 * j];
@@ -101,9 +101,9 @@ namespace pd
 				b_term_2 += B_ij * d_b[3 * j + 2];
 			}
 
-			float D_ii_inv = d_diagonals[idx];
+			SimScalar D_ii_inv = d_diagonals[idx];
 
-			// may contains floating point precision problem
+			// may contains SimScalaring point precision problem
 			d_b_term[3 * idx] = (d_b[3 * idx] + b_term_0) * D_ii_inv;
 			d_b_term[3 * idx + 1] = (d_b[3 * idx + 1] + b_term_1) * D_ii_inv;
 			d_b_term[3 * idx + 2] = (d_b[3 * idx + 2] + b_term_2) * D_ii_inv;
@@ -111,18 +111,18 @@ namespace pd
 	}
 
 	__global__ void itr_order_2(
-		float* __restrict__ next_x_1,
-		float* __restrict__ next_x_2,
-		const float* __restrict__ x_1,
-		const float* __restrict__ x_2,
+		SimScalar* __restrict__ next_x_1,
+		SimScalar* __restrict__ next_x_2,
+		const SimScalar* __restrict__ x_1,
+		const SimScalar* __restrict__ x_2,
 
-		float** __restrict__ d_2_ring_neighbors,
+		SimScalar** __restrict__ d_2_ring_neighbors,
 		int** __restrict__ d_2_ring_neighbor_indices,
 		const int* __restrict__ d_2_ring_neighbor_sizes,
 
-		const float* __restrict__ d_diagonals, // D_ii
+		const SimScalar* __restrict__ d_diagonals, // D_ii
 
-		const float* __restrict__ d_b_term,
+		const SimScalar* __restrict__ d_b_term,
 		int n_vertex  // #Vertex
 	)
 	{
@@ -130,21 +130,21 @@ namespace pd
 
 		if (idx < n_vertex)
 		{
-			const float* B_issjs = d_2_ring_neighbors[idx];
+			const SimScalar* B_issjs = d_2_ring_neighbors[idx];
 			const int* js = d_2_ring_neighbor_indices[idx];
 
-			float sum_0_1 = 0.0f;
-			float sum_1_1 = 0.0f;
-			float sum_2_1 = 0.0f;
+			SimScalar sum_0_1 = 0.0f;
+			SimScalar sum_1_1 = 0.0f;
+			SimScalar sum_2_1 = 0.0f;
 
-			float sum_0_2 = 0.0f;
-			float sum_1_2 = 0.0f;
-			float sum_2_2 = 0.0f;
+			SimScalar sum_0_2 = 0.0f;
+			SimScalar sum_1_2 = 0.0f;
+			SimScalar sum_2_2 = 0.0f;
 
 			int j_cnt = d_2_ring_neighbor_sizes[idx];
 			for (int k = 0; k < j_cnt; k++)
 			{
-				float B_issj = B_issjs[k];
+				SimScalar B_issj = B_issjs[k];
 				int j = js[k];
 
 				sum_0_1 += B_issj * x_1[3 * j];
@@ -156,7 +156,7 @@ namespace pd
 				sum_2_2 += B_issj * x_2[3 * j + 2];
 			}
 
-			float D_ii_inv = d_diagonals[idx];
+			SimScalar D_ii_inv = d_diagonals[idx];
 
 			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + d_b_term[3 * idx]; 
 			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + d_b_term[3 * idx + 1];
@@ -169,18 +169,18 @@ namespace pd
 	}
 
 	__global__ void precompute_b_term_3(
-		float* __restrict__ d_b_term,
-		const float* __restrict__ d_b,
+		SimScalar* __restrict__ d_b_term,
+		const SimScalar* __restrict__ d_b,
 
-		float** __restrict__ d_1_ring_neighbors,
+		SimScalar** __restrict__ d_1_ring_neighbors,
 		int** __restrict__ d_1_ring_neighbor_indices,
 		const int* __restrict__ d_1_ring_neighbor_sizes,
 
-		float** __restrict__ d_2_ring_neighbors,
+		SimScalar** __restrict__ d_2_ring_neighbors,
 		int** __restrict__ d_2_ring_neighbor_indices,
 		const int* __restrict__ d_2_ring_neighbor_sizes,
 
-		const float* __restrict__ d_diagonals,
+		const SimScalar* __restrict__ d_diagonals,
 		int n_vertex
 	)
 	{
@@ -189,17 +189,17 @@ namespace pd
 		if (idx < n_vertex)
 		{
 			// b_terms_1:
-			const float* B_ijs_b = d_1_ring_neighbors[idx];
+			const SimScalar* B_ijs_b = d_1_ring_neighbors[idx];
 			const int* js_b_1 = d_1_ring_neighbor_indices[idx];
 
-			float b_term_0_1 = 0.0f;
-			float b_term_1_1 = 0.0f;
-			float b_term_2_1 = 0.0f;
+			SimScalar b_term_0_1 = 0.0f;
+			SimScalar b_term_1_1 = 0.0f;
+			SimScalar b_term_2_1 = 0.0f;
 
 			int j_cnt_b_1 = d_1_ring_neighbor_sizes[idx];
 			for (int k = 0; k < j_cnt_b_1; k++)
 			{
-				float B_ij = B_ijs_b[k];
+				SimScalar B_ij = B_ijs_b[k];
 				int j = js_b_1[k];
 
 				b_term_0_1 += B_ij * d_b[3 * j];
@@ -208,17 +208,17 @@ namespace pd
 			}
 
 			// b_terms_2:
-			const float* B_issjs_b = d_2_ring_neighbors[idx];
+			const SimScalar* B_issjs_b = d_2_ring_neighbors[idx];
 			const int* js_b_2 = d_2_ring_neighbor_indices[idx];
 
-			float b_term_0_2 = 0.0f;
-			float b_term_1_2 = 0.0f;
-			float b_term_2_2 = 0.0f;
+			SimScalar b_term_0_2 = 0.0f;
+			SimScalar b_term_1_2 = 0.0f;
+			SimScalar b_term_2_2 = 0.0f;
 
 			int j_cnt_b_2 = d_2_ring_neighbor_sizes[idx];
 			for (int k = 0; k < j_cnt_b_2; k++)
 			{
-				float B_issj = B_issjs_b[k];
+				SimScalar B_issj = B_issjs_b[k];
 				int j = js_b_2[k];
 
 				b_term_0_2 += B_issj * d_b[3 * j];
@@ -226,9 +226,9 @@ namespace pd
 				b_term_2_2 += B_issj * d_b[3 * j + 2];
 			}
 
-			float D_ii_inv = d_diagonals[idx];
+			SimScalar D_ii_inv = d_diagonals[idx];
 
-			// may contains floating point precision problem
+			// may contains SimScalaring point precision problem
 			d_b_term[3 * idx] = (d_b[3 * idx] + b_term_0_1 + b_term_0_2) * D_ii_inv;
 			d_b_term[3 * idx + 1] = (d_b[3 * idx + 1] + b_term_1_1 + b_term_1_2) * D_ii_inv;
 			d_b_term[3 * idx + 2] = (d_b[3 * idx + 2] + b_term_2_1 + b_term_2_2) * D_ii_inv;
@@ -236,19 +236,19 @@ namespace pd
 	}
 
 	__global__ void itr_order_3(
-		float* __restrict__ next_x_1,
-		float* __restrict__ next_x_2,
-		float* __restrict__ next_x_3,
-		const float* __restrict__ x_1,
-		const float* __restrict__ x_2,
-		const float* __restrict__ x_3,
+		SimScalar* __restrict__ next_x_1,
+		SimScalar* __restrict__ next_x_2,
+		SimScalar* __restrict__ next_x_3,
+		const SimScalar* __restrict__ x_1,
+		const SimScalar* __restrict__ x_2,
+		const SimScalar* __restrict__ x_3,
 
-		float** __restrict__ d_3_ring_neighbors,
+		SimScalar** __restrict__ d_3_ring_neighbors,
 		int** __restrict__ d_3_ring_neighbor_indices,
 		const int* __restrict__ d_3_ring_neighbor_sizes,
 
-		const float* __restrict__ d_diagonals, // D_ii
-		const float* __restrict__ d_b_term,
+		const SimScalar* __restrict__ d_diagonals, // D_ii
+		const SimScalar* __restrict__ d_b_term,
 		int n_vertex  // #Vertex
 	)
 	{
@@ -256,25 +256,25 @@ namespace pd
 
 		if (idx < n_vertex)
 		{
-			const float* B_ittssjs = d_3_ring_neighbors[idx];
+			const SimScalar* B_ittssjs = d_3_ring_neighbors[idx];
 			const int* js = d_3_ring_neighbor_indices[idx];
 
-			float sum_0_1 = 0.0f;
-			float sum_1_1 = 0.0f;
-			float sum_2_1 = 0.0f;
+			SimScalar sum_0_1 = 0.0f;
+			SimScalar sum_1_1 = 0.0f;
+			SimScalar sum_2_1 = 0.0f;
 
-			float sum_0_2 = 0.0f;
-			float sum_1_2 = 0.0f;
-			float sum_2_2 = 0.0f;
+			SimScalar sum_0_2 = 0.0f;
+			SimScalar sum_1_2 = 0.0f;
+			SimScalar sum_2_2 = 0.0f;
 
-			float sum_0_3 = 0.0f;
-			float sum_1_3 = 0.0f;
-			float sum_2_3 = 0.0f;
+			SimScalar sum_0_3 = 0.0f;
+			SimScalar sum_1_3 = 0.0f;
+			SimScalar sum_2_3 = 0.0f;
 
 			int j_cnt = d_3_ring_neighbor_sizes[idx];
 			for (int k = 0; k < j_cnt; k++)
 			{
-				float B_ittssj = B_ittssjs[k];
+				SimScalar B_ittssj = B_ittssjs[k];
 				int j = js[k];
 
 				sum_0_1 += B_ittssj * x_1[3 * j];
@@ -290,7 +290,7 @@ namespace pd
 				sum_2_3 += B_ittssj * x_3[3 * j + 2];
 			}
 
-			float D_ii_inv = d_diagonals[idx];
+			SimScalar D_ii_inv = d_diagonals[idx];
 
 			next_x_1[3 * idx] = sum_0_1 * D_ii_inv + d_b_term[3 * idx];
 			next_x_1[3 * idx + 1] = sum_1_1 * D_ii_inv + d_b_term[3 * idx + 1];
@@ -346,7 +346,7 @@ namespace pd
 
 	// Eigen::SparseMatrix can be converted to CUDA sparse matrix but it's quite tricky.
 	// Instead we construct sparse matrix using adjacent table by ourselves
-	void AJacobi::set_A(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models)
+	void AJacobi::set_A(const Eigen::SparseMatrix<SimScalar>& A, const std::unordered_map<MeshIDType, DeformableMesh>& models)
 	{
 		n = A.rows();
 		assert((n / 3) * 3 == n);
@@ -356,12 +356,12 @@ namespace pd
 			assert(false);
 		}
 
-		checkCudaErrors(cudaMalloc((void**)&d_b, sizeof(float) * n));
-		checkCudaErrors(cudaMalloc((void**)&d_b_term, sizeof(float) * n));
+		checkCudaErrors(cudaMalloc((void**)&d_b, sizeof(SimScalar) * n));
+		checkCudaErrors(cudaMalloc((void**)&d_b_term, sizeof(SimScalar) * n));
 		for (int i = 0; i < order; i++)
 		{
-			checkCudaErrors(cudaMalloc((void**)&d_x[i], sizeof(float) * n));
-			checkCudaErrors(cudaMalloc((void**)&d_next_x[i], sizeof(float) * n));
+			checkCudaErrors(cudaMalloc((void**)&d_x[i], sizeof(SimScalar) * n));
+			checkCudaErrors(cudaMalloc((void**)&d_next_x[i], sizeof(SimScalar) * n));
 		}
 		// set precomputation values
 		precompute_A_jacobi(A, models);
@@ -369,7 +369,7 @@ namespace pd
 		is_allocated = true;
 	}
 
-	void AJacobi::precompute_A_jacobi(const Eigen::SparseMatrix<float>& A, const std::unordered_map<int, DeformableMesh>& models)
+	void AJacobi::precompute_A_jacobi(const Eigen::SparseMatrix<SimScalar>& A, const std::unordered_map<MeshIDType, DeformableMesh>& models)
 	{
 		// fill the member
 		const int n_vertex = n / 3;
@@ -390,7 +390,7 @@ namespace pd
 		for (const auto& [id, model] : models)
 		{
 			int n = model.positions().rows();
-			const Eigen::MatrixXi model_edges = model.get_edges();
+			const Eigen::MatrixX2i model_edges = model.get_edges();
 
 			for (int i = 0; i < model_edges.rows(); i++)
 			{
@@ -404,7 +404,7 @@ namespace pd
 			acc += n;
 		}
 		util::AdjListGraph adj_list_graph(edges, n_vertex);
-		const std::vector<std::unordered_set<int>>& adj_list = adj_list_graph.get_adj_list();
+		const std::vector<std::unordered_set<VertexIndexType>>& adj_list = adj_list_graph.get_adj_list();
 
 		D.resize(n_vertex);
 		B.resize(n_vertex);
@@ -412,7 +412,7 @@ namespace pd
 		// B and D precomputation
 		for (int i = 0; i < n_vertex; i++)
 		{
-			for (int j : adj_list[i])
+			for (VertexIndexType j : adj_list[i])
 			{
 				// Note: negative sign!!!
 				B[i][j] = -get_B_ij(i, j);
@@ -423,14 +423,14 @@ namespace pd
 		}
 
 		// --- Compute d_diagonals
-		checkCudaErrors(cudaMalloc((void**)&d_diagonals, sizeof(float) * n_vertex));
-		checkCudaErrors(cudaMemcpy(d_diagonals, D.data(), sizeof(float) * n_vertex, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMalloc((void**)&d_diagonals, sizeof(SimScalar) * n_vertex));
+		checkCudaErrors(cudaMemcpy(d_diagonals, D.data(), sizeof(SimScalar) * n_vertex, cudaMemcpyHostToDevice));
 
 		const auto get_vertex_k_ring_neighbors = [&](
 			int i,
 			int ring_width,
-			std::vector<int>& neighbor_indices,
-			std::vector<float>& neighbor_B_vals
+			std::vector<VertexIndexType>& neighbor_indices,
+			std::vector<SimScalar>& neighbor_B_vals
 		) {
 			if (ring_width == 1)
 			{
@@ -445,7 +445,7 @@ namespace pd
 			// compute D_{ss}^{-1} * B_{is}B_{sj} for l = 2
 			if (ring_width == 2)
 			{
-				std::unordered_map<int, float> a_products_on_vertex;
+				std::unordered_map<VertexIndexType, SimScalar> a_products_on_vertex;
 				for (const auto& [s, v1] : B[i])
 				{
 					for (const auto& [j, v2] : B[s])
@@ -476,7 +476,7 @@ namespace pd
 			}
 			if (ring_width == 3)
 			{
-				std::unordered_map<int, float> a_products_on_vertex;
+				std::unordered_map<VertexIndexType, SimScalar> a_products_on_vertex;
 				for (const auto& [t, v1] : B[i])
 				{
 					for (const auto& [s, v2] : B[t])
@@ -510,35 +510,35 @@ namespace pd
 		for (int k = 0; k < order; k++)
 		{
 			// --- Compute d_a_products, d_a_products_idx and d_a_products_sizes
-			checkCudaErrors(cudaMalloc((void***)&d_k_ring_neighbors[k], sizeof(float*) * n_vertex));
+			checkCudaErrors(cudaMalloc((void***)&d_k_ring_neighbors[k], sizeof(SimScalar*) * n_vertex));
 			checkCudaErrors(cudaMalloc((void***)&d_k_ring_neighbor_indices[k], sizeof(int*) * n_vertex));
 			checkCudaErrors(cudaMalloc((void**)&d_k_ring_neighbor_sizes[k], sizeof(int) * n_vertex));
 			// to avoid indexing device memory on the host, use tmp host memory
-			k_ring_neighbors[k] = (float**)malloc(sizeof(float*) * n_vertex);
+			k_ring_neighbors[k] = (SimScalar**)malloc(sizeof(SimScalar*) * n_vertex);
 			k_ring_neighbor_indices[k] = (int**)malloc(sizeof(int*) * n_vertex);
 			k_ring_neighbor_sizes[k].resize(n_vertex);
 
 			for (int i = 0; i < n_vertex; i++)
 			{
 				std::vector<int> neighbor_indices;
-				std::vector<float> neighbor_B_vals;
+				std::vector<SimScalar> neighbor_B_vals;
 				get_vertex_k_ring_neighbors(i, k + 1, neighbor_indices, neighbor_B_vals);
 				const int n_adj_vertex = neighbor_indices.size();
 				checkCudaErrors(
-					cudaMalloc((void**)&k_ring_neighbors[k][i], sizeof(float) * n_adj_vertex));
+					cudaMalloc((void**)&k_ring_neighbors[k][i], sizeof(SimScalar) * n_adj_vertex));
 				checkCudaErrors(
 					cudaMalloc((void**)&k_ring_neighbor_indices[k][i], sizeof(int) * n_adj_vertex));
 				k_ring_neighbor_sizes[k][i] = n_adj_vertex;
 
 				checkCudaErrors(
-					cudaMemcpy(k_ring_neighbors[k][i], neighbor_B_vals.data(), sizeof(float) * n_adj_vertex, cudaMemcpyHostToDevice));
+					cudaMemcpy(k_ring_neighbors[k][i], neighbor_B_vals.data(), sizeof(SimScalar) * n_adj_vertex, cudaMemcpyHostToDevice));
 				checkCudaErrors(
 					cudaMemcpy(k_ring_neighbor_indices[k][i], neighbor_indices.data(), sizeof(int) * n_adj_vertex, cudaMemcpyHostToDevice));
 			}
 
 			// copy memory
 			checkCudaErrors(
-				cudaMemcpy(d_k_ring_neighbors[k], k_ring_neighbors[k], sizeof(float*) * n_vertex, cudaMemcpyHostToDevice));
+				cudaMemcpy(d_k_ring_neighbors[k], k_ring_neighbors[k], sizeof(SimScalar*) * n_vertex, cudaMemcpyHostToDevice));
 			checkCudaErrors(
 				cudaMemcpy(d_k_ring_neighbor_indices[k], k_ring_neighbor_indices[k], sizeof(int*) * n_vertex, cudaMemcpyHostToDevice));
 			checkCudaErrors(
@@ -546,16 +546,16 @@ namespace pd
 		}
 	}
 
-	Eigen::VectorXf AJacobi::solve(const Eigen::VectorXf& b)
+	SimVectorX AJacobi::solve(const SimVectorX& b)
 	{
-		Eigen::VectorXf ret;
+		SimVectorX ret;
 		ret.resizeLike(b);
 
-		checkCudaErrors(cudaMemcpy(d_b, b.data(), sizeof(float) * n, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_b, b.data(), sizeof(SimScalar) * n, cudaMemcpyHostToDevice));
 		for (int i = 0; i < order; i++)
 		{
-			cudaMemset(d_x[i], 0, sizeof(float) * n);
-			cudaMemset(d_next_x[i], 0, sizeof(float) * n);
+			cudaMemset(d_x[i], 0, sizeof(SimScalar) * n);
+			cudaMemset(d_next_x[i], 0, sizeof(SimScalar) * n);
 		}
 
 		const int n_vertex = n / 3;
@@ -698,12 +698,12 @@ namespace pd
 			}
 		}
 
-		checkCudaErrors(cudaMemcpy(ret.data(), d_x[order - 1], sizeof(float) * n, cudaMemcpyDeviceToHost));
+		checkCudaErrors(cudaMemcpy(ret.data(), d_x[order - 1], sizeof(SimScalar) * n, cudaMemcpyDeviceToHost));
 		// check if the error is OK
-		Eigen::VectorXf err_checker;
+		SimVectorX err_checker;
 		err_checker.resizeLike(ret);
-		checkCudaErrors(cudaMemcpy(err_checker.data(), d_next_x[order - 1], sizeof(float) * n, cudaMemcpyDeviceToHost));
-		constexpr float eps = 1e-3f;
+		checkCudaErrors(cudaMemcpy(err_checker.data(), d_next_x[order - 1], sizeof(SimScalar) * n, cudaMemcpyDeviceToHost));
+		constexpr SimScalar eps = 1e-3;
 		for (int i = 0; i < n; i++)
 		{
 			if (std::abs(err_checker[i] - ret[i]) > eps)
@@ -717,5 +717,4 @@ namespace pd
 
 		return ret;
 	}
-
 }

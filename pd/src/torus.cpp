@@ -3,14 +3,14 @@
 #include <meshgen/mesh_generator.h>
 
 namespace primitive {
-    bool Torus::collision_handle(Eigen::Vector3f &pos) const
+    bool Torus::collision_handle(pd::SimVector3 &pos) const
     {
-        const float EPS = 0.03;
-        Eigen::Vector3f diff_xz = pos - center_point;
+        const pd::SimScalar EPS = 0.03;
+        pd::SimVector3 diff_xz = pos - center_point;
         diff_xz.y() = 0; // This only suits when the torus is placed horizontally
-        Eigen::Vector3f tube_center = diff_xz.normalized() * main_radius + center_point;
+        pd::SimVector3 tube_center = diff_xz.normalized() * main_radius + center_point;
 
-        Eigen::Vector3f diff = pos - tube_center;
+        pd::SimVector3 diff = pos - tube_center;
 
         if (diff.norm() < ring_radius + EPS)
         {
@@ -28,12 +28,12 @@ namespace primitive {
         V = ret.first, F = ret.second;
     }
 
-    Eigen::Vector3f Torus::center() const
+    pd::SimVector3 Torus::center() const
     {
         return center_point;
     }
 
-    void Torus::set_center(Eigen::Vector3f center)
+    void Torus::set_center(pd::SimVector3 center)
     {
         center_point = center;
     }

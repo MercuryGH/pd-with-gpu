@@ -51,8 +51,8 @@ namespace pd
 
 	void GpuLocalSolver::gpu_local_step_solver_alloc(int n)
 	{
-		checkCudaErrors(cudaMalloc((void **)&d_b, sizeof(float) * n));
-		checkCudaErrors(cudaMalloc((void **)&d_q_nplus1, sizeof(float) * n));
+		checkCudaErrors(cudaMalloc((void **)&d_b, sizeof(SimScalar) * n));
+		checkCudaErrors(cudaMalloc((void **)&d_q_nplus1, sizeof(SimScalar) * n));
 	}
 
 	void GpuLocalSolver::gpu_object_creation_serial(const thrust::host_vector<pd::Constraint*>& constraints)
@@ -106,7 +106,7 @@ namespace pd
 		}
 	}
 
-	void GpuLocalSolver::gpu_object_creation_parallel(const std::unordered_map<int, DeformableMesh>& models)
+	void GpuLocalSolver::gpu_object_creation_parallel(const std::unordered_map<MeshIDType, DeformableMesh>& models)
 	{
 		this->n_constraints = 0;
 
@@ -164,18 +164,18 @@ namespace pd
 		is_allocated = true;
 	}
 
-	void GpuLocalSolver::gpu_local_step_entry(const Eigen::VectorXf &q_nplus1, Eigen::VectorXf &b)
+	void GpuLocalSolver::gpu_local_step_entry(const SimPositions& q_nplus1, SimVectorX& b)
 	{
 		const int n = b.size();
-		checkCudaErrors(cudaMemcpy(d_q_nplus1, q_nplus1.data(), sizeof(float) * n, cudaMemcpyHostToDevice));
-		checkCudaErrors(cudaMemcpy(d_b, b.data(), sizeof(float) * n, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_q_nplus1, q_nplus1.data(), sizeof(SimScalar) * n, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_b, b.data(), sizeof(SimScalar) * n, cudaMemcpyHostToDevice));
 
 		const int n_blocks = util::get_n_blocks(n_constraints);
 
 		if (n_constraints != 0)
 			gpu_local_step<<<n_blocks, WARP_SIZE>>>(d_b, d_q_nplus1, thrust::raw_pointer_cast(d_cloned_constraints.data()), n_constraints);
 
-		checkCudaErrors(cudaMemcpy(b.data(), d_b, sizeof(float) * n, cudaMemcpyDeviceToHost));
+		checkCudaErrors(cudaMemcpy(b.data(), d_b, sizeof(SimScalar) * n, cudaMemcpyDeviceToHost));
 	}
 
 	__host__ __device__ void print_ptr_content(void* ptr)

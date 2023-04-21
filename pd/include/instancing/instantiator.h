@@ -1,11 +1,13 @@
 #pragma once
 
 #include <ui/obj_manager.h>
+#include <ui/physics_params.h>
 
 namespace instancing {
     struct Instantiator
     {
         ui::ObjManager& obj_manager;
+        ui::PhysicsParams& physics_params;
 
         void reset_all();
 
@@ -26,6 +28,7 @@ namespace instancing {
         void instance_cylinder_bend();
 
         void instance_bar();
+        void instance_bridge();
 
         void instance_obj_model(const std::string& file_path);
         void instance_bunny();

@@ -4,10 +4,10 @@
 
 namespace primitive
 {
-    bool Sphere::collision_handle(Eigen::Vector3f &pos) const
+    bool Sphere::collision_handle(pd::SimVector3 &pos) const
     {
-        const float EPS = 0.05f;
-        Eigen::Vector3f diff = pos - center_point;
+        const pd::SimScalar EPS = 0.05f;
+        pd::SimVector3 diff = pos - center_point;
         if (diff.norm() < radius + EPS)
         {
             diff.normalize();
@@ -24,12 +24,12 @@ namespace primitive
         V = ret.first, F = ret.second;
     }
 
-    Eigen::Vector3f Sphere::center() const
+    pd::SimVector3 Sphere::center() const
     {
         return center_point;
     }
 
-    void Sphere::set_center(Eigen::Vector3f center)
+    void Sphere::set_center(pd::SimVector3 center)
     {
         center_point = center;
     }
