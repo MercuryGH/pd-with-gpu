@@ -17,6 +17,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(_libigl)
 
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON) # allow device function in different .cu files
+set(CMAKE_CUDA_ARCHITECTURES 86) # set __CUDA_ARCH__ to be the latest to generate fastest code (require latest device)
 
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
 if (CUDA_ENABLE)

@@ -182,7 +182,7 @@ namespace instancing {
         int id = obj_manager.add_model(V, T, boundary_facets);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         
-        model.set_tet_strain_constraints(100.f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
+        model.set_tet_strain_constraints(100, pd::SimVector3(0.95, 0.95, 0.95), pd::SimVector3(1.05, 1.05, 1.05));
 
         std::unordered_set<int> toggle_vertices;
         for (int i = 0; i <= (w + 1) * (h + 1) * (d + 1) - (d + 1); i += d + 1)
@@ -206,7 +206,7 @@ namespace instancing {
 
         // model.set_tet_strain_constraints(400.f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
 
-        model.set_tet_strain_constraints(1000.f, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
+        model.set_tet_strain_constraints(1000, pd::SimVector3(0.95, 0.95, 0.95), pd::SimVector3(1.05, 1.05, 1.05));
 
         std::unordered_set<int> toggle_vertices;
         for (int i = 0; i <= (w + 1) * (h + 1) * (d + 1) - (d + 1); i += d + 1)
@@ -270,7 +270,7 @@ namespace instancing {
 
         physics_params.enable_gravity = false;
         
-        model.set_tet_strain_constraints(10000000.0f, Eigen::Vector3f(0.99f, 0.99f, 0.99f), Eigen::Vector3f(1.01f, 1.01f, 1.01f));
+        model.set_tet_strain_constraints(10000000.0f, pd::SimVector3(0.99, 0.99, 0.99), pd::SimVector3(1.01, 1.01, 1.01));
 
         std::unordered_set<int> toggle_vertices;
         for (int i = d; i <= (w + 1) * (h + 1) * (d + 1) - 1; i += d + 1)

@@ -184,7 +184,7 @@ namespace ui
 		// apply offset
 		for (int i = 0; i < V.rows(); i++)
 		{
-			V.row(i) += rigid_colliders[obj_id]->center().transpose().cast<double>();
+			V.row(i) += rigid_colliders[obj_id]->center().transpose().cast<pd::DataScalar>();
 		}
 
 		// reset viewer
@@ -240,21 +240,25 @@ namespace ui
 
 		if (enable_edge_strain_constraint)
 		{
-			model.set_edge_strain_constraints(physics_params.edge_strain_constraint_wc);
+			model.set_edge_strain_constraints((pd::SimScalar)physics_params.edge_strain_constraint_wc);
 		}
 		if (enable_bending_constraint)
 		{
-			model.set_bending_constraints(physics_params.bending_constraint_wc);
+			model.set_bending_constraints((pd::SimScalar)physics_params.bending_constraint_wc);
 		}
 		if (enable_tet_strain_constraint)
 		{
-			model.set_tet_strain_constraints(physics_params.tet_strain_constraint_wc, physics_params.tet_strain_constraint_min_xyz, physics_params.tet_strain_constraint_max_xyz);
+			model.set_tet_strain_constraints(
+				(pd::SimScalar)physics_params.tet_strain_constraint_wc, 
+				physics_params.tet_strain_constraint_min_xyz.cast<pd::SimScalar>(), 
+				physics_params.tet_strain_constraint_max_xyz.cast<pd::SimScalar>()
+			);
 		}
 		if (enable_positional_constraint && user_control.toggle_vertex_fix)
 		{
 			model.toggle_vertices_fixed(
 				user_control.toggle_fixed_vertex_idxs, 
-				physics_params.positional_constraint_wc 
+				(pd::SimScalar)physics_params.positional_constraint_wc 
 			);
 			user_control.toggle_vertex_fix = false;
 			user_control.toggle_fixed_vertex_idxs.clear();
@@ -287,7 +291,7 @@ namespace ui
 			// Note: only translation is available for rigid colliders.
 			// For floor, only vertical translation is allowed.
 			const pd::SimVector3 center = rigid_colliders[obj_id]->center();
-			gizmo.T.block<3, 1>(0, 3) = center;
+			gizmo.T.block<3, 1>(0, 3) = center.cast<float>();
 		}
 		else
 		{
