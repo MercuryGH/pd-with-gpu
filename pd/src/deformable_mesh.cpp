@@ -8,7 +8,7 @@ namespace pd
 {
 	void DeformableMesh::toggle_vertices_fixed(const std::unordered_set<VertexIndexType> &v, SimScalar wc)
 	{
-		for (const int vi : v)
+		for (const VertexIndexType vi : v)
 		{
 			if (is_vertex_fixed(vi) == false)
 			{
@@ -122,9 +122,6 @@ namespace pd
 
 		for (int i = 0; i < p.rows(); i++)
 		{
-			// TODO: remove this debug statement
-			if (fixed_vertices.find(i) != fixed_vertices.end()) continue;
-
 			if (eq(static_cast<DataScalar>(m(i)), mass_per_vertex) == false)
 			{
 				m(i) = static_cast<DataScalar>(mass_per_vertex);

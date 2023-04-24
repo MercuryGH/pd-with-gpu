@@ -64,82 +64,81 @@ namespace ui {
 
 	void obj_menu_window_handler::operator()()
 	{
-		// set_window_position_size(viewer.core().viewport, obj_menu_wps);
-		// ImGui::Begin("Object Manager");
+		set_window_position_size(viewer.core().viewport, obj_menu_wps);
+		ImGui::Begin("Object Manager");
 
-		// ui::mesh_manager_menu("Deformable", obj_manager.models, obj_manager, user_control, viewer.core().is_animating);
-		// ui::mesh_manager_menu("Collider", obj_manager.rigid_colliders, obj_manager, user_control, viewer.core().is_animating);
+		ui::mesh_manager_menu("Deformable", obj_manager.models, obj_manager, user_control, viewer.core().is_animating);
+		ui::mesh_manager_menu("Collider", obj_manager.rigid_colliders, obj_manager, user_control, viewer.core().is_animating);
 
-		// ui::mesh_remove_menu(obj_manager, user_control.cur_sel_mesh_id);
+		ui::mesh_remove_menu(obj_manager, user_control.cur_sel_mesh_id);
 
-		// ImGui::Separator();
+		ImGui::Separator();
 
-		// ui::deformable_mesh_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
-		// ui::collider_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
+		ui::deformable_mesh_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
+		ui::collider_generate_menu(obj_manager, user_control.cur_sel_mesh_id);
 
-		// ImGui::End();
+		ImGui::End();
 	}
 
 	void constraint_menu_window_handler::operator()()
 	{
-		// set_window_position_size(viewer.core().viewport, constraint_menu_wps);
-		// if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id) == false)
-		// {
-		// 	return;
-		// }
+		set_window_position_size(viewer.core().viewport, constraint_menu_wps);
+		if (obj_manager.is_deformable_model(user_control.cur_sel_mesh_id) == false)
+		{
+			return;
+		}
 
-		// ImGui::Begin("Constraint Setter");
+		ImGui::Begin("Constraint Setter");
 
-		// ui::set_constraints_menu(obj_manager, physics_params, user_control);
+		ui::set_constraints_menu(obj_manager, physics_params, user_control);
 
-		// ImGui::End();
+		ImGui::End();
 	}
 
 	void instantiator_menu_window_handler::operator()()
 	{
-		// set_window_position_size(viewer.core().viewport, instantiator_menu_wps);
-		// ImGui::Begin("Instantiator");
+		set_window_position_size(viewer.core().viewport, instantiator_menu_wps);
+		ImGui::Begin("Instantiator");
 
-		// instancing::Instantiator instantiator{ obj_manager, physics_params };
-		// ui::instantiator_menu(instantiator);
+		instancing::Instantiator instantiator{ obj_manager, physics_params };
+		ui::instantiator_menu(instantiator);
 
-		// ImGui::End();
+		ImGui::End();
 	};
 
 	void component_menu_window_handler::operator()()
 	{
-		// return; 
+		return; 
 
-		// // not implemented yet
-		// set_window_position_size(viewer.core().viewport, component_menu_wps);
-		// ImGui::Begin("Component");
+		// not implemented yet
+		set_window_position_size(viewer.core().viewport, component_menu_wps);
+		ImGui::Begin("Component");
 
-
-		// ImGui::End();		
+		ImGui::End();		
 	}
 
 	void pd_menu_window_handler::operator()()
 	{
-		// set_window_position_size(viewer.core().viewport, pd_menu_wps);
-		// ImGui::Begin("PD Panel");
+		set_window_position_size(viewer.core().viewport, pd_menu_wps);
+		ImGui::Begin("PD Panel");
 
-		// ui::physics_menu(physics_params, user_control);
-		// ui::visualization_menu(viewer, screen_capture_plugin, obj_manager.models, always_recompute_normal, user_control.cur_sel_mesh_id);
+		ui::physics_menu(physics_params, user_control);
+		ui::visualization_menu(viewer, screen_capture_plugin, obj_manager.models, always_recompute_normal, user_control.cur_sel_mesh_id);
 
-		// ui::simulation_ctrl_menu(
-		// 	solver, 
-		// 	obj_manager,
-		// 	user_control,
-		// 	solver_params, 
-		// 	physics_params, 
-		// 	viewer, 
-		// 	frame_callback, 
-		// 	f_exts, 
-		// 	gizmo, 
-		// 	always_recompute_normal
-		// );
+		ui::simulation_ctrl_menu(
+			solver, 
+			obj_manager,
+			user_control,
+			solver_params, 
+			physics_params, 
+			viewer, 
+			frame_callback, 
+			f_exts, 
+			gizmo, 
+			always_recompute_normal
+		);
 
-		// ImGui::End();
+		ImGui::End();
 	}
 
 	template<typename T>
@@ -151,30 +150,30 @@ namespace ui {
 		bool is_animating
 	) 
 	{
-		// const std::string title = obj_prompts + " objects";
-		// if (ImGui::BeginListBox(title.c_str(), ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
-		// {
-		// 	for (const auto& [id, mesh] : meshes)
-		// 	{
-		// 		const std::string model_name = obj_prompts + " " + std::to_string(id);
+		const std::string title = obj_prompts + " objects";
+		if (ImGui::BeginListBox(title.c_str(), ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
+		{
+			for (const auto& [id, mesh] : meshes)
+			{
+				const std::string model_name = obj_prompts + " " + std::to_string(id);
 
-		// 		const bool is_selected = (user_control.cur_sel_mesh_id == id);
-		// 		if (ImGui::Selectable(model_name.c_str(), is_selected))
-		// 		{
-		// 			user_control.cur_sel_mesh_id = id;
-		// 			user_control.selected_vertex_idx = 0;
-		// 		}
-		// 		if (is_selected)
-		// 		{
-		// 			if ((obj_manager.is_deformable_model(id) && is_animating) == false)
-		// 			{
-		// 				obj_manager.bind_gizmo(id);  // To rebind gizmo in animating causes weird behavior sometimes 
-		// 			}
-		// 			ImGui::SetItemDefaultFocus();
-		// 		}
-		// 	}
-		// 	ImGui::EndListBox();
-		// }
+				const bool is_selected = (user_control.cur_sel_mesh_id == id);
+				if (ImGui::Selectable(model_name.c_str(), is_selected))
+				{
+					user_control.cur_sel_mesh_id = id;
+					user_control.selected_vertex_idx = 0;
+				}
+				if (is_selected)
+				{
+					if ((obj_manager.is_deformable_model(id) && is_animating) == false)
+					{
+						obj_manager.bind_gizmo(id);  // To rebind gizmo in animating causes weird behavior sometimes 
+					}
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndListBox();
+		}
 	}
 	// instantiate used template explicitly to avoid linker error and improve compiling speed
 	template void mesh_manager_menu<pd::DeformableMesh>(const std::string& obj_prompts, const std::unordered_map<int, pd::DeformableMesh>& meshes, ObjManager& obj_manager, UserControl& user_control, bool is_animating);
@@ -182,253 +181,253 @@ namespace ui {
 
 	void mesh_remove_menu(ObjManager& obj_manager, int id)
 	{
-		// ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-		// ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-		// ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-		// if (ImGui::Button("Remove selected mesh"))
-		// {
-		// 	if (obj_manager.is_deformable_model(id))
-		// 	{
-		//    		obj_manager.remove_model(id);
-		// 	}
-		// 	else if (obj_manager.is_rigid_collider(id))
-		// 	{
-		// 		obj_manager.remove_rigid_collider(id);
-		// 	}
-		// 	else 
-		// 	{
-		// 		printf("Error: Invalid mesh to remove\n!");
-		// 	}
-		// }
-		// ImGui::PopStyleColor(3);
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+		if (ImGui::Button("Remove selected mesh"))
+		{
+			if (obj_manager.is_deformable_model(id))
+			{
+		   		obj_manager.remove_model(id);
+			}
+			else if (obj_manager.is_rigid_collider(id))
+			{
+				obj_manager.remove_rigid_collider(id);
+			}
+			else 
+			{
+				printf("Error: Invalid mesh to remove\n!");
+			}
+		}
+		ImGui::PopStyleColor(3);
 	}
 
     void deformable_mesh_generate_menu(ObjManager& obj_manager, int id)
     {
-        // if (ImGui::CollapsingHeader("Model Generator", ImGuiTreeNodeFlags_DefaultOpen))
-		// {
-		// 	constexpr int OP_ADD = 0;
-		// 	constexpr int OP_RESET = 1;
-		// 	static int add_or_reset = OP_ADD;
-		// 	// user select add model or reset a model
-		// 	if (obj_manager.is_deformable_model(id))
-		// 	{
-		// 		ImGui::RadioButton("Add", &add_or_reset, OP_ADD); ImGui::SameLine();
-		// 		ImGui::RadioButton("Reset", &add_or_reset, OP_RESET); 
-		// 	}
+        if (ImGui::CollapsingHeader("Model Generator", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			constexpr int OP_ADD = 0;
+			constexpr int OP_RESET = 1;
+			static int add_or_reset = OP_ADD;
+			// user select add model or reset a model
+			if (obj_manager.is_deformable_model(id))
+			{
+				ImGui::RadioButton("Add", &add_or_reset, OP_ADD); ImGui::SameLine();
+				ImGui::RadioButton("Reset", &add_or_reset, OP_RESET); 
+			}
 
-		// 	if (ImGui::TreeNode("Cloth"))
-		// 	{
-		// 		static int w = 20;
-		// 		static int h = 20;
-		// 		ImGui::InputInt(LABEL("width"), &w);
-		// 		ImGui::InputInt(LABEL("height"), &h);
-		// 		if (ImGui::Button("Generate"))
-		// 		{
-		// 			auto [V, F] = meshgen::generate_cloth(w, h);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(V, F);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, V, F);
-		// 			}
-		// 		}
+			if (ImGui::TreeNode("Cloth"))
+			{
+				static int w = 20;
+				static int h = 20;
+				ImGui::InputInt(LABEL("width"), &w);
+				ImGui::InputInt(LABEL("height"), &h);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, F] = meshgen::generate_cloth(w, h);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, F);
+					}
+				}
 				
-		// 		ImGui::TreePop();
-		// 	}
-		// 	if (ImGui::TreeNode("Hemisphere shell"))
-		// 	{
-		// 		static float radius = 1.0f;
-		// 		ImGui::InputFloat(LABEL("radius"), &radius);
-		// 		if (ImGui::Button("Generate"))
-		// 		{
-		// 			auto [V, F] = meshgen::generate_hemisphere(radius);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(V, F);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, V, F);
-		// 			}
-		// 		}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Hemisphere shell"))
+			{
+				static float radius = 1.0f;
+				ImGui::InputFloat(LABEL("radius"), &radius);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, F] = meshgen::generate_hemisphere(radius);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, F);
+					}
+				}
 				
-		// 		ImGui::TreePop();
-		// 	}
-		// 	if (ImGui::TreeNode("Sphere shell"))
-		// 	{
-		// 		static float radius = 0.5f;
-		// 		ImGui::InputFloat(LABEL("radius"), &radius);
-		// 		if (ImGui::Button("Generate"))
-		// 		{
-		// 			auto [V, F] = meshgen::generate_sphere(radius);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(V, F);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, V, F);
-		// 			}
-		// 		}
-		// 		ImGui::TreePop();
-		// 	}		
-		// 	if (ImGui::TreeNode("Cylinder shell"))
-		// 	{
-		// 		static float radius = 0.5f;
-		// 		static float height = 1.2f;
-		// 		ImGui::InputFloat(LABEL("radius"), &radius);
-		// 		ImGui::InputFloat(LABEL("height"), &height);
-		// 		if (ImGui::Button("Generate"))
-		// 		{
-		// 			auto [V, F] = meshgen::generate_cylinder(radius, height);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(V, F);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, V, F);
-		// 			}
-		// 		}
-		// 		ImGui::TreePop();
-		// 	}
-		// 	if (ImGui::TreeNode("Cone shell"))
-		// 	{
-		// 		static float radius = 0.5f;
-		// 		static float height = 1.2f;
-		// 		ImGui::InputFloat(LABEL("radius"), &radius);
-		// 		ImGui::InputFloat(LABEL("height"), &height);
-		// 		if (ImGui::Button("Generate"))
-		// 		{
-		// 			auto [V, F] = meshgen::generate_cone(radius, height);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(V, F);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, V, F);
-		// 			}
-		// 		}
-		// 		ImGui::TreePop();
-		// 	}
-		// 	if (ImGui::TreeNode("Torus shell"))
-		// 	{
-		// 		static float main_radius = 1.2f;
-		// 		static float ring_radius = 0.4f;
-		// 		ImGui::InputFloat(LABEL("main radius"), &main_radius);
-		// 		ImGui::InputFloat(LABEL("ring radius"), &ring_radius);
-		// 		if (ImGui::Button("Generate"))
-		// 		{
-		// 			auto [V, F] = meshgen::generate_torus(main_radius, ring_radius);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(V, F);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, V, F);
-		// 			}
-		// 		}
-		// 		ImGui::TreePop();
-		// 	}
-		// 	if (ImGui::TreeNode("Bar"))
-		// 	{
-		// 		static int w = 3;
-		// 		static int h = 4;
-		// 		static int d = 5;
-		// 		ImGui::InputInt(LABEL("width"), &w);
-		// 		ImGui::InputInt(LABEL("height"), &h);
-		// 		ImGui::InputInt(LABEL("depth"), &d);
-		// 		if (ImGui::Button("Generate"))
-		// 		{
-		// 			auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(V, T, boundary_facets);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, V, T, boundary_facets);
-		// 			}
-		// 		}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Sphere shell"))
+			{
+				static float radius = 0.5f;
+				ImGui::InputFloat(LABEL("radius"), &radius);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, F] = meshgen::generate_sphere(radius);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, F);
+					}
+				}
+				ImGui::TreePop();
+			}		
+			if (ImGui::TreeNode("Cylinder shell"))
+			{
+				static float radius = 0.5f;
+				static float height = 1.2f;
+				ImGui::InputFloat(LABEL("radius"), &radius);
+				ImGui::InputFloat(LABEL("height"), &height);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, F] = meshgen::generate_cylinder(radius, height);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, F);
+					}
+				}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Cone shell"))
+			{
+				static float radius = 0.5f;
+				static float height = 1.2f;
+				ImGui::InputFloat(LABEL("radius"), &radius);
+				ImGui::InputFloat(LABEL("height"), &height);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, F] = meshgen::generate_cone(radius, height);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, F);
+					}
+				}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Torus shell"))
+			{
+				static float main_radius = 1.2f;
+				static float ring_radius = 0.4f;
+				ImGui::InputFloat(LABEL("main radius"), &main_radius);
+				ImGui::InputFloat(LABEL("ring radius"), &ring_radius);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, F] = meshgen::generate_torus(main_radius, ring_radius);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, F);
+					}
+				}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Bar"))
+			{
+				static int w = 3;
+				static int h = 4;
+				static int d = 5;
+				ImGui::InputInt(LABEL("width"), &w);
+				ImGui::InputInt(LABEL("height"), &h);
+				ImGui::InputInt(LABEL("depth"), &d);
+				if (ImGui::Button("Generate"))
+				{
+					auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, T, boundary_facets);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, T, boundary_facets);
+					}
+				}
 				
-		// 		ImGui::TreePop();
-		// 	}
-		// 	if (ImGui::TreeNode(".obj File"))
-		// 	{
-		// 		static bool tetrahedrize = false;
-		// 		ImGui::Checkbox("Tetrahedrize", &tetrahedrize);
-		// 		if (ImGui::Button("Load .obj file"))
-		// 		{
-		// 			std::string file_name = igl::file_dialog_open();
-		// 			std::filesystem::path obj_file{ file_name };
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode(".obj File"))
+			{
+				static bool tetrahedrize = false;
+				ImGui::Checkbox("Tetrahedrize", &tetrahedrize);
+				if (ImGui::Button("Load .obj file"))
+				{
+					std::string file_name = igl::file_dialog_open();
+					std::filesystem::path obj_file{ file_name };
 
-		// 			if (std::filesystem::exists(obj_file) && std::filesystem::is_regular_file(obj_file))
-		// 			{
-		// 				Eigen::MatrixXd V;
-		// 				Eigen::MatrixXi F;
-		// 				bool flag = igl::read_triangle_mesh(file_name, V, F);
-		// 				if (flag)
-		// 				{
-		// 					if (tetrahedrize == true)
-		// 					{
-		// 						Eigen::MatrixXd TV;
-		// 						Eigen::MatrixXi TT;
-		// 						Eigen::MatrixXi TF;
-		// 						// tetgen
-		// 						igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
-		// 						if (add_or_reset == OP_ADD)
-		// 						{
-		// 							obj_manager.add_model(TV, TT, F);
-		// 						}
-		// 						if (add_or_reset == OP_RESET)
-		// 						{
-		// 							obj_manager.reset_model(id, TV, TT, F);
-		// 						}
-		// 					}
+					if (std::filesystem::exists(obj_file) && std::filesystem::is_regular_file(obj_file))
+					{
+						Eigen::MatrixXd V;
+						Eigen::MatrixXi F;
+						bool flag = igl::read_triangle_mesh(file_name, V, F);
+						if (flag)
+						{
+							if (tetrahedrize == true)
+							{
+								Eigen::MatrixXd TV;
+								Eigen::MatrixXi TT;
+								Eigen::MatrixXi TF;
+								// tetgen
+								igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
+								if (add_or_reset == OP_ADD)
+								{
+									obj_manager.add_model(TV, TT, F);
+								}
+								if (add_or_reset == OP_RESET)
+								{
+									obj_manager.reset_model(id, TV, TT, F);
+								}
+							}
 
-		// 					if (add_or_reset == OP_ADD)
-		// 					{
-		// 						obj_manager.add_model(V, F);
-		// 					}
-		// 					if (add_or_reset == OP_RESET)
-		// 					{
-		// 						obj_manager.reset_model(id, V, F);
-		// 					}
-		// 				}
-		// 				else
-		// 				{
-		// 					printf("Load .obj file failed!\n");
-		// 				}
-		// 			}
-		// 		}
-		// 		if (ImGui::Button("Load Armadillo")) // TOOD: For test only, must be removed later
-		// 		{
-		// 			Eigen::MatrixXd V;
-		// 			Eigen::MatrixXi F;
-		// 			igl::read_triangle_mesh("../assets/meshes/armadillo.obj", V, F);
-		// 			Eigen::MatrixXd TV;
-		// 			Eigen::MatrixXi TT;
-		// 			Eigen::MatrixXi TF;
-		// 			// tetgen
-		// 			igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
-		// 			if (add_or_reset == OP_ADD)
-		// 			{
-		// 				obj_manager.add_model(TV, TT, F);
-		// 			}
-		// 			if (add_or_reset == OP_RESET)
-		// 			{
-		// 				obj_manager.reset_model(id, TV, TT, F);
-		// 			}
-		// 		}
+							if (add_or_reset == OP_ADD)
+							{
+								obj_manager.add_model(V, F);
+							}
+							if (add_or_reset == OP_RESET)
+							{
+								obj_manager.reset_model(id, V, F);
+							}
+						}
+						else
+						{
+							printf("Load .obj file failed!\n");
+						}
+					}
+				}
+				if (ImGui::Button("Load Armadillo")) // TOOD: For test only, must be removed later
+				{
+					Eigen::MatrixXd V;
+					Eigen::MatrixXi F;
+					igl::read_triangle_mesh("../assets/meshes/armadillo.obj", V, F);
+					Eigen::MatrixXd TV;
+					Eigen::MatrixXi TT;
+					Eigen::MatrixXi TF;
+					// tetgen
+					igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(TV, TT, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, TV, TT, F);
+					}
+				}
 
-		// 		ImGui::TreePop();
-		// 	}
-		// }
+				ImGui::TreePop();
+			}
+		}
     }
 
     void collider_generate_menu(ObjManager& obj_manager, int id)
@@ -453,53 +452,52 @@ namespace ui {
 				static float center_radius[4] = { 0.2f, 0.2f, 0.2f, 0.2f };
             	ImGui::InputFloat3(LABEL("center"), center_radius, "%.1f");
 				ImGui::InputFloat(LABEL("radius"), &center_radius[3]);
-				auto x = pd::SimVector3(center_radius);
 
-				// if (ImGui::Button("Generate"))
-				// {
-				// 	obj_manager.add_rigid_collider(std::make_unique<primitive::Sphere>(
-				// 		pd::SimVector3(center_radius),
-				// 		center_radius[3]
-				// 	));
-				// }
+				if (ImGui::Button("Generate"))
+				{
+					obj_manager.add_rigid_collider(std::make_unique<primitive::Sphere>(
+						Eigen::Vector3f(center_radius).cast<pd::SimScalar>(),
+						center_radius[3]
+					));
+				}
 
 				ImGui::TreePop();
 			}
 
-			// if (ImGui::TreeNode("Torus"))
-			// {
-			// 	static float center_radius[5] = { 0, 0, 0, 0.5f, 0.1f };
-			// 	ImGui::InputFloat3(LABEL("center"), center_radius, "%.1f");
-			// 	ImGui::InputFloat(LABEL("main radius"), &center_radius[3]);
-			// 	ImGui::InputFloat(LABEL("ring radius"), &center_radius[4]);
-			// 	if (ImGui::Button("Generate"))
-			// 	{
-			// 		obj_manager.add_rigid_collider(std::make_unique<primitive::Torus>(
-			// 			pd::SimVector3(center_radius),
-			// 			center_radius[3],
-			// 			center_radius[4]
-			// 		));
-			// 	}
-			// 	ImGui::TreePop();
-			// }
+			if (ImGui::TreeNode("Torus"))
+			{
+				static float center_radius[5] = { 0, 0, 0, 0.5f, 0.1f };
+				ImGui::InputFloat3(LABEL("center"), center_radius, "%.1f");
+				ImGui::InputFloat(LABEL("main radius"), &center_radius[3]);
+				ImGui::InputFloat(LABEL("ring radius"), &center_radius[4]);
+				if (ImGui::Button("Generate"))
+				{
+					obj_manager.add_rigid_collider(std::make_unique<primitive::Torus>(
+						Eigen::Vector3f(center_radius).cast<pd::SimScalar>(),
+						center_radius[3],
+						center_radius[4]
+					));
+				}
+				ImGui::TreePop();
+			}
 
-			// if (ImGui::TreeNode("Block"))
-			// {
-			// 	static float center[3] = { 0.5f, 0.5f, 0.5f };
-			// 	static float xyz[3] = { 0.4f, 0.5f, 0.6f };
-            // 	ImGui::InputFloat3(LABEL("center"), center, "%.1f");
-            // 	ImGui::InputFloat3(LABEL("xyz"), xyz, "%.1f");
+			if (ImGui::TreeNode("Block"))
+			{
+				static float center[3] = { 0.5f, 0.5f, 0.5f };
+				static float xyz[3] = { 0.4f, 0.5f, 0.6f };
+            	ImGui::InputFloat3(LABEL("center"), center, "%.1f");
+            	ImGui::InputFloat3(LABEL("xyz"), xyz, "%.1f");
 
-			// 	if (ImGui::Button("Generate"))
-			// 	{
-			// 		obj_manager.add_rigid_collider(std::make_unique<primitive::Block>(
-			// 			pd::SimVector3(center),
-			// 			pd::SimVector3(xyz)
-			// 		));
-			// 	}
+				if (ImGui::Button("Generate"))
+				{
+					obj_manager.add_rigid_collider(std::make_unique<primitive::Block>(
+						Eigen::Vector3f(center).cast<pd::SimScalar>(),
+						Eigen::Vector3f(xyz).cast<pd::SimScalar>()
+					));
+				}
 
-				// ImGui::TreePop();
-			// }
+				ImGui::TreePop();
+			}
 		}
     }
 
@@ -535,7 +533,7 @@ namespace ui {
 		{
 			help_marker("Shift + LMC to toggle fix/unfix to a vertex.");
 			std::string vertices_to_be_toggled = "";
-			for (const int vi : user_control.toggle_fixed_vertex_idxs)
+			for (const pd::VertexIndexType vi : user_control.toggle_fixed_vertex_idxs)
 			{
 				vertices_to_be_toggled += std::to_string(vi) + " ";
 			}

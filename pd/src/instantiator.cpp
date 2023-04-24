@@ -182,7 +182,8 @@ namespace instancing {
         int id = obj_manager.add_model(V, T, boundary_facets);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         
-        model.set_tet_strain_constraints(100, pd::SimVector3(0.95, 0.95, 0.95), pd::SimVector3(1.05, 1.05, 1.05));
+        model.set_tet_strain_constraints(1000, pd::SimVector3(0.95, 0.95, 0.95), pd::SimVector3(1.05, 1.05, 1.05));
+        // model.set_tet_strain_constraints(100, pd::SimVector3(0.95, 0.95, 0.95), pd::SimVector3(1.05, 1.05, 1.05));
 
         std::unordered_set<int> toggle_vertices;
         for (int i = 0; i <= (w + 1) * (h + 1) * (d + 1) - (d + 1); i += d + 1)
@@ -270,7 +271,7 @@ namespace instancing {
 
         physics_params.enable_gravity = false;
         
-        model.set_tet_strain_constraints(10000000.0f, pd::SimVector3(0.99, 0.99, 0.99), pd::SimVector3(1.01, 1.01, 1.01));
+        model.set_tet_strain_constraints(10000000, pd::SimVector3(0.99, 0.99, 0.99), pd::SimVector3(1.01, 1.01, 1.01));
 
         std::unordered_set<int> toggle_vertices;
         for (int i = d; i <= (w + 1) * (h + 1) * (d + 1) - 1; i += d + 1)
@@ -278,7 +279,7 @@ namespace instancing {
             toggle_vertices.insert(i);
             model.set_vertex_mass(i, 1e10);
         }
-        model.toggle_vertices_fixed(toggle_vertices, 1000000000.0f);
+        model.toggle_vertices_fixed(toggle_vertices, 1000000000);
 
 		obj_manager.recalc_total_n_constraints();   
 

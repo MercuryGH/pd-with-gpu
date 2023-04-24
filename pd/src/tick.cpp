@@ -47,8 +47,8 @@ namespace pd {
 			solver.precompute();
 			solver.dirty = false;
 		}
-		// solver.step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
-		solver.test_step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
+		solver.step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
+		// solver.test_step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
 
 		for (const auto& [id, model] : models)
 		{
@@ -81,7 +81,7 @@ namespace pd {
             int idx = viewer.mesh_index(id);
             viewer.data_list[idx].clear_points();
             viewer.data_list[idx].clear_labels();
-            for (const int vi : model.get_fixed_vertices())
+            for (const VertexIndexType vi : model.get_fixed_vertices())
             {
                 viewer.data_list[idx].add_points(model.positions().row(vi), RED_COLOR);
             }
@@ -96,7 +96,7 @@ namespace pd {
                 viewer.data_list[idx].add_label(pos + offset, std::to_string(sel_vertex_idx));
 
                 int cnt = 1;
-                for (const int v : model.get_adj_list().at(sel_vertex_idx))
+                for (const VertexIndexType v : model.get_adj_list().at(sel_vertex_idx))
                 {
                     const pd::DataRowVector3 normal = viewer.data_list[idx].V_normals.row(v);
                     const pd::DataRowVector3 offset = 0.01 * normal;

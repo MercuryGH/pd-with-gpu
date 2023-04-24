@@ -24,7 +24,7 @@ namespace pd {
 
 	void Solver::precompute_A()
 	{
-		const SimScalar dtsqr_inv = 1.0f / (dt * dt);
+		const SimScalar dtsqr_inv = 1.0 / (dt * dt);
 		int total_n = 0; // #Vertex
 		for (const auto& [id, model] : models)
 		{
@@ -74,8 +74,11 @@ namespace pd {
 			gpu_local_solver->gpu_object_creation_parallel(models);  
 		}
 
-		//std::cout << A.row(1) << "\n";
-		//assert(false);
+		// std::cout << A << "\n";
+		// while (1);
+
+		// std::cout << A.row(1) << "\n";
+		// assert(false);
 
 		//std::vector<int> v_adj;
 		//for (int i = 0; i < n; i++)
@@ -158,11 +161,11 @@ namespace pd {
 
 			const int n = model.positions().rows();
 
-			// TODO: determine whether use this code to fix vertex
-			// for (const int vi : model.fixed_vertices)
-			// {
-			// 	q_explicit.row(vi) = q.row(vi).cast<float>();
-			// }
+			// use this code to fix vertex
+			for (const VertexIndexType vi : model.fixed_vertices)
+			{
+				q_explicit.row(vi) = q.row(vi).cast<SimScalar>();
+			}
 
 			const auto flatten = [n](const SimMatrixX3& q) {
 				assert(q.cols() == 3);
@@ -368,7 +371,8 @@ namespace pd {
 		{
 			b = global_solve_b_mass_term;
 			//if (k == 0)
-				//std::cout << "b = " << b << "\n";
+			// std::cout << "b = " << b << "\n";
+			// while (1);
 
 			timer.start();
 
@@ -379,18 +383,27 @@ namespace pd {
 
 			timer.start();
 
+			// while (1);
+            static int cnt = 0;
+            if (true)
+			{
+                cnt++;
+                std::cout << cnt << ", " << k << ":\n";
+				std::cout << b << "\n";
+			}
+
 			q_nplus1 = (*linear_sys_solver)->solve(b);
 
 			timer.stop();
 			last_global_step_time += timer.elapsed_milliseconds();
 
-            static int cnt = 0;
-            if (k == 9)
-			{
-                cnt++;
-				std::cout << cnt << ": b(0, 1, 2) = " << b(0) << ", " << b(1) << ", " << b(2) << "\n";
-				std::cout << cnt << ": q(0, 1, 2) = " << q_nplus1(0) << ", " << q_nplus1(1) << ", " << q_nplus1(2) << "\n";
-			}
+            // static int cnt = 0;
+            // if (true)
+			// {
+                // cnt++;
+				// std::cout << k << ": b(0, 1, 2) = " << b(0) << ", " << b(1) << ", " << b(2) << "\n";
+				// std::cout << k << ": q(0, 1, 2) = " << q_nplus1(0) << ", " << q_nplus1(1) << ", " << q_nplus1(2) << "\n";
+			// }
 			//if (k == 0)
 				//std::cout << "q_nplus1 = " << q_nplus1 << "\n";
 		}

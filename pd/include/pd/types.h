@@ -12,7 +12,7 @@ namespace pd
 	using Float = float; // scalar type
 	using Double = double;
 	using DataScalar = Double;
-	using SimScalar = Double;
+	using SimScalar = Float;
 
 	using DataVector3 = Eigen::Matrix<DataScalar, 3, 1>;
 	using DataRowVector3 = Eigen::Matrix<DataScalar, 1, 3>;

@@ -112,7 +112,7 @@ namespace pd
 		const thrust::host_vector<pd::Constraint*>& get_all_constraints() const { return constraints; }
 		bool is_vertex_fixed(VertexIndexType vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
 		const std::unordered_set<int>& get_fixed_vertices() const { return fixed_vertices; }
-		const std::vector<std::vector<int>>& get_adj_list() const { return adj_list; }
+		const std::vector<std::vector<VertexIndexType>>& get_adj_list() const { return adj_list; }
 		int n_constraints() const { return constraints.size(); }
 		bool is_tet_mesh() const { return tet_mesh; }
 		const PositionData& get_element_barycenters() const { return barycenters; }

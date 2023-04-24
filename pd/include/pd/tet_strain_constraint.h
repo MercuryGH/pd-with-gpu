@@ -20,7 +20,6 @@ namespace pd
 
 		std::vector<Eigen::Triplet<SimScalar>> get_c_AcTAc(int n_vertex_offset) const override;
 
-		__host__ __device__ void test_local_step_tet_strain(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const;
 		__host__ __device__ void project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const override;
 
 		__host__ __device__ void print_name() const override
