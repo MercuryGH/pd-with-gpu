@@ -1,7 +1,6 @@
 #include <pd/tick.h>
 
 namespace pd {
-        // Physical frame calculation
 	void tick(
 		igl::opengl::glfw::Viewer& viewer,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
@@ -9,7 +8,34 @@ namespace pd {
 		const ui::SolverParams& solver_params,
 		pd::Solver& solver,
 		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
+		const ui::UserControl& user_control,
 		bool always_recompute_normal
+	)
+	{
+		// Physics tick stage
+
+        // apply mass
+        for (auto& [id, model] : models)
+        {
+            bool flag = model.apply_mass_per_vertex(physics_params.mass_per_vertex);
+            if (flag == true)
+            {
+                solver.dirty = true;
+            }
+        }
+
+        physics_tick(models, physics_params, solver_params, solver, f_exts);
+
+		// Rendering stage
+		rendering_tick(viewer, models, f_exts, user_control, always_recompute_normal);
+	}
+
+	void physics_tick(
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
+		const ui::PhysicsParams& physics_params,
+		const ui::SolverParams& solver_params,
+		pd::Solver& solver,
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts
 	)
 	{
 		if (models.empty() == true)
@@ -49,7 +75,17 @@ namespace pd {
 		}
 		solver.step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
 		// solver.test_step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
+	}
 
+	void rendering_tick(
+		igl::opengl::glfw::Viewer& viewer,
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
+		const ui::UserControl& user_control,
+		bool always_recompute_normal
+	)
+	{
+		// set visual data from calculation result
 		for (const auto& [id, model] : models)
 		{
 			f_exts[id].setZero();
@@ -62,6 +98,12 @@ namespace pd {
 			{
 				viewer.data_list[idx].compute_normals();
 			}
+		}
+
+		// draw debug points
+		if (user_control.enable_debug_draw)
+		{
+        	draw_debug_info(viewer, models, user_control.cur_sel_mesh_id, user_control.selected_vertex_idx);
 		}
 	}
 
@@ -119,6 +161,8 @@ namespace pd {
             return false;
         }
 
+		// Physics tick stage
+
         // timer ready
         timer.start();
 
@@ -134,7 +178,7 @@ namespace pd {
 
         if (viewer.core().is_animating)
         {
-            tick(viewer, models, physics_params, solver_params, solver, f_exts, always_recompute_normal);
+            physics_tick(models, physics_params, solver_params, solver, f_exts);
         }
 
         timer.stop();
@@ -143,10 +187,8 @@ namespace pd {
         last_local_step_time = solver.last_local_step_time;
         last_precomputation_time = solver.last_precomputation_time;
 
-		if (user_control.enable_debug_draw)
-		{
-        	draw_debug_info(viewer, models, user_control.cur_sel_mesh_id, user_control.selected_vertex_idx);
-		}
+		// Rendering stage
+		rendering_tick(viewer, models, f_exts, user_control, always_recompute_normal);
 
         return false;
     }

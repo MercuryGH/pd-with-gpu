@@ -68,6 +68,7 @@ namespace ui
 		solver.dirty = true;
 
 		user_control.cur_sel_mesh_id = obj_id;
+		user_control.selected_vertex_idx = 0;
 
 		// if this is the only model, select it
 		if (models.size() == 1)
@@ -195,6 +196,7 @@ namespace ui
 		viewer.data_list[idx].show_lines = 0;
 
 		user_control.cur_sel_mesh_id = obj_id;
+		user_control.selected_vertex_idx = 0;
 
 		// if this is the only model, select it
 		if (models.size() == 1)

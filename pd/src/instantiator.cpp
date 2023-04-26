@@ -1,6 +1,8 @@
 #include <instancing/instantiator.h>
 
 #include <meshgen/mesh_generator.h>
+#include <texturegen/texture_generator.h>
+#include <igl/copyleft/tetgen/tetrahedralize.h>
 
 #include <primitive/floor.h>
 #include <primitive/block.h>
@@ -14,7 +16,33 @@ namespace instancing {
 
     void Instantiator::instance_floor()
     {
-        obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(-1));
+        int id = obj_manager.add_rigid_collider(std::make_unique<primitive::Floor>(-1));
+
+        Eigen::MatrixXd UV(4, 2);
+        UV << 0, 0,
+            1, 0,
+            0, 1,
+            1, 1;
+        Eigen::MatrixXi fF(2, 3);
+        fF << 0, 1, 2,
+            1, 3, 2;
+
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> X;
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> A;
+        texturegen::checkerboard_texture(16, 100, X, A);
+
+        auto& viewer = obj_manager.viewer;
+
+		int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.set_uv(UV);
+        data.uniform_colors(Eigen::Vector3d(0.3, 0.3, 0.3), Eigen::Vector3d(0.8, 0.8, 0.8), Eigen::Vector3d(0, 0, 0));
+        data.set_texture(X, X, X, A);
+        data.show_texture = true;
+        data.show_lines = false;
+
+        viewer.core().light_position << 1.0f, 2.0f, 0.0f;
+        viewer.core().light_position = viewer.core().light_position + viewer.core().camera_eye;
     }
 
     void Instantiator::instance_bending_hemisphere()
@@ -240,7 +268,21 @@ namespace instancing {
 
     void Instantiator::instance_armadillo()
     {
-        instance_obj_model("../assets/meshes/armadillo.obj");
+        Eigen::MatrixXd V;
+        Eigen::MatrixXi F;
+        igl::read_triangle_mesh("../assets/meshes/armadillo.obj", V, F);
+        Eigen::MatrixXd TV;
+        Eigen::MatrixXi TT;
+        Eigen::MatrixXi TF;
+        // tetgen
+        igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
+        int id = obj_manager.add_model(TV, TT, F);
+
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        model.set_tet_strain_constraints(10000);
+
+		obj_manager.recalc_total_n_constraints();
     }
 
     void Instantiator::instance_bunny()

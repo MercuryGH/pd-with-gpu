@@ -14,7 +14,7 @@
 #include <util/cpu_timer.h>
 
 namespace pd {
-    // Physical frame calculation
+	// tick physics and rendering frame
 	void tick(
 		igl::opengl::glfw::Viewer& viewer,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
@@ -22,7 +22,24 @@ namespace pd {
 		const ui::SolverParams& solver_params,
 		pd::Solver& solver,
 		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
+		const ui::UserControl& user_control,
 		bool always_recompute_normal
+	);
+
+	void rendering_tick(
+		igl::opengl::glfw::Viewer& viewer,
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
+		const ui::UserControl& user_control,
+		bool always_recompute_normal
+	);
+
+	void physics_tick(
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
+		const ui::PhysicsParams& physics_params,
+		const ui::SolverParams& solver_params,
+		pd::Solver& solver,
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts
 	);
 
 	void draw_debug_info(

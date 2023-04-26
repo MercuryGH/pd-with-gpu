@@ -84,7 +84,9 @@ int main(int argc, char* argv[])
 
 	main_menu.callback_draw_viewer_window = ui::pd_menu_window_handler{ viewer, screen_capture_plugin, obj_manager, solver, solver_params, physics_params, user_control, frame_callback, f_exts, gizmo, always_recompute_normal };
 
-	viewer.launch(true, false, "Projective Dynamics", 0, 0);
+    viewer.launch_init(true, false, "Projective Dynamics", 0, 0);
+	viewer.launch_rendering(true);
+	viewer.launch_shut();
 
 	return 0;
 }

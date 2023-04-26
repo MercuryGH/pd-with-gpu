@@ -775,7 +775,7 @@ namespace ui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 			if (ImGui::Button("Simulate Single Step", ImVec2(-1, 0)) && viewer.core().is_animating == false)
 			{
-				pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, always_recompute_normal);
+				pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, user_control, always_recompute_normal);
 			}
 			ImGui::PopStyleColor(3);
 

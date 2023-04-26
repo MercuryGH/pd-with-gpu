@@ -104,6 +104,66 @@ namespace pd
 		return triplets;
 	}
 
+	__host__ __device__ SimScalar TetStrainConstraint::determinant3(const SimMatrix3& mat)
+	{
+		SimScalar x = (mat(1, 1) * mat(2, 2)) - (mat(2, 1) * mat(1, 2));
+		SimScalar y = (mat(1, 0) * mat(2, 2)) - (mat(2, 0) * mat(1, 2));
+		SimScalar z = (mat(1, 0) * mat(2, 1)) - (mat(2, 0) * mat(1, 1));
+	
+		SimScalar det = (mat(0, 0) * x) - (mat(0, 1) * y) + (mat(0, 2) * z);
+		return det;
+	}
+
+	__host__ __device__ SimMatrix3 TetStrainConstraint::multiply3x3(const SimMatrix3& A, const SimMatrix3& B)
+	{
+		SimMatrix3 ret;
+		ret << 
+			(A(0, 0) * B(0, 0)) + (A(0, 1) * B(1, 0)) + (A(0, 2) * B(2, 0)),
+			(A(0, 0) * B(0, 1)) + (A(0, 1) * B(1, 1)) + (A(0, 2) * B(2, 1)),
+			(A(0, 0) * B(0, 2)) + (A(0, 1) * B(1, 2)) + (A(0, 2) * B(2, 2)),
+			(A(1, 0) * B(0, 0)) + (A(1, 1) * B(1, 0)) + (A(1, 2) * B(2, 0)),
+			(A(1, 0) * B(0, 1)) + (A(1, 1) * B(1, 1)) + (A(1, 2) * B(2, 1)),
+			(A(1, 0) * B(0, 2)) + (A(1, 1) * B(1, 2)) + (A(1, 2) * B(2, 2)),
+			(A(2, 0) * B(0, 0)) + (A(2, 1) * B(1, 0)) + (A(2, 2) * B(2, 0)),
+			(A(2, 0) * B(0, 1)) + (A(2, 1) * B(1, 1)) + (A(2, 2) * B(2, 1)),
+			(A(2, 0) * B(0, 2)) + (A(2, 1) * B(1, 2)) + (A(2, 2) * B(2, 2));
+		return ret;
+	}
+
+	__host__ __device__ SimMatrix3 TetStrainConstraint::multiply_diagx3(const SimVector3& A, const SimMatrix3& B)
+	{
+		SimMatrix3 ret;
+		ret << 
+			A(0) * B(0, 0),
+			A(0) * B(0, 1),
+			A(0) * B(0, 2),
+			A(1) * B(1, 0),
+			A(1) * B(1, 1),
+			A(1) * B(1, 2),
+			A(2) * B(2, 0),
+			A(2) * B(2, 1),
+			A(2) * B(2, 2);
+
+		return ret;
+	}
+
+	__device__ void TetStrainConstraint::gpu_svd3(const SimMatrix3& mat, SimMatrix3& U, SimVector3& sigma, SimMatrix3& V)
+	{
+		// Note: This svd method takes all as float but not double
+		util::svd(
+			mat(0, 0), mat(0, 1), mat(0, 2),
+			mat(1, 0), mat(1, 1), mat(1, 2),
+			mat(2, 0), mat(2, 1), mat(2, 2),
+			U(0, 0), U(0, 1), U(0, 2),
+			U(1, 0), U(1, 1), U(1, 2),
+			U(2, 0), U(2, 1), U(2, 2),
+			sigma(0), sigma(1), sigma(2),
+			V(0, 0), V(0, 1), V(0, 2),
+			V(1, 0), V(1, 1), V(1, 2),
+			V(2, 0), V(2, 1), V(2, 2)
+		);
+	}
+
 	__host__ __device__ void TetStrainConstraint::project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const
 	{
 		SimVector3 cur_pos[4];
@@ -114,9 +174,11 @@ namespace pd
 			SimScalar x = (SimScalar)q[3 * v];
 			SimScalar y = (SimScalar)q[3 * v + 1];
 			SimScalar z = (SimScalar)q[3 * v + 2];
+			// printf("x,y,z = %f %f %f\n", x,y,z);
 
 			cur_pos[i] = { x, y, z };
 		}
+		
 		// v[3] as pivot
 		SimMatrix3 D_s;
 		for (int i = 0; i < 3; i++)
@@ -124,25 +186,39 @@ namespace pd
 			D_s.col(i) = cur_pos[i] - cur_pos[3];
 		}
 
-		const SimMatrix3 F = D_s * D_m_inv; // deformation gradient
-
 	#ifdef __CUDA_ARCH__
-		// GPU side determinant
-		bool tet_inverted = false;
+		// Eigen 3*3 matrix product fails on cuda device code without any warning
+		const SimMatrix3 F = multiply3x3(D_s, D_m_inv); // deformation gradient
+	#else
+		const SimMatrix3 F = D_s * D_m_inv; // deformation gradient
+	#endif
 
+		// printf("D_s = %f %f %f\n", D_s(0, 0), D_s(1, 1), D_s(2, 2));
+		// printf("D_s Dminv = %f %f %f %f %f %f\n", D_s(0, 0), D_s(1, 1), D_s(2, 2), D_m_inv(0, 0), D_m_inv(1, 1), D_m_inv(2, 2));
+		// printf("F, det(F) = %f %f %f %f\n", F(0, 0), F(1, 1), F(2, 2), determinant3(F));
+	#ifdef __CUDA_ARCH__
+		// while (1);
+	#endif
+
+		const bool tet_inverted = determinant3(F) < 0;
+	#ifdef __CUDA_ARCH__
 		// GPU side SVD
 		SimMatrix3 U;
 		SimMatrix3 V;
 		SimVector3 sigma;
+		gpu_svd3(F, U, sigma, V);
 	#else
-		const bool tet_inverted = F.determinant() < 0;
-
 		// CPU side SVD
 		Eigen::JacobiSVD<SimMatrix3> svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
 		const SimMatrix3& U = svd.matrixU();
-		const SimMatrix3& V = svd.matrixV();
 		SimVector3 sigma = svd.singularValues();
+		const SimMatrix3& V = svd.matrixV();
 	#endif
+
+	#ifdef __CUDA_ARCH__
+		// printf("sigmas = %f, %f, %f\n", sigma(0), sigma(1), sigma(2));
+	#endif
+
 		for (int i = 0; i < 3; i++)
 		{
 			sigma(i) = std::clamp(sigma(i), (SimScalar)min_strain_xyz(i), (SimScalar)max_strain_xyz(i));
@@ -154,15 +230,18 @@ namespace pd
 			sigma(2) = -sigma(2);
 		}
 
+	#ifdef __CUDA_ARCH__
+		const SimMatrix3 Achpc = multiply3x3(V, multiply_diagx3(sigma, U.transpose())); // equivalent to (U * sigma * V^T)^{-1}
+		// printf("sigmas = %f, %f, %f\n", sigma(0), sigma(1), sigma(2));
+		// printf("Achpc = %f %f %f\n", Achpc(0, 0), Achpc(1, 1), Achpc(2, 2));
+
+		// while (1);
+	#else
 		// U * sigma * V^T is NEARLY the rotation part of deformation gradient assumes simga(i) is clamp to nearly 1
 		// Thus we can transpose it to get the inversion of this matrix so as to restore the deformation
-		SimMatrix3 Achpc = V * sigma.asDiagonal() * U.transpose(); // equivalent to (U * sigma * V^T)^{-1}
+		const SimMatrix3 Achpc = V * sigma.asDiagonal() * U.transpose(); // equivalent to (U * sigma * V^T)^{-1}
 		// Note: if we don't transpose U * sigma * V^T, the simulation very become stiff and weird
-
-		#ifndef __CUDA_ARCH__
-			std::cout << "F = \n" << F << "\n";
-			std::cout << "Achpc = \n" << Achpc << "\n";
-		#endif
+	#endif
 
 		// apply A_c^T
 		for (int i = 0; i < 4; i++)

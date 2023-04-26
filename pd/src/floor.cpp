@@ -17,7 +17,7 @@ namespace primitive
 
     void Floor::generate_visualized_model(Eigen::MatrixXd& V, Eigen::MatrixXi& F) const
     {
-		auto ret = meshgen::generate_plane(11, 11, 1, 1);
+		auto ret = meshgen::generate_plane(21, 21, 1, 1);
 		V = ret.first, F = ret.second;
     }
 
