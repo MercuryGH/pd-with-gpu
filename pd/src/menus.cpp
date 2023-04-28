@@ -123,7 +123,7 @@ namespace ui {
 		ImGui::Begin("PD Panel");
 
 		ui::physics_menu(physics_params, user_control);
-		ui::visualization_menu(viewer, screen_capture_plugin, obj_manager.models, always_recompute_normal, user_control.cur_sel_mesh_id);
+		ui::visualization_menu(viewer, user_control, screen_capture_plugin, obj_manager.models, user_control.cur_sel_mesh_id);
 
 		ui::simulation_ctrl_menu(
 			solver, 
@@ -134,8 +134,7 @@ namespace ui {
 			viewer, 
 			frame_callback, 
 			f_exts, 
-			gizmo, 
-			always_recompute_normal
+			gizmo
 		);
 
 		ImGui::End();
@@ -256,6 +255,7 @@ namespace ui {
 				
 				ImGui::TreePop();
 			}
+			static bool tetrahedralize = false;
 			if (ImGui::TreeNode("Sphere shell"))
 			{
 				static float radius = 0.5f;
@@ -389,14 +389,16 @@ namespace ui {
 									obj_manager.reset_model(id, TV, TT, F);
 								}
 							}
-
-							if (add_or_reset == OP_ADD)
+							else
 							{
-								obj_manager.add_model(V, F);
-							}
-							if (add_or_reset == OP_RESET)
-							{
-								obj_manager.reset_model(id, V, F);
+								if (add_or_reset == OP_ADD)
+								{
+									obj_manager.add_model(V, F);
+								}
+								if (add_or_reset == OP_RESET)
+								{
+									obj_manager.reset_model(id, V, F);
+								}
 							}
 						}
 						else
@@ -595,15 +597,15 @@ namespace ui {
 
 	void visualization_menu(
 		igl::opengl::glfw::Viewer& viewer, 
+		UserControl& user_control,
 		ScreenCapturePlugin& screen_capture_plugin,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
-		bool& always_recompute_normal, 
 		int id
 	)
     {
 		if (ImGui::CollapsingHeader("Visualization Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
-			ImGui::Checkbox("Always recompute normals", &always_recompute_normal); ImGui::SameLine();
+			ImGui::Checkbox("Always recompute normals", &user_control.always_recompute_normal); ImGui::SameLine();
 			if (ImGui::Button("Recompute normals"))
 			{
 				for (int i = 0; i < viewer.data_list.size(); i++)
@@ -619,6 +621,11 @@ namespace ui {
 				}
 			);
 			ImGui::Checkbox("Double sided lighting", &viewer.data_list[idx].double_sided);
+
+			ImGui::Checkbox("Shadow mapping", &viewer.core().is_shadow_mapping);
+
+			ImGui::Checkbox("Debug draw vertex", &user_control.enable_debug_draw);
+
 			ImGui::InputFloat(LABEL("Point Size"), &viewer.data_list[idx].point_size, 1.f, 10.f);
 
 			int n_vertices, n_faces;
@@ -668,7 +675,9 @@ namespace ui {
 			&instancing::Instantiator::instance_bending_hemisphere,
 			&instancing::Instantiator::instance_cylinder,
 			&instancing::Instantiator::instance_cone,
+			&instancing::Instantiator::instance_bouncing_sphere,
 			&instancing::Instantiator::instance_armadillo,
+			&instancing::Instantiator::instance_pinned_armadillo,
 			&instancing::Instantiator::instance_bunny
 		};
 
@@ -682,7 +691,9 @@ namespace ui {
 			"Bending Hemisphere",
 			"Cylinder",
 			"Cone",
+			"Bouncing Sphere",
 			"Armadillo",
+			"Pinned Armadillo",
 			"Bunny"
 		};
 		static int item_current = 0;
@@ -714,8 +725,7 @@ namespace ui {
         igl::opengl::glfw::Viewer& viewer,
         pd::pre_draw_handler& frame_callback,
 	    std::unordered_map<pd::MeshIDType, pd::DataMatrixX3>& f_exts,
-		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo,
-        bool always_recompute_normal
+		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo
     )
     {
         if (ImGui::CollapsingHeader("Simulating Control"), ImGuiTreeNodeFlags_DefaultOpen)
@@ -729,12 +739,12 @@ namespace ui {
 
 			// Solver Selector
 			const char* items[] = { "Direct", "Parallel Jacobi", "A-Jacobi-1", "A-Jacobi-2", "A-Jacobi-3" };
-			static const char* cur_select_item = "Direct";
-			if (ImGui::BeginCombo(LABEL("current solver"), cur_select_item))
+			static int cur_select_item_idx = 0;
+			if (ImGui::BeginCombo(LABEL("current solver"), items[cur_select_item_idx]))
 			{
 				for (int i = 0; i < IM_ARRAYSIZE(items); i++)
 				{
-					bool is_selected = (cur_select_item == items[i]);
+					bool is_selected = (cur_select_item_idx == i);
 					if (ImGui::Selectable(items[i], is_selected))
 					{
 						// If solver changed
@@ -745,7 +755,7 @@ namespace ui {
 						}
 
 						// change solver
-						cur_select_item = items[i];
+						cur_select_item_idx = i;
 						solver_params.selected_solver = static_cast<ui::LinearSysSolver>(i);
 					}
 					if (is_selected)
@@ -754,6 +764,17 @@ namespace ui {
 					}
 				}
 				ImGui::EndCombo();
+			}
+
+			// extra param tuning for chebyshev method
+			if (cur_select_item_idx >= 2)
+			{
+				ImGui::InputDouble(LABEL("rho"), &solver_params.rho, 0.01, 0.1, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
+				ImGui::InputDouble(LABEL("under relaxation"), &solver_params.under_relaxation, 0.01, 0.1, "%.3f"); // n_solver_pd_iterations in PD is 1 timestep
+				if (ImGui::Button("Set chebyshev params"))
+				{
+					solver.set_chebyshev_params(solver_params.rho, solver_params.under_relaxation);
+				}
 			}
 
 			ImGui::Separator();
@@ -775,25 +796,29 @@ namespace ui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 			if (ImGui::Button("Simulate Single Step", ImVec2(-1, 0)) && viewer.core().is_animating == false)
 			{
-				pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, user_control, always_recompute_normal);
+				pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, user_control);
 			}
 			ImGui::PopStyleColor(3);
 
 			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0x66, 0xCC, 0xFF, 0xFF));
+
+			static bool enable_gizmo_flag = false;
 			ImGui::Checkbox("Auto Simulate!", [&]() { 
 					bool is_animating = viewer.core().is_animating;
 					if (is_animating)
 					{
 						// disable gizmo control when animating
 						gizmo.visible = !obj_manager.is_deformable_model(user_control.cur_sel_mesh_id);
+						enable_gizmo_flag = false;
 					}
 					return is_animating;
 				},
 				[&](bool value) {
-					if (value == false)
+					if (value == false && enable_gizmo_flag == false)
 					{
 						// enable gizmo when disable animating
 						gizmo.visible = true;
+						enable_gizmo_flag = true;
 					}
 					viewer.core().is_animating = value;
 				}

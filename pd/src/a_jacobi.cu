@@ -25,15 +25,33 @@ namespace pd
 		}
 	}
 
+	__device__ void chebyshev_acc(
+		SimScalar* __restrict__ next_x,
+		const SimScalar* __restrict__ x,
+		const SimScalar* __restrict__ prev_x,	
+		SimScalar omega, // chebyshev param omega 
+		SimScalar under_relaxation, // under-relaxation coeff	
+		int _3_idx
+	)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			next_x[_3_idx + i] = omega * (((next_x[_3_idx + i] - x[_3_idx + i]) * under_relaxation + x[_3_idx + i]) - prev_x[_3_idx + i]) + prev_x[_3_idx + i];
+		}	
+	}
+
 	__global__ void itr_order_1(
 		SimScalar* __restrict__ next_x,
 		const SimScalar* __restrict__ x,
+		const SimScalar* __restrict__ prev_x,
 		SimScalar** __restrict__ d_1_ring_neighbors,
 		int** __restrict__ d_1_ring_neighbor_indices,
 		const int* __restrict__ d_1_ring_neighbor_sizes,
 		const SimScalar* __restrict__ d_diagonals,
 		const SimScalar* __restrict__ d_b_term,
-		int n_vertex  // #Vertex, parallelism is n but not 3n
+		int n_vertex,  // #Vertex, parallelism is n but not 3n
+		SimScalar omega, // chebyshev param omega 
+		SimScalar under_relaxation // under-relaxation coeff
 	)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -63,6 +81,12 @@ namespace pd
 			next_x[3 * idx] = sum_0 * D_ii_inv + d_b_term[3 * idx];
 			next_x[3 * idx + 1] = sum_1 * D_ii_inv + d_b_term[3 * idx + 1];
 			next_x[3 * idx + 2] = sum_2 * D_ii_inv + d_b_term[3 * idx + 2];
+
+			// debug only
+			// printf("Debug: %d %f %f %f\n", idx, next_x[3 * idx], next_x[3 * idx + 1], next_x[3 * idx + 2]);
+
+			// chebyshev
+			chebyshev_acc(next_x, x, prev_x, omega, under_relaxation, 3 * idx);
 		}
 	}
 
@@ -317,6 +341,7 @@ namespace pd
 			checkCudaErrors(cudaFree(d_b_term));
 			for (int k = 0; k < order; k++)
 			{
+				checkCudaErrors(cudaFree(d_prev_x[k]));
 				checkCudaErrors(cudaFree(d_x[k]));
 				checkCudaErrors(cudaFree(d_next_x[k]));
 			}
@@ -360,6 +385,7 @@ namespace pd
 		checkCudaErrors(cudaMalloc((void**)&d_b_term, sizeof(SimScalar) * n));
 		for (int i = 0; i < order; i++)
 		{
+			checkCudaErrors(cudaMalloc((void**)&d_prev_x[i], sizeof(SimScalar) * n));
 			checkCudaErrors(cudaMalloc((void**)&d_x[i], sizeof(SimScalar) * n));
 			checkCudaErrors(cudaMalloc((void**)&d_next_x[i], sizeof(SimScalar) * n));
 		}
@@ -554,12 +580,30 @@ namespace pd
 		checkCudaErrors(cudaMemcpy(d_b, b.data(), sizeof(SimScalar) * n, cudaMemcpyHostToDevice));
 		for (int i = 0; i < order; i++)
 		{
+			cudaMemset(d_prev_x[i], 0, sizeof(SimScalar) * n);
 			cudaMemset(d_x[i], 0, sizeof(SimScalar) * n);
 			cudaMemset(d_next_x[i], 0, sizeof(SimScalar) * n);
 		}
 
 		const int n_vertex = n / 3;
 		const int n_blocks = util::get_n_blocks(n_vertex);
+
+		SimScalar omega = 1;
+		const auto get_omega = [&](int cur_n_itr) -> SimScalar
+		{
+			constexpr auto chebyshev_chmod_threshold = 11;
+
+			if (cur_n_itr < chebyshev_chmod_threshold)
+			{
+				return 1;
+			}
+			else if (cur_n_itr == chebyshev_chmod_threshold)
+			{
+				return (SimScalar)2 / (2 - rho * rho);
+			}
+			return (SimScalar)4 / (4 - rho * rho * omega);
+		};
+
 		if (order == 1)
 		{
 			// precompute b term 1
@@ -567,22 +611,29 @@ namespace pd
 
 			for (int i = 0; i < n_itr; i++)
 			{
-				if (i % 2 == 1)
+				omega = get_omega(n_itr);
+
+				// perform triple buffer to avoid swapping overhead
+				if (i % 3 == 0)
 				{
 					itr_order_1 << <n_blocks, WARP_SIZE >> > (
-						d_x[0],
 						d_next_x[0],
+						d_x[0],
+						d_prev_x[0],
 						d_k_ring_neighbors[0],
 						d_k_ring_neighbor_indices[0],
 						d_k_ring_neighbor_sizes[0],
 						d_diagonals,
 						d_b_term,
-						n_vertex
+						n_vertex,
+						omega,
+						under_relaxation
 						);
 				}
-				else
+				else if (i % 3 == 1)
 				{
 					itr_order_1 << <n_blocks, WARP_SIZE >> > (
+						d_prev_x[0],
 						d_next_x[0],
 						d_x[0],
 						d_k_ring_neighbors[0],
@@ -590,7 +641,25 @@ namespace pd
 						d_k_ring_neighbor_sizes[0],
 						d_diagonals,
 						d_b_term,
-						n_vertex
+						n_vertex,
+						omega,
+						under_relaxation
+						);
+				}
+				else // i % 3 == 2
+				{
+					itr_order_1 << <n_blocks, WARP_SIZE >> > (
+						d_x[0],
+						d_prev_x[0],
+						d_next_x[0],
+						d_k_ring_neighbors[0],
+						d_k_ring_neighbor_indices[0],
+						d_k_ring_neighbor_sizes[0],
+						d_diagonals,
+						d_b_term,
+						n_vertex,
+						omega,
+						under_relaxation
 						);
 				}
 			}
@@ -708,12 +777,20 @@ namespace pd
 		{
 			if (std::abs(err_checker[i] - ret[i]) > eps)
 			{
-				printf("Warning: A-Jacobi Iteration Incomplete. At index %d, values are %f, %f.\n", i, err_checker[i], ret[i]);
+				printf("Warning: A-Jacobi iteration incomplete: At index %d, values are %f, %f.\n", i, err_checker[i], ret[i]);
 				break;
 			}
+			if (std::abs(err_checker[i]) > 1e10)
+			{
+				printf("Warning: A-Jacobi divergence issue occured: At index %d, value is %f.\n", i, err_checker[i]);
+			}
+		}
+		if (err_checker.hasNaN())
+		{
+			printf("Warning: A-Jacobi divergence issue occured: NaN detected!\n");
 		}
 		// if (true)
-		// 	std::cout << "err checker[32] = " << err_checker[32] << "\n" << "ret[32] = " << ret[32] << "\n";
+			// std::cout << "err checker[32] = " << err_checker[32] << "\n" << "ret[32] = " << ret[32] << "\n";
 
 		return ret;
 	}

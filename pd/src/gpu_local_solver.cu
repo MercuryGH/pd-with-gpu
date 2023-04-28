@@ -7,9 +7,7 @@ namespace pd
 	__global__ void free_constraints(
 		Constraint **__restrict__ d_cloned_constraints, int n_constraints)
 	{
-		int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (idx < n_constraints)
+		for (int idx = blockDim.x * blockIdx.x + threadIdx.x; idx < n_constraints; idx += blockDim.x * gridDim.x)
 		{
 			delete d_cloned_constraints[idx];
 		}
@@ -198,9 +196,7 @@ namespace pd
 	template<typename T>
 	__global__ void restore_dev_vtables(const T* const* __restrict__ constraints, int n)
 	{
-		int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (idx < n)
+		for (int idx = blockDim.x * blockIdx.x + threadIdx.x; idx < n; idx += blockDim.x * gridDim.x)
 		{
 			const T* constraint = constraints[idx];
 			fix_vtable_pointer<T>(constraint);

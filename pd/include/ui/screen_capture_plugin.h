@@ -26,8 +26,20 @@ namespace ui
             std::unique_ptr<GLubyte[]> pixels(new GLubyte[width * height * 4]);
 
             glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.get());
+            
+            // If Linux system, use `convert -delay 3 -loop 0 *.png output.gif` to generate gif from captured pngs
+            const auto zeros_prefix_str = [](int width, std::string& num)
+            {
+                while (num.size() < width)
+                {
+                    num = "0" + num;
+                }
+            };
 
-            std::string path = path_prefix + std::to_string(capture_idx++) + ".png";
+            std::string n_frame_str = std::to_string(capture_idx++);
+            zeros_prefix_str(3, n_frame_str);
+
+            std::string path = path_prefix + n_frame_str + ".png";
             // invoke a file saver thread
             std::thread{ save_png_file, path, std::move(pixels), width, height }.detach();
 

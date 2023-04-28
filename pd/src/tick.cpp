@@ -8,8 +8,7 @@ namespace pd {
 		const ui::SolverParams& solver_params,
 		pd::Solver& solver,
 		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
-		const ui::UserControl& user_control,
-		bool always_recompute_normal
+		const ui::UserControl& user_control
 	)
 	{
 		// Physics tick stage
@@ -27,7 +26,7 @@ namespace pd {
         physics_tick(models, physics_params, solver_params, solver, f_exts);
 
 		// Rendering stage
-		rendering_tick(viewer, models, f_exts, user_control, always_recompute_normal);
+		rendering_tick(viewer, models, f_exts, user_control);
 	}
 
 	void physics_tick(
@@ -81,8 +80,7 @@ namespace pd {
 		igl::opengl::glfw::Viewer& viewer,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
-		const ui::UserControl& user_control,
-		bool always_recompute_normal
+		const ui::UserControl& user_control
 	)
 	{
 		// set visual data from calculation result
@@ -94,20 +92,18 @@ namespace pd {
 			// viewer.data_list[idx].clear();
 			int idx = viewer.mesh_index(id);
 			viewer.data_list[idx].set_vertices(model.positions());
-			if (always_recompute_normal)
+			if (user_control.always_recompute_normal)
 			{
 				viewer.data_list[idx].compute_normals();
 			}
 		}
 
 		// draw debug points
-		if (user_control.enable_debug_draw)
-		{
-        	draw_debug_info(viewer, models, user_control.cur_sel_mesh_id, user_control.selected_vertex_idx);
-		}
+        draw_debug_info(user_control.enable_debug_draw, viewer, models, user_control.cur_sel_mesh_id, user_control.selected_vertex_idx);
 	}
 
     void draw_debug_info(
+		bool enable_debug_draw,
 		igl::opengl::glfw::Viewer& viewer,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		pd::MeshIDType sel_mesh_id,
@@ -123,6 +119,12 @@ namespace pd {
             int idx = viewer.mesh_index(id);
             viewer.data_list[idx].clear_points();
             viewer.data_list[idx].clear_labels();
+
+			if (enable_debug_draw == false)
+			{
+				return;
+			}
+
             for (const VertexIndexType vi : model.get_fixed_vertices())
             {
                 viewer.data_list[idx].add_points(model.positions().row(vi), RED_COLOR);
@@ -188,7 +190,7 @@ namespace pd {
         last_precomputation_time = solver.last_precomputation_time;
 
 		// Rendering stage
-		rendering_tick(viewer, models, f_exts, user_control, always_recompute_normal);
+		rendering_tick(viewer, models, f_exts, user_control);
 
         return false;
     }

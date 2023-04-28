@@ -30,8 +30,12 @@ namespace instancing {
         void instance_bar();
         void instance_bridge();
 
+        void instance_bouncing_sphere();
+
         void instance_obj_model(const std::string& file_path);
         void instance_bunny();
+
+        void instance_pinned_armadillo();
         void instance_armadillo();
 
         void instance_cone();

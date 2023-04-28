@@ -22,16 +22,14 @@ namespace pd {
 		const ui::SolverParams& solver_params,
 		pd::Solver& solver,
 		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
-		const ui::UserControl& user_control,
-		bool always_recompute_normal
+		const ui::UserControl& user_control
 	);
 
 	void rendering_tick(
 		igl::opengl::glfw::Viewer& viewer,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts,
-		const ui::UserControl& user_control,
-		bool always_recompute_normal
+		const ui::UserControl& user_control
 	);
 
 	void physics_tick(
@@ -43,6 +41,7 @@ namespace pd {
 	);
 
 	void draw_debug_info(
+		bool enable_debug_draw,
 		igl::opengl::glfw::Viewer& viewer,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
 		pd::MeshIDType sel_mesh_id,
@@ -59,7 +58,6 @@ namespace pd {
 		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts;
 		ui::SolverParams& solver_params;
 		const ui::UserControl& user_control;
-		const bool& always_recompute_normal;
 
 		util::CpuTimer timer;
 		static double last_elapse_time;

@@ -22,6 +22,8 @@ namespace ui
 		std::unordered_set<int> toggle_fixed_vertex_idxs;
 		std::unordered_set<int> vertex_idxs_memory;
 
+		bool always_recompute_normal{ false };
+
 		// debug draw (adj vertex)
 		bool enable_debug_draw{ true };
 		bool enable_tetrahedra_visualization{ false };

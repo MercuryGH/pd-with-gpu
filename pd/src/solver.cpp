@@ -80,15 +80,18 @@ namespace pd {
 		// std::cout << A.row(1) << "\n";
 		// assert(false);
 
-		//std::vector<int> v_adj;
-		//for (int i = 0; i < n; i++)
-		//{
-		//	if (std::abs(A.coeff(63, i)) > 1e-3f)
-		//	{
-		//		v_adj.push_back(i);
-		//	}
-		//}
-		//for (auto v : v_adj) std::cout << v << " ";
+		// std::vector<int> v_adj;
+		// for (int i = 0; i < A.cols(); i++)
+		// {
+		// 	std::cout << A.coeff(63, i) << " ";
+		// 	if (std::abs(A.coeff(63, i)) > 1e-3)
+		// 	{
+		// 		v_adj.push_back(i);
+		// 	}
+		// }
+		// std::cout << "\n" << "wrong: " << "\n";
+		// for (auto v : v_adj) std::cout << v << " ";
+		// while (1);
 		//int cnt = 3;
 		//std::cout << A.coeff(0, 3) << "\n";
 		//for (int i = 0; i < n / 3; i++)
@@ -121,7 +124,7 @@ namespace pd {
 
 	void Solver::clear_solver()
 	{
-		if (solvers.size() != 0) // not init
+		if (solvers.empty() == false) // not init
 		{
 			(*linear_sys_solver)->clear();
 		}

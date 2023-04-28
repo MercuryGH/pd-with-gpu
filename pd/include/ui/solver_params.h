@@ -19,6 +19,10 @@ namespace ui
 
 		bool use_gpu_for_local_step{ true };
 
+		// params for chebyshev method
+		double rho{ 0.9992 };
+		double under_relaxation{ 1 };
+
 		LinearSysSolver selected_solver{ LinearSysSolver::DIRECT };
 	};
 }

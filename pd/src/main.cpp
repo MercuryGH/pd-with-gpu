@@ -65,7 +65,6 @@ int main(int argc, char* argv[])
 	ui::SolverParams solver_params;
 
 	static int total_n_constraints = 0;
-	static bool always_recompute_normal = false;
 	ui::ObjManager obj_manager{ viewer, gizmo, solver, models, rigid_colliders, obj_init_pos_map, f_exts, user_control, solver_params, total_n_constraints };
 
 	gizmo.callback = ui::gizmo_handler{ viewer, models, rigid_colliders, obj_manager, obj_init_pos_map, user_control, viewer.core().is_animating };
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
 	viewer.callback_mouse_up = ui::mouse_up_handler{ user_control };
 	viewer.callback_key_pressed = ui::keypress_handler{ gizmo, obj_manager, user_control };
 
-	pd::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control, always_recompute_normal };
+	pd::pre_draw_handler frame_callback{ solver, models, physics_params, f_exts, solver_params, user_control };
 	viewer.callback_pre_draw = frame_callback; // frame routine
 
 	obj_menu.callback_draw_viewer_window = ui::obj_menu_window_handler{ viewer, obj_manager, user_control };
@@ -82,7 +81,7 @@ int main(int argc, char* argv[])
 	component_menu.callback_draw_viewer_window = ui::component_menu_window_handler{ viewer };
 	instantiator_menu.callback_draw_viewer_window = ui::instantiator_menu_window_handler{ viewer, obj_manager, physics_params };
 
-	main_menu.callback_draw_viewer_window = ui::pd_menu_window_handler{ viewer, screen_capture_plugin, obj_manager, solver, solver_params, physics_params, user_control, frame_callback, f_exts, gizmo, always_recompute_normal };
+	main_menu.callback_draw_viewer_window = ui::pd_menu_window_handler{ viewer, screen_capture_plugin, obj_manager, solver, solver_params, physics_params, user_control, frame_callback, f_exts, gizmo };
 
     viewer.launch_init(true, false, "Projective Dynamics", 0, 0);
 	viewer.launch_rendering(true);

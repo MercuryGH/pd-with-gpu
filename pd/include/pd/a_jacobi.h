@@ -12,6 +12,7 @@ namespace pd
 	{
 	public:
 		AJacobi(int order): order(order) {}
+		AJacobi(int order, SimScalar rho, SimScalar under_relaxation): order(order), rho(rho), under_relaxation(under_relaxation) {}
 		void set_A(const Eigen::SparseMatrix<SimScalar>& A, const std::unordered_map<MeshIDType, DeformableMesh>& models) override;
 
 		SimVectorX solve(const SimVectorX& b) override;
@@ -20,12 +21,15 @@ namespace pd
 		__global__ friend void itr_order_1(
 			SimScalar* __restrict__ next_x,
 			const SimScalar* __restrict__ x,
+			const SimScalar* __restrict__ prev_x,
 			SimScalar** __restrict__ d_1_ring_neighbors,
 			int** __restrict__ d_1_ring_neighbor_indices,
 			const int* __restrict__ d_1_ring_neighbor_sizes,
 			const SimScalar* __restrict__ d_diagonals,
-			const SimScalar* __restrict__ b_term,
-			int n_vertex  // #Vertex, parallelism is n but not 3n
+			const SimScalar* __restrict__ d_b_term,
+			int n_vertex,  // #Vertex, parallelism is n but not 3n
+			SimScalar omega, // chebyshev param omega 
+			SimScalar under_relaxation // under-relaxation coeff
 		);
 
 		__global__ friend void itr_order_2(
@@ -75,6 +79,12 @@ namespace pd
 			this->order = order;
 		}
 
+		void set_params(SimScalar rho, SimScalar under_relaxation)
+		{
+			this->rho = rho;
+			this->under_relaxation = under_relaxation;
+		}
+
 	private:
 		void precompute_A_jacobi(const Eigen::SparseMatrix<SimScalar>& A, const std::unordered_map<MeshIDType, DeformableMesh>& models);
 
@@ -107,7 +117,12 @@ namespace pd
 		SimScalar* d_b_term;
 
 		int order{ 0 };
+		SimScalar* d_prev_x[A_JACOBI_MAX_ORDER];
 		SimScalar* d_x[A_JACOBI_MAX_ORDER];
 		SimScalar* d_next_x[A_JACOBI_MAX_ORDER];
+
+		// chebyshev params
+		SimScalar rho{ 0.9992 };
+		SimScalar under_relaxation{ 1 };
 	};
 }

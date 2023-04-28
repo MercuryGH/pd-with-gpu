@@ -71,11 +71,10 @@ namespace ui {
 		pd::Solver& solver;
         SolverParams& solver_params;
         PhysicsParams& physics_params;
-		const UserControl& user_control;
+		UserControl& user_control;
         pd::pre_draw_handler& frame_callback;
 	    std::unordered_map<pd::MeshIDType, pd::DataMatrixX3>& f_exts;
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo;
-        bool& always_recompute_normal;
 
 		void operator()();
 	};
@@ -100,9 +99,9 @@ namespace ui {
 
 	void visualization_menu(
 		igl::opengl::glfw::Viewer& viewer, 
+		UserControl& user_control,
 		ScreenCapturePlugin& screen_capture_plugin,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
-		bool& always_recompute_normal, 
 		int id
 	);
 
@@ -117,7 +116,6 @@ namespace ui {
         igl::opengl::glfw::Viewer& viewer,
         pd::pre_draw_handler& frame_callback,
 	    std::unordered_map<pd::MeshIDType, pd::DataMatrixX3>& f_exts,
-		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo,
-        bool always_recompute_normal
+		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo
     );
 }
