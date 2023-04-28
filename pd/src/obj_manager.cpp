@@ -19,9 +19,12 @@ namespace ui
 		V.array() /= (V.maxCoeff() - V.minCoeff());
 	}
 
-	int ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+	int ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F, bool enable_rescale)
 	{
-		rescale(V);
+		if (enable_rescale)
+		{
+			rescale(V);
+		}
 
 		// create a new mesh
 		pd::MeshIDType obj_id = viewer.append_mesh();
@@ -32,9 +35,12 @@ namespace ui
 		return obj_id;
 	}
 
-	int ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
+	int ObjManager::add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets, bool enable_rescale)
 	{
-		rescale(V);
+		if (enable_rescale)
+		{
+			rescale(V);
+		}
 
 		// create a new mesh
 		pd::MeshIDType obj_id = viewer.append_mesh();

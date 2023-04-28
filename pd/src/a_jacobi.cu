@@ -127,7 +127,7 @@ namespace pd
 
 			SimScalar D_ii_inv = d_diagonals[idx];
 
-			// may contains SimScalaring point precision problem
+			// may contains floating point precision problem
 			d_b_term[3 * idx] = (d_b[3 * idx] + b_term_0) * D_ii_inv;
 			d_b_term[3 * idx + 1] = (d_b[3 * idx + 1] + b_term_1) * D_ii_inv;
 			d_b_term[3 * idx + 2] = (d_b[3 * idx + 2] + b_term_2) * D_ii_inv;
@@ -139,6 +139,8 @@ namespace pd
 		SimScalar* __restrict__ next_x_2,
 		const SimScalar* __restrict__ x_1,
 		const SimScalar* __restrict__ x_2,
+		const SimScalar* __restrict__ prev_x_1,
+		const SimScalar* __restrict__ prev_x_2,
 
 		SimScalar** __restrict__ d_2_ring_neighbors,
 		int** __restrict__ d_2_ring_neighbor_indices,
@@ -147,7 +149,9 @@ namespace pd
 		const SimScalar* __restrict__ d_diagonals, // D_ii
 
 		const SimScalar* __restrict__ d_b_term,
-		int n_vertex  // #Vertex
+		int n_vertex,  // #Vertex
+		SimScalar omega, // chebyshev param omega 
+		SimScalar under_relaxation // under-relaxation coeff
 	)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -189,6 +193,10 @@ namespace pd
 			next_x_2[3 * idx] = sum_0_2 * D_ii_inv + d_b_term[3 * idx];
 			next_x_2[3 * idx + 1] = sum_1_2 * D_ii_inv + d_b_term[3 * idx + 1];
 			next_x_2[3 * idx + 2] = sum_2_2 * D_ii_inv + d_b_term[3 * idx + 2];
+
+			// chebyshev
+			chebyshev_acc(next_x_1, x_1, prev_x_1, omega, under_relaxation, 3 * idx);
+			chebyshev_acc(next_x_2, x_2, prev_x_2, omega, under_relaxation, 3 * idx);
 		}
 	}
 
@@ -266,6 +274,9 @@ namespace pd
 		const SimScalar* __restrict__ x_1,
 		const SimScalar* __restrict__ x_2,
 		const SimScalar* __restrict__ x_3,
+		const SimScalar* __restrict__ prev_x_1,
+		const SimScalar* __restrict__ prev_x_2,
+		const SimScalar* __restrict__ prev_x_3,
 
 		SimScalar** __restrict__ d_3_ring_neighbors,
 		int** __restrict__ d_3_ring_neighbor_indices,
@@ -273,7 +284,9 @@ namespace pd
 
 		const SimScalar* __restrict__ d_diagonals, // D_ii
 		const SimScalar* __restrict__ d_b_term,
-		int n_vertex  // #Vertex
+		int n_vertex,  // #Vertex
+		SimScalar omega, // chebyshev param omega 
+		SimScalar under_relaxation // under-relaxation coeff
 	)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -327,6 +340,11 @@ namespace pd
 			next_x_3[3 * idx] = sum_0_3 * D_ii_inv + d_b_term[3 * idx];
 			next_x_3[3 * idx + 1] = sum_1_3 * D_ii_inv + d_b_term[3 * idx + 1];
 			next_x_3[3 * idx + 2] = sum_2_3 * D_ii_inv + d_b_term[3 * idx + 2];
+
+			// chebyshev
+			chebyshev_acc(next_x_1, x_1, prev_x_1, omega, under_relaxation, 3 * idx);
+			chebyshev_acc(next_x_2, x_2, prev_x_2, omega, under_relaxation, 3 * idx);
+			chebyshev_acc(next_x_3, x_3, prev_x_3, omega, under_relaxation, 3 * idx);
 		}
 	}
 
@@ -679,24 +697,33 @@ namespace pd
 
 			for (int i = 0; i < n_itr; i++)
 			{
-				if (i % 2 == 1)
+				omega = get_omega(n_itr);
+
+				// perform triple buffer to avoid swapping overhead
+				if (i % 3 == 0)
 				{
 					itr_order_2 << <n_blocks, WARP_SIZE >> > (
-						d_x[0],
-						d_x[1],
 						d_next_x[0],
 						d_next_x[1],
+						d_x[0],
+						d_x[1],
+						d_prev_x[0],
+						d_prev_x[1],
 						d_k_ring_neighbors[1],
 						d_k_ring_neighbor_indices[1],
 						d_k_ring_neighbor_sizes[1],
 						d_diagonals,
 						d_b_term,
-						n_vertex
+						n_vertex,
+						omega,
+						under_relaxation
 						);
 				}
-				else
+				else if (i % 3 == 1)
 				{
 					itr_order_2 << <n_blocks, WARP_SIZE >> > (
+						d_prev_x[0],
+						d_prev_x[1],
 						d_next_x[0],
 						d_next_x[1],
 						d_x[0],
@@ -706,7 +733,28 @@ namespace pd
 						d_k_ring_neighbor_sizes[1],
 						d_diagonals,
 						d_b_term,
-						n_vertex
+						n_vertex,
+						omega,
+						under_relaxation
+						);
+				}
+				else // i % 3 == 2
+				{
+					itr_order_2 << <n_blocks, WARP_SIZE >> > (
+						d_x[0],
+						d_x[1],
+						d_prev_x[0],
+						d_prev_x[1],
+						d_next_x[0],
+						d_next_x[1],
+						d_k_ring_neighbors[1],
+						d_k_ring_neighbor_indices[1],
+						d_k_ring_neighbor_sizes[1],
+						d_diagonals,
+						d_b_term,
+						n_vertex,
+						omega,
+						under_relaxation
 						);
 				}
 			}
@@ -727,29 +775,39 @@ namespace pd
 				n_vertex
 			);
 
-
 			for (int i = 0; i < n_itr; i++)
 			{
-				if (i % 2 == 1)
+				omega = get_omega(n_itr);
+
+				// perform triple buffer to avoid swapping overhead
+				if (i % 3 == 0)
 				{
 					itr_order_3 << <n_blocks, WARP_SIZE >> > (
-						d_x[0],
-						d_x[1],
-						d_x[2],
 						d_next_x[0],
 						d_next_x[1],
 						d_next_x[2],
+						d_x[0],
+						d_x[1],
+						d_x[2],
+						d_prev_x[0],
+						d_prev_x[1],
+						d_prev_x[2],
 						d_k_ring_neighbors[2],
 						d_k_ring_neighbor_indices[2],
 						d_k_ring_neighbor_sizes[2],
 						d_diagonals,
 						d_b_term,
-						n_vertex
+						n_vertex,
+						omega,
+						under_relaxation
 						);
 				}
-				else
+				else if (i % 3 == 1)
 				{
 					itr_order_3 << <n_blocks, WARP_SIZE >> > (
+						d_prev_x[0],
+						d_prev_x[1],
+						d_prev_x[2],
 						d_next_x[0],
 						d_next_x[1],
 						d_next_x[2],
@@ -761,7 +819,31 @@ namespace pd
 						d_k_ring_neighbor_sizes[2],
 						d_diagonals,
 						d_b_term,
-						n_vertex
+						n_vertex,
+						omega,
+						under_relaxation
+						);
+				}
+				else // i % 3 == 2
+				{
+					itr_order_3 << <n_blocks, WARP_SIZE >> > (
+						d_x[0],
+						d_x[1],
+						d_x[2],
+						d_prev_x[0],
+						d_prev_x[1],
+						d_prev_x[2],
+						d_next_x[0],
+						d_next_x[1],
+						d_next_x[2],
+						d_k_ring_neighbors[2],
+						d_k_ring_neighbor_indices[2],
+						d_k_ring_neighbor_sizes[2],
+						d_diagonals,
+						d_b_term,
+						n_vertex,
+						omega,
+						under_relaxation
 						);
 				}
 			}

@@ -40,6 +40,8 @@ namespace instancing {
 
         void instance_cone();
 
+        void instance_large_cloth();
+
         void instance_test();
     };
 }

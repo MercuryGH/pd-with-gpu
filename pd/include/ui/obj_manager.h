@@ -44,9 +44,9 @@ namespace ui
 		}
 
 	    // add triangle mesh model
-		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& F, bool enable_rescale=true);
 		// add tetrahedron mesh model
-		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);
+		int add_model(Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets, bool enable_rescale=true);
 
 		void reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 		void reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets);

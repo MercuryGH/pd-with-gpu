@@ -16,6 +16,7 @@ namespace texturegen {
                 const int v = j / f;
                 const double y = double(j) / double(s * f - 1) * 2 - 1;
                 const double r1 = std::min(std::max((1.0 - sqrt(x * x + y * y)) * 1.0, 0.0), 1.0);
+                // const double r1 = std::min(std::max((1.0 - sqrt(x * x + y * y)) * 2.0, 0.0), 1.0);
                 const double r3 = std::min(std::max((1.0 - sqrt(x * x + y * y)) * 3.0, 0.0), 1.0);
                 // const double a = 3*r*r - 2*r*r*r;
                 const auto smooth_step = [](const double w)
@@ -24,7 +25,7 @@ namespace texturegen {
                 };
                 double a3 = smooth_step(r1);
                 double a1 = smooth_step(r1);
-                X(i, j) = (0.75 + 0.25 * a1) * (u % 2 == v % 2 ? 245 : 235);
+                X(i, j) = (0.75 + 0.25 * a1) * (u % 2 == v % 2 ? 240 : 180);
                 A(i, j) = a3 * 255;
             }
         }

@@ -58,11 +58,10 @@ namespace pd
 		bool use_gpu_for_local_step{ true };
 		std::unique_ptr<GpuLocalSolver> gpu_local_solver{ nullptr };
 
-		void set_chebyshev_params(SimScalar rho, SimScalar under_relaxation)
+		void set_chebyshev_params(SimScalar rho, SimScalar under_relaxation);
+		void set_linear_sys_solver(int idx)
 		{
-			// If the cast doesn't succeed, it throws an exception
-			auto& p = dynamic_cast<AJacobi&>(**linear_sys_solver);
-			p.set_params(rho, under_relaxation);
+			linear_sys_solver = solvers.begin() + idx;
 		}
 
 	private:
@@ -77,7 +76,6 @@ namespace pd
 		constexpr static int N_SOLVERS = 5;
 		std::array<std::unique_ptr<LinearSystemSolver>, N_SOLVERS> solvers;
 		std::array<std::unique_ptr<LinearSystemSolver>, N_SOLVERS>::iterator linear_sys_solver;
-		std::array<std::unique_ptr<AJacobi>, N_SOLVERS>::iterator a_jacobi_solver;
 
 		// local step
 		void local_step_cpu(const SimPositions& q_nplus1, SimVectorX& b);

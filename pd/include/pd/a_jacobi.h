@@ -37,6 +37,8 @@ namespace pd
 			SimScalar* __restrict__ next_x_2,
 			const SimScalar* __restrict__ x_1,
 			const SimScalar* __restrict__ x_2,
+			const SimScalar* __restrict__ prev_x_1,
+			const SimScalar* __restrict__ prev_x_2,
 
 			SimScalar** __restrict__ d_2_ring_neighbors,
 			int** __restrict__ d_2_ring_neighbor_indices,
@@ -45,7 +47,9 @@ namespace pd
 			const SimScalar* __restrict__ d_diagonals, // D_ii
 
 			const SimScalar* __restrict__ b_term,
-			int n_vertex  // #Vertex
+			int n_vertex,  // #Vertex
+			SimScalar omega, // chebyshev param omega 
+			SimScalar under_relaxation // under-relaxation coeff
 		);
 
 		__global__ friend void itr_order_3(
@@ -55,14 +59,9 @@ namespace pd
 			const SimScalar* __restrict__ x_1,
 			const SimScalar* __restrict__ x_2,
 			const SimScalar* __restrict__ x_3,
-
-			SimScalar** __restrict__ d_1_ring_neighbors,
-			int** __restrict__ d_1_ring_neighbor_indices,
-			const int* __restrict__ d_1_ring_neighbor_sizes,
-
-			SimScalar** __restrict__ d_2_ring_neighbors,
-			int** __restrict__ d_2_ring_neighbor_indices,
-			const int* __restrict__ d_2_ring_neighbor_sizes,
+			const SimScalar* __restrict__ prev_x_1,
+			const SimScalar* __restrict__ prev_x_2,
+			const SimScalar* __restrict__ prev_x_3,
 
 			SimScalar** __restrict__ d_3_ring_neighbors,
 			int** __restrict__ d_3_ring_neighbor_indices,
@@ -70,7 +69,9 @@ namespace pd
 
 			const SimScalar* __restrict__ d_diagonals, // D_ii
 			const SimScalar* __restrict__ b,
-			int n_vertex  // #Vertex
+			int n_vertex,  // #Vertex
+			SimScalar omega, // chebyshev param omega 
+			SimScalar under_relaxation // under-relaxation coeff
 		);
 
 		// not used at runtime

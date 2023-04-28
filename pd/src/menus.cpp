@@ -357,16 +357,16 @@ namespace ui {
 				
 				ImGui::TreePop();
 			}
-			if (ImGui::TreeNode(".obj File"))
+			if (ImGui::TreeNode("Triangle mesh file"))
 			{
 				static bool tetrahedrize = false;
 				ImGui::Checkbox("Tetrahedrize", &tetrahedrize);
-				if (ImGui::Button("Load .obj file"))
+				if (ImGui::Button("Load triangle mesh file (e.g. obj)"))
 				{
 					std::string file_name = igl::file_dialog_open();
-					std::filesystem::path obj_file{ file_name };
+					std::filesystem::path tri_mesh_file{ file_name };
 
-					if (std::filesystem::exists(obj_file) && std::filesystem::is_regular_file(obj_file))
+					if (std::filesystem::exists(tri_mesh_file) && std::filesystem::is_regular_file(tri_mesh_file))
 					{
 						Eigen::MatrixXd V;
 						Eigen::MatrixXi F;
@@ -403,7 +403,7 @@ namespace ui {
 						}
 						else
 						{
-							printf("Load .obj file failed!\n");
+							printf("Cannot load file!\n");
 						}
 					}
 				}
@@ -426,6 +426,105 @@ namespace ui {
 						obj_manager.reset_model(id, TV, TT, F);
 					}
 				}
+
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("MESH file"))
+			{
+				if (ImGui::Button("Load mesh (tet) file"))
+				{
+					std::string file_name = igl::file_dialog_open();
+					std::filesystem::path tet_mesh_file{ file_name };
+
+					if (std::filesystem::exists(tet_mesh_file) && std::filesystem::is_regular_file(tet_mesh_file))
+					{
+						Eigen::MatrixXd V;
+						Eigen::MatrixXi T;
+						Eigen::MatrixXi F;
+						bool flag = igl::readMESH(file_name, V, T, F);
+						if (flag)
+						{
+							if (add_or_reset == OP_ADD)
+							{
+								obj_manager.add_model(V, T, F);
+							}
+							if (add_or_reset == OP_RESET)
+							{
+								obj_manager.reset_model(id, V, T, F);
+							}
+						}
+						else
+						{
+							printf("Cannot load file!\n");
+						}
+					}
+				}
+				if (ImGui::Button("Load Bunny")) // TOOD: For test only, must be removed later
+				{
+					Eigen::MatrixXd V;
+					Eigen::MatrixXi T;
+					Eigen::MatrixXi F;
+					igl::readMESH("../assets/meshes/bunny_tet.mesh", V, T, F);
+					if (add_or_reset == OP_ADD)
+					{
+						obj_manager.add_model(V, T, F);
+					}
+					if (add_or_reset == OP_RESET)
+					{
+						obj_manager.reset_model(id, V, T, F);
+					}
+				}
+
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("MSH file"))
+			{
+				if (ImGui::Button("Load msh (tet) file"))
+				{
+					std::string file_name = igl::file_dialog_open();
+					std::filesystem::path tet_mesh_file{ file_name };
+
+					if (std::filesystem::exists(tet_mesh_file) && std::filesystem::is_regular_file(tet_mesh_file))
+					{
+						Eigen::MatrixXd V;
+						Eigen::MatrixXi T;
+						Eigen::MatrixXi F;
+						Eigen::VectorXi TriTag;
+						Eigen::VectorXi TetTag;
+						// This is problematic
+						bool flag = igl::readMSH(file_name, V, F, T, TriTag, TetTag);
+						if (flag)
+						{
+							if (add_or_reset == OP_ADD)
+							{
+								obj_manager.add_model(V, T, F);
+							}
+							if (add_or_reset == OP_RESET)
+							{
+								obj_manager.reset_model(id, V, T, F);
+							}
+						}
+						else
+						{
+							printf("Cannot load file!\n");
+						}
+					}
+				}
+				// if (ImGui::Button("Load Bunny")) // TOOD: For test only, must be removed later
+				// {
+				// 	Eigen::MatrixXd V;
+				// 	Eigen::MatrixXi T;
+				// 	Eigen::MatrixXi F;
+				// 	igl::readMESH("../assets/meshes/bunny_tet.mesh", V, T, F);
+				// 	if (add_or_reset == OP_ADD)
+				// 	{
+				// 		obj_manager.add_model(V, T, F);
+				// 	}
+				// 	if (add_or_reset == OP_RESET)
+				// 	{
+				// 		obj_manager.reset_model(id, V, T, F);
+				// 	}
+				// }
 
 				ImGui::TreePop();
 			}
@@ -672,6 +771,7 @@ namespace ui {
 			&instancing::Instantiator::instance_floor,
 			&instancing::Instantiator::instance_cloth,
 			&instancing::Instantiator::instance_4hanged_cloth,
+			&instancing::Instantiator::instance_large_cloth,
 			&instancing::Instantiator::instance_bending_hemisphere,
 			&instancing::Instantiator::instance_cylinder,
 			&instancing::Instantiator::instance_cone,
@@ -688,6 +788,7 @@ namespace ui {
 			"Floor", 
 			"Cloth", 
 			"Corners-pinned cloth",
+			"Large cloth",
 			"Bending Hemisphere",
 			"Cylinder",
 			"Cone",
@@ -752,6 +853,7 @@ namespace ui {
 						{
 							solver.algo_changed = true;
 							solver.dirty = true;
+							solver.set_linear_sys_solver(i);
 						}
 
 						// change solver

@@ -134,6 +134,21 @@ namespace pd {
 		}
 	}
 
+	void Solver::set_chebyshev_params(SimScalar rho, SimScalar under_relaxation)
+	{
+		// If the cast doesn't succeed, it throws an exception
+		if (solvers.empty())
+		{
+			return;
+		}
+
+		for (int i = 2; i <= 4; i++)
+		{
+			auto& p = dynamic_cast<AJacobi&>(*solvers.at(i));
+			p.set_params(rho, under_relaxation);
+		}
+	}
+
 	void Solver::step(const std::unordered_map<MeshIDType, DataMatrixX3>& f_exts, int n_itr, int itr_solver_n_itr)
 	{
 		(*linear_sys_solver)->set_n_itr(itr_solver_n_itr);
