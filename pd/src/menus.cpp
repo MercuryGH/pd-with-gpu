@@ -1,11 +1,13 @@
 #include <ui/menus.h>
 
 #include <filesystem>
+#include <thread>
 
 #include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
 #include <igl/opengl/glfw/imgui/ImGuizmoWidget.h>
 
+#include <igl/write_triangle_mesh.h>
 #include <igl/png/writePNG.h>
 #include <igl/copyleft/tetgen/tetrahedralize.h>
 
@@ -199,6 +201,13 @@ namespace ui {
 			}
 		}
 		ImGui::PopStyleColor(3);
+		
+		if (ImGui::Button("Save current mesh as .obj") && obj_manager.models.empty() == false)
+		{
+			std::string filename = igl::file_dialog_save();
+			std::filesystem::path path{ filename };
+			igl::writeOBJ(path.string(), obj_manager.models.at(id).positions(), obj_manager.models.at(id).faces());
+		}
 	}
 
     void deformable_mesh_generate_menu(ObjManager& obj_manager, int id)
@@ -255,7 +264,6 @@ namespace ui {
 				
 				ImGui::TreePop();
 			}
-			static bool tetrahedralize = false;
 			if (ImGui::TreeNode("Sphere shell"))
 			{
 				static float radius = 0.5f;
@@ -359,8 +367,8 @@ namespace ui {
 			}
 			if (ImGui::TreeNode("Triangle mesh file"))
 			{
-				static bool tetrahedrize = false;
-				ImGui::Checkbox("Tetrahedrize", &tetrahedrize);
+				static bool tetrahedralize = false;
+				ImGui::Checkbox("Tetrahedralize", &tetrahedralize);
 				if (ImGui::Button("Load triangle mesh file (e.g. obj)"))
 				{
 					std::string file_name = igl::file_dialog_open();
@@ -373,7 +381,7 @@ namespace ui {
 						bool flag = igl::read_triangle_mesh(file_name, V, F);
 						if (flag)
 						{
-							if (tetrahedrize == true)
+							if (tetrahedralize == true)
 							{
 								Eigen::MatrixXd TV;
 								Eigen::MatrixXi TT;
@@ -405,25 +413,6 @@ namespace ui {
 						{
 							printf("Cannot load file!\n");
 						}
-					}
-				}
-				if (ImGui::Button("Load Armadillo")) // TOOD: For test only, must be removed later
-				{
-					Eigen::MatrixXd V;
-					Eigen::MatrixXi F;
-					igl::read_triangle_mesh("../assets/meshes/armadillo.obj", V, F);
-					Eigen::MatrixXd TV;
-					Eigen::MatrixXi TT;
-					Eigen::MatrixXi TF;
-					// tetgen
-					igl::copyleft::tetgen::tetrahedralize(V, F, "pq1.414Y", TV, TT, TF);
-					if (add_or_reset == OP_ADD)
-					{
-						obj_manager.add_model(TV, TT, F);
-					}
-					if (add_or_reset == OP_RESET)
-					{
-						obj_manager.reset_model(id, TV, TT, F);
 					}
 				}
 
@@ -459,25 +448,9 @@ namespace ui {
 						}
 					}
 				}
-				if (ImGui::Button("Load Bunny")) // TOOD: For test only, must be removed later
-				{
-					Eigen::MatrixXd V;
-					Eigen::MatrixXi T;
-					Eigen::MatrixXi F;
-					igl::readMESH("../assets/meshes/bunny_tet.mesh", V, T, F);
-					if (add_or_reset == OP_ADD)
-					{
-						obj_manager.add_model(V, T, F);
-					}
-					if (add_or_reset == OP_RESET)
-					{
-						obj_manager.reset_model(id, V, T, F);
-					}
-				}
-
 				ImGui::TreePop();
 			}
-			if (ImGui::TreeNode("MSH file"))
+			if (ImGui::TreeNode("msh file"))
 			{
 				if (ImGui::Button("Load msh (tet) file"))
 				{
@@ -486,22 +459,35 @@ namespace ui {
 
 					if (std::filesystem::exists(tet_mesh_file) && std::filesystem::is_regular_file(tet_mesh_file))
 					{
-						Eigen::MatrixXd V;
-						Eigen::MatrixXi T;
-						Eigen::MatrixXi F;
+						Eigen::MatrixXd X;
+						Eigen::MatrixXi Tri;
+						Eigen::MatrixXi Tet;
 						Eigen::VectorXi TriTag;
 						Eigen::VectorXi TetTag;
-						// This is problematic
-						bool flag = igl::readMSH(file_name, V, F, T, TriTag, TetTag);
+
+						std::vector<std::string> XFields;
+						std::vector<std::string> EFields;
+
+						std::vector<Eigen::MatrixXd> XF;
+						std::vector<Eigen::MatrixXd> TriF;
+						std::vector<Eigen::MatrixXd> TetF;
+
+						bool flag = igl::readMSH(tet_mesh_file, X, Tri, Tet, TriTag, TetTag, XFields, XF, EFields, TriF, TetF);
 						if (flag)
 						{
+							Eigen::MatrixXi boundary_facets; 
+							igl::boundary_facets(Tet, boundary_facets);
+
+							// inverse face based
+							Tet = Tet.rowwise().reverse().eval(); 
+							boundary_facets = boundary_facets.rowwise().reverse().eval();
 							if (add_or_reset == OP_ADD)
 							{
-								obj_manager.add_model(V, T, F);
+								obj_manager.add_model(X, Tet, boundary_facets);
 							}
 							if (add_or_reset == OP_RESET)
 							{
-								obj_manager.reset_model(id, V, T, F);
+								obj_manager.reset_model(id, X, Tet, boundary_facets);
 							}
 						}
 						else
@@ -510,22 +496,6 @@ namespace ui {
 						}
 					}
 				}
-				// if (ImGui::Button("Load Bunny")) // TOOD: For test only, must be removed later
-				// {
-				// 	Eigen::MatrixXd V;
-				// 	Eigen::MatrixXi T;
-				// 	Eigen::MatrixXi F;
-				// 	igl::readMESH("../assets/meshes/bunny_tet.mesh", V, T, F);
-				// 	if (add_or_reset == OP_ADD)
-				// 	{
-				// 		obj_manager.add_model(V, T, F);
-				// 	}
-				// 	if (add_or_reset == OP_RESET)
-				// 	{
-				// 		obj_manager.reset_model(id, V, T, F);
-				// 	}
-				// }
-
 				ImGui::TreePop();
 			}
 		}
@@ -632,13 +602,15 @@ namespace ui {
 		}
 		if (ImGui::TreeNode("Positional"))
 		{
-			help_marker("Shift + LMC to toggle fix/unfix to a vertex.");
-			std::string vertices_to_be_toggled = "";
+			std::string vertices_to_be_toggled = 	"";
 			for (const pd::VertexIndexType vi : user_control.toggle_fixed_vertex_idxs)
 			{
 				vertices_to_be_toggled += std::to_string(vi) + " ";
 			}
 			ImGui::TextWrapped("For mesh %d, Vertex indices to be toggled: %s", user_control.cur_sel_mesh_id, vertices_to_be_toggled.c_str());
+			ImGui::SameLine();
+			help_marker("Shift + LMC to toggle fix/unfix to a vertex.");
+
 			// Pinned 
 			ImGui::InputFloat(LABEL("weight"), &physics_params.positional_constraint_wc, 10.f, 100.f, "%.1f");
 
@@ -677,20 +649,24 @@ namespace ui {
 		if (ImGui::CollapsingHeader("Physics Setting"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
 			// physics params
-			ImGui::Checkbox("Enable Gravity", &physics_params.enable_gravity);
+			ImGui::Checkbox("Enable gravity", &physics_params.enable_gravity);
 
 			ImGui::InputDouble(LABEL("mass per vertex"), &physics_params.mass_per_vertex, 0.01, 0.1, "%.3f");
 
-			ImGui::Separator();
+			ImGui::Text(user_control.apply_ext_force ? "Applying external force" : "Not applying external force");
+			ImGui::SameLine();
+			help_marker("Ctrl + LMC to apply external force to a vertex of a model.");
 
-			help_marker("Ctrl + LMC to apply external force to the model.");
-			ImGui::Text("State: %s", user_control.apply_ext_force ? "Applying" : "Not applying");
 			if (user_control.apply_ext_force)
 			{
-				ImGui::Text("Vertex forced: %d", user_control.ext_forced_vertex_idx);
+				ImGui::Text("Vertex forced: ", user_control.ext_forced_vertex_idx);
 			}
 
 			ImGui::InputFloat(LABEL("dragging force"), &physics_params.external_force_val, 1.f, 10.f, "%.2f");
+
+			ImGui::Checkbox("Enable wind", &physics_params.enable_wind);
+			ImGui::InputFloat(LABEL("wind force"), &physics_params.wind_force_val, 0.001f, 0.01f, "%.4f");
+			ImGui::InputFloat3(LABEL("wind direction"), physics_params.wind_dir.data(), "%.1f");
 		}
 	}
 
@@ -765,37 +741,39 @@ namespace ui {
 	void instantiator_menu(instancing::Instantiator& instantiator)
 	{
 		std::vector<std::function<void(instancing::Instantiator&)>> instantiate_caller = {
-			&instancing::Instantiator::instance_test,
-			&instancing::Instantiator::instance_bar,
-			&instancing::Instantiator::instance_bridge,
+			// &instancing::Instantiator::instance_test,
 			&instancing::Instantiator::instance_floor,
 			&instancing::Instantiator::instance_cloth,
 			&instancing::Instantiator::instance_4hanged_cloth,
 			&instancing::Instantiator::instance_large_cloth,
 			&instancing::Instantiator::instance_bending_hemisphere,
 			&instancing::Instantiator::instance_cylinder,
-			&instancing::Instantiator::instance_cone,
-			&instancing::Instantiator::instance_bouncing_sphere,
+			&instancing::Instantiator::instance_bar,
+			&instancing::Instantiator::instance_bridge,
+			&instancing::Instantiator::instance_ball,
 			&instancing::Instantiator::instance_armadillo,
 			&instancing::Instantiator::instance_pinned_armadillo,
-			&instancing::Instantiator::instance_bunny
+			&instancing::Instantiator::instance_bunny,
+			&instancing::Instantiator::instance_spot,
+			&instancing::Instantiator::instance_dragon
 		};
 
 		const char* instances[] = { 
-			"Test",
-			"Bar",
-			"Bridge",
+			// "Test",
 			"Floor", 
 			"Cloth", 
-			"Corners-pinned cloth",
+			"Corner-pinned cloth",
 			"Large cloth",
-			"Bending Hemisphere",
+			"Bending hemisphere",
 			"Cylinder",
-			"Cone",
-			"Bouncing Sphere",
+			"Bar",
+			"Bridge",
+			"Ball",
 			"Armadillo",
 			"Pinned Armadillo",
-			"Bunny"
+			"Bunny",
+			"Spot",
+			"Dragon"
 		};
 		static int item_current = 0;
 		ImGui::PushItemWidth(-1);
@@ -831,7 +809,11 @@ namespace ui {
     {
         if (ImGui::CollapsingHeader("Simulating Control"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
-			ImGui::Text("Solver is %s", solver.dirty ? "not ready." : "ready.");
+			ImGui::Text("Solver is %s", solver.is_dirty() ? "not ready." : "ready.");
+			if (solver.is_dirty() == true)
+			{
+				ImGui::ProgressBar(pd::Solver::get_precompute_progress(), ImVec2(-1, 0));
+			}
 
 			ImGui::Checkbox("Use GPU for local step", &solver_params.use_gpu_for_local_step);
 			ImGui::InputDouble(LABEL("timestep"), &solver_params.dt, 0.01, 0.1, "%.4f"); // n_solver_pd_iterations in PD is 1 timestep
@@ -851,8 +833,8 @@ namespace ui {
 						// If solver changed
 						if (solver_params.selected_solver != static_cast<ui::LinearSysSolver>(i))
 						{
-							solver.algo_changed = true;
-							solver.dirty = true;
+							solver.set_algo_changed(true);
+							solver.set_dirty(true);
 							solver.set_linear_sys_solver(i);
 						}
 
@@ -885,8 +867,28 @@ namespace ui {
 			{
 				ImGui::Text("FPS = %lf", 1000.0 / frame_callback.last_elapse_time);
 				ImGui::Text("Last frame time elapsed: %lf ms", frame_callback.last_elapse_time);
+
+				// Show fps plot
+				/*
+				{
+					static float values[90] = {};
+					static int values_offset = 0;
+
+					{
+						values[values_offset] = 1000.0 / frame_callback.last_elapse_time;
+						values_offset = (values_offset + 1) % IM_ARRAYSIZE(values);
+					}
+
+					float average = 0.0f;
+					for (int n = 0; n < IM_ARRAYSIZE(values); n++)
+						average += values[n];
+					average /= (float)IM_ARRAYSIZE(values);
+					char overlay[32];
+					sprintf(overlay, "avg %f", average);
+					ImGui::PlotLines(LABEL("Lines"), values, IM_ARRAYSIZE(values), values_offset, overlay, -1.0f, 1.0f);
+				}
+				*/
 			}
-			//ImGui::Text("Time for 1 tick: %lf ms", frame_callback.last_elapse_time);
 			ImGui::Text("Time for global step: %lf ms", frame_callback.last_global_step_time);
 			ImGui::Text("Time for local step: %lf ms", frame_callback.last_local_step_time);
 			ImGui::Text("Time for precomputation: %lf ms", frame_callback.last_precomputation_time);
@@ -898,7 +900,10 @@ namespace ui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 			if (ImGui::Button("Simulate Single Step", ImVec2(-1, 0)) && viewer.core().is_animating == false)
 			{
-				pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, user_control);
+				std::thread t([&] {
+					pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, user_control);
+				});
+				t.detach();
 			}
 			ImGui::PopStyleColor(3);
 

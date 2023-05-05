@@ -46,15 +46,15 @@ namespace pd
 			m.setOnes(); // Init messes to equally distributed
 			v.setZero(); // init velocity to 0
 
-			Eigen::VectorXi indicator;
-			if (igl::is_vertex_manifold(boundary_facets, indicator) == false)
-			{
-				printf("Warning: Non vertex manifold mesh detected!\n");
-			}
-			if (igl::is_edge_manifold(boundary_facets) == false)
-			{
-				printf("Warning: Non edge manifold mesh detected!\n");
-			}
+			// Eigen::VectorXi indicator;
+			// if (igl::is_vertex_manifold(boundary_facets, indicator) == false)
+			// {
+			// 	printf("Warning: Non vertex manifold mesh detected!\n");
+			// }
+			// if (igl::is_edge_manifold(boundary_facets) == false)
+			// {
+			// 	printf("Warning: Non edge manifold mesh detected!\n");
+			// }
 
 			// do not construct ordered adj list since the boundary of tet mesh may be non-manifold
 			igl::adjacency_list(boundary_facets, adj_list, false);
@@ -91,7 +91,7 @@ namespace pd
 
 		~DeformableMesh()
 		{
-			std::cout << "Debug: delete mesh " << this->obj_id << "\n";
+			// std::cout << "Debug: delete mesh " << this->obj_id << "\n";
 			for (const auto& constraint : constraints)
 			{
 				delete constraint;
@@ -168,7 +168,7 @@ namespace pd
 		void set_bending_constraints(SimScalar wc);
 		void set_tet_strain_constraints(SimScalar wc, SimVector3 min_strain_xyz=SimVector3::Ones(), SimVector3 max_strain_xyz=SimVector3::Ones());
 
-		// TODO: use area weighted method to apply mass
+		// Currently use uniform weighted mass. Alternative: use area weighted mass.
 		bool apply_mass_per_vertex(DataScalar mass_per_vertex);
 		int n_edges{ 0 };   // #Edges
 
@@ -193,7 +193,7 @@ namespace pd
 		VelocityData v;  // Per-vertex velocity
 		thrust::host_vector<pd::Constraint*> constraints; // Vector of constraints
 
-		std::vector<std::vector<VertexIndexType>> adj_list; // sorted adjancecy list
+		std::vector<std::vector<VertexIndexType>> adj_list; // adjancecy list (tri mesh: sorted, tet mesh: not sorted)
 
 		std::unordered_set<VertexIndexType> fixed_vertices; // store all fixed vertex
 	};

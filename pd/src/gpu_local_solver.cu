@@ -106,14 +106,15 @@ namespace pd
 
 	void GpuLocalSolver::gpu_object_creation_parallel(const std::unordered_map<MeshIDType, DeformableMesh>& models)
 	{
-		this->n_constraints = 0;
+		n_constraints = 0;
+		cloned_constraints = {};
 
 		int acc = 0;
 		for (const auto& [id, model] : models)
 		{
 			int n = model.positions().rows();
 			const auto& constraints = model.get_all_constraints();
-			this->n_constraints += constraints.size();
+			n_constraints += constraints.size();
 
 			for (const auto& constraint : constraints)
 			{
@@ -140,7 +141,7 @@ namespace pd
 				}
 
 				c->set_vertex_offset(acc);
-				this->cloned_constraints.push_back(c);
+				cloned_constraints.push_back(c);
 			}
 
 			acc += n;

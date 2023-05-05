@@ -500,7 +500,6 @@ namespace meshgen {
 					const int cur_row = (i * (y_n_vertex - 1) * (z_n_vertex - 1) + j * (z_n_vertex - 1) + k) * 5;
 
 					// create tetrahedron by splitting the cube (there are multiple splitting methods)
-					// TODO: This is problematic since it causes non-manifold in some cases
 					if ((i + j + k) % 2 == 1)
 					{
 						T.row(cur_row) = Eigen::RowVector4i(v1, v0, v5, v2);

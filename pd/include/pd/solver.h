@@ -4,18 +4,20 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
-#include <pd/deformable_mesh.h>
 
 #include <primitive/primitive.h>
 
+#include <pd/gpu_local_solver.h>
+#include <pd/deformable_mesh.h>
 #include <pd/linear_sys_solver.h>
 #include <pd/cholesky_direct.h>
 #include <pd/parallel_jacobi.h>
 #include <pd/a_jacobi.h>
 
 #include <ui/solver_params.h>
+
+#include <util/progress_percentage.h>
 #include <util/cpu_timer.h>
-#include <pd/gpu_local_solver.h>
 
 namespace pd
 {
@@ -38,15 +40,22 @@ namespace pd
 		void precompute_A();
 		void precompute();
 		void step(const std::unordered_map<MeshIDType, DataMatrixX3>& f_exts, int n_itr, int itr_solver_n_itr);
-		void test_step(const std::unordered_map<MeshIDType, DataMatrixX3>& f_exts, int n_itr, int itr_solver_n_itr);
 		void set_solver(ui::LinearSysSolver sel);
 		void clear_solver();
 
-		// algo_changed = true indicates setting new algorithm for the solver
-		bool algo_changed{ false };
+		bool is_algo_changed() const { return algo_changed; }
+		void set_algo_changed(bool val) { algo_changed = val; }
 
-		// dirty = true indicates the solver needs to recompute
-		bool dirty{ false };
+		bool is_dirty() const { return dirty; }
+		void set_dirty(bool val) 
+		{ 
+			dirty = val;  
+
+			if (val == true)
+			{
+				progress_percentage.set_progress_percentage(0);
+			}
+		}
 
 		// timer variable
 		util::CpuTimer timer;
@@ -64,7 +73,18 @@ namespace pd
 			linear_sys_solver = solvers.begin() + idx;
 		}
 
+		static Float get_precompute_progress() { return progress_percentage.get_progress(); }
+
 	private:
+		// progress indicator
+		static util::ProgressPercentage progress_percentage;
+
+		// dirty = true indicates the solver needs to recompute
+		bool dirty{ false };
+
+		// algo_changed = true indicates setting new algorithm for the solver
+		bool algo_changed{ false };
+
 		// solver params
 		SimScalar dt;
 

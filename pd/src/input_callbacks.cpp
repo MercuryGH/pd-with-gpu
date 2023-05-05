@@ -187,7 +187,6 @@ namespace ui {
 
         if (models.find(obj_id) != models.end())
         {
-            // TODO: apply lazy update (not necessary indeed)
             models[obj_id].set_positions(positions);
         }
         else if (rigid_colliders.find(obj_id) != rigid_colliders.end())
@@ -246,7 +245,6 @@ namespace ui {
 
                 Eigen::MatrixXd V_tmp(visable_z.size() * 4, 3);
                 Eigen::MatrixXi F_tmp(visable_z.size() * 4, 3);
-                Eigen::VectorXd D_tmp(visable_z.size() * 4);
 
                 for (int i = 0; i < visable_z.size(); i++)
                 {
@@ -256,7 +254,7 @@ namespace ui {
                         V_tmp.row(i * 4 + j) = model.positions().row(vertex_idx);
                         // D_tmp(i * 4 + j) = D(visable_z.at(i));
                     }
-                    // write tets
+                    // write tet faces
                     F_tmp.row(i * 4) << (i * 4), (i * 4) + 1, (i * 4) + 3;
                     F_tmp.row(i * 4 + 1) << (i * 4), (i * 4) + 2, (i * 4) + 1;
                     F_tmp.row(i * 4 + 2) << (i * 4) + 3, (i * 4) + 2, (i * 4);
@@ -267,6 +265,7 @@ namespace ui {
                 viewer.data_list[idx].clear();
                 viewer.data_list[idx].set_mesh(V_tmp, F_tmp);
                 viewer.data_list[idx].set_colors(obj_manager.DEFORMABLE_TET_MESH_TEXTURE_COLOR);
+                viewer.data_list[idx].set_face_based(true);
                 user_control.enable_debug_draw = false;
                 user_control.enable_tetrahedra_visualization = true;
             }
@@ -289,7 +288,8 @@ namespace ui {
                     viewer.data_list[idx].clear();
                     viewer.data_list[idx].set_mesh(model.positions(), model.faces());
                     viewer.data_list[idx].set_colors(obj_manager.DEFORMABLE_TET_MESH_TEXTURE_COLOR);
-                    user_control.enable_debug_draw = true;
+                    viewer.data_list[idx].set_face_based(false);
+                    // user_control.enable_debug_draw = true;
                     user_control.enable_tetrahedra_visualization = false;
                 }
             }

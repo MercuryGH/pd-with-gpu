@@ -22,7 +22,7 @@ namespace ui
 		std::unordered_set<int> toggle_fixed_vertex_idxs;
 		std::unordered_set<int> vertex_idxs_memory;
 
-		bool always_recompute_normal{ false };
+		bool always_recompute_normal{ true }; // rendering but not very costly
 
 		// debug draw (adj vertex)
 		bool enable_debug_draw{ true };

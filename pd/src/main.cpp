@@ -1,3 +1,5 @@
+#define IGL_VIEWER_VIEWER_QUIET // disable extra debug info printing
+
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
@@ -24,7 +26,6 @@
 
 int main(int argc, char* argv[])
 {
-	// TODO: hide igl::opengl::glfw::Viewer usage
 	igl::opengl::glfw::Viewer viewer;
 	ui::ScreenCapturePlugin screen_capture_plugin;
 	viewer.plugins.push_back(&screen_capture_plugin); // place in front of menu to avoid capturing UI contents
@@ -42,7 +43,7 @@ int main(int argc, char* argv[])
 	igl::opengl::glfw::imgui::ImGuiMenu component_menu;
 	menu_plugin.widgets.push_back(&component_menu);
 
-	// Only 1 gizmo during simulation
+	// only 1 gizmo during simulation
 	igl::opengl::glfw::imgui::ImGuizmoWidget gizmo;
 	gizmo.visible = false;
 	gizmo.operation = ImGuizmo::OPERATION::TRANSLATE;

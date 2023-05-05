@@ -25,6 +25,13 @@ namespace pd {
 		const ui::UserControl& user_control
 	);
 
+	void compute_external_force(
+		igl::opengl::glfw::Viewer& viewer,
+		const ui::PhysicsParams& physics_params,
+		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,
+		std::unordered_map<MeshIDType, DataMatrixX3>& f_exts
+	);
+
 	void rendering_tick(
 		igl::opengl::glfw::Viewer& viewer,
 		std::unordered_map<pd::MeshIDType, pd::DeformableMesh>& models,

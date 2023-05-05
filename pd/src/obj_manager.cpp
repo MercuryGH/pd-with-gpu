@@ -71,7 +71,7 @@ namespace ui
 		viewer.data_list[idx].show_custom_labels = true;
 
 		// reset solver
-		solver.dirty = true;
+		solver.set_dirty(true);
 
 		user_control.cur_sel_mesh_id = obj_id;
 		user_control.selected_vertex_idx = 0;
@@ -102,7 +102,7 @@ namespace ui
 		viewer.core().align_camera_center(model.positions());
 
 		// reset solver
-		solver.dirty = true;
+		solver.set_dirty(true);
 
 		recalc_total_n_constraints();
 	}
@@ -147,7 +147,14 @@ namespace ui
 		recalc_total_n_constraints();
 
 		// select the first mesh
-		user_control.cur_sel_mesh_id = models.begin()->first;
+		if (models.empty() == false)
+		{
+			user_control.cur_sel_mesh_id = models.begin()->first;
+		}
+		else 
+		{
+			user_control.cur_sel_mesh_id = rigid_colliders.begin()->first;
+		}
 		user_control.selected_vertex_idx = 0;
 		bind_gizmo(user_control.cur_sel_mesh_id);
 	}
@@ -167,7 +174,7 @@ namespace ui
 		f_exts.erase(obj_id);
 
 		// reset solver
-		solver.dirty = true;
+		solver.set_dirty(true);
 
 		if (recalc)
 		{
@@ -244,7 +251,7 @@ namespace ui
 		pd::DeformableMesh& model = models[obj_id];
 
 		model.reset_constraints();
-		solver.dirty = true;
+		solver.set_dirty(true);
 
 		if (enable_edge_strain_constraint)
 		{

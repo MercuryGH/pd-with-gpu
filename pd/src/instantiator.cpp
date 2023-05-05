@@ -83,6 +83,11 @@ namespace instancing {
         // apply translation
         model.apply_translation(Eigen::Vector3d(1, 0, 0));
 
+        auto& viewer = obj_manager.viewer;
+        int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.double_sided = true;
+
         model.set_edge_strain_constraints(100);
 
         // add positional constraint
@@ -96,6 +101,12 @@ namespace instancing {
         auto [V, F] = meshgen::generate_cloth(20, 20);
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        auto& viewer = obj_manager.viewer;
+        int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.double_sided = true;
+
         model.set_edge_strain_constraints(100);
 
         model.set_bending_constraints(5e-7);
@@ -117,6 +128,12 @@ namespace instancing {
         auto [V, F] = meshgen::generate_cloth(20, 20);
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        auto& viewer = obj_manager.viewer;
+        int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.double_sided = true;
+
         model.apply_translation(Eigen::Vector3d(1, 0, 0));
 
         model.set_edge_strain_constraints(100);
@@ -132,6 +149,12 @@ namespace instancing {
         auto [V, F] = meshgen::generate_cloth(20, 20);
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        auto& viewer = obj_manager.viewer;
+        int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.double_sided = true;
+    
         model.set_edge_strain_constraints(100);
 
         model.set_bending_constraints(5e-7);
@@ -236,7 +259,6 @@ namespace instancing {
         // model.set_tet_strain_constraints(400, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
 
         model.set_tet_strain_constraints(1000, pd::SimVector3(0.99, 0.99, 0.99), pd::SimVector3(1.01, 1.01, 1.01));
-        model.set_bending_constraints(5e-7);
 
         std::unordered_set<int> toggle_vertices;
         for (int i = 0; i <= (w + 1) * (h + 1) * (d + 1) - (d + 1); i += d + 1)
@@ -252,7 +274,7 @@ namespace instancing {
 		obj_manager.recalc_total_n_constraints();
     }
 
-    void Instantiator::instance_bouncing_sphere()
+    void Instantiator::instance_ball()
     {
         // under relaxation = 0.7 for A-Jacobi is OK
         instance_obj_model("../assets/meshes/sphere.obj");
@@ -271,7 +293,9 @@ namespace instancing {
 
         pd::DeformableMesh& model = obj_manager.models.at(id);
 
-        model.set_tet_strain_constraints(1000);
+        // model.set_tet_strain_constraints(1000);
+        model.set_tet_strain_constraints(10000, pd::SimVector3(0.9, 0.9, 0.9), pd::SimVector3(1, 1, 1));
+
         // model.toggle_vertices_fixed({ 61 }, 100);
 
 		obj_manager.recalc_total_n_constraints();   
@@ -288,7 +312,7 @@ namespace instancing {
         igl::copyleft::tetgen::tetrahedralize(V, F, "pq8.0Y", TV, TT, TF); // 49393 tets
         int id = obj_manager.add_model(TV, TT, F, false);
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
-        igl::png::readPNG("../assets/textures/matcap1.png", R, G, B, A);
+        igl::png::readPNG("../assets/textures/matcap_march7th.png", R, G, B, A);
 
         auto& viewer = obj_manager.viewer;
 
@@ -334,7 +358,7 @@ namespace instancing {
 
         // use matcap texture
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
-        igl::png::readPNG("../assets/textures/matcap2.png", R, G, B, A);
+        igl::png::readPNG("../assets/textures/matcap_jade.png", R, G, B, A);
 
         auto& viewer = obj_manager.viewer;
 
@@ -361,7 +385,7 @@ namespace instancing {
 		igl::readMESH("../assets/meshes/bunny_tet.mesh", V, T, F);
         // use matcap texture
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
-        igl::png::readPNG("../assets/textures/matcap2.png", R, G, B, A);
+        igl::png::readPNG("../assets/textures/matcap_jade.png", R, G, B, A);
 
         int id = obj_manager.add_model(V, T, F); // scale the model
 
@@ -383,6 +407,84 @@ namespace instancing {
 		obj_manager.recalc_total_n_constraints();    
     }
 
+    void Instantiator::instance_spot()
+    {
+        Eigen::MatrixXd V;
+        Eigen::MatrixXi F;
+        igl::read_triangle_mesh("../assets/meshes/spot_quadrangulated.obj", V, F);
+
+        Eigen::MatrixXd TV;
+        Eigen::MatrixXi TT;
+        Eigen::MatrixXi TF;
+        // tetgen
+        igl::copyleft::tetgen::tetrahedralize(V, F, "pq8.0Y", TV, TT, TF); // 49393 tets
+        int id = obj_manager.add_model(TV, TT, F, false); // don't scale the model
+
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+        igl::png::readPNG("../assets/textures/matcap_metal.png", R, G, B, A);
+
+        auto& viewer = obj_manager.viewer;
+
+		int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.show_lines = false;
+        data.set_face_based(true);
+        data.set_texture(R, G, B, A);
+        data.use_matcap = true;
+        data.show_texture = true;
+
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        model.set_tet_strain_constraints(10000);
+
+		obj_manager.recalc_total_n_constraints();
+    }
+
+    void Instantiator::instance_dragon()
+    {
+        // draggin force > 100 shoule be good
+        Eigen::MatrixXd X;
+        Eigen::MatrixXi Tri;
+        Eigen::MatrixXi Tet;
+        Eigen::VectorXi TriTag;
+        Eigen::VectorXi TetTag;
+
+        std::vector<std::string> XFields;
+        std::vector<std::string> EFields;
+
+        std::vector<Eigen::MatrixXd> XF;
+        std::vector<Eigen::MatrixXd> TriF;
+        std::vector<Eigen::MatrixXd> TetF;
+		igl::readMSH("../assets/meshes/dragon_tet.msh", X, Tri, Tet, TriTag, TetTag, XFields, XF, EFields, TriF, TetF);
+        Eigen::MatrixXi boundary_facets; 
+        igl::boundary_facets(Tet, boundary_facets);
+
+        // inverse face based
+        Tet = Tet.rowwise().reverse().eval(); 
+        boundary_facets = boundary_facets.rowwise().reverse().eval();
+        // use matcap texture
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+        igl::png::readPNG("../assets/textures/matcap_jade.png", R, G, B, A);
+
+        int id = obj_manager.add_model(X, Tet, boundary_facets, false); // dont scale the model
+
+        auto& viewer = obj_manager.viewer;
+
+		int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.show_lines = false;
+        data.set_face_based(true);
+        data.set_texture(R, G, B, A);
+        data.use_matcap = true;
+        data.show_texture = true;
+
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        model.set_tet_strain_constraints(100000);
+
+		obj_manager.recalc_total_n_constraints(); 
+    }
+
     void Instantiator::instance_cone()
     {
         constexpr int usub = 20;
@@ -399,66 +501,18 @@ namespace instancing {
         // apply translation
         // model.apply_translation(Eigen::Vector3d(1, 0, 0));
 
-        model.set_edge_strain_constraints(100);
+        model.set_edge_strain_constraints(500);
 
         // A-Jacobi-1 is the fastest when pd #itr = 5, solver #itr = 200
         // A-Jacobi FPS is approx 100 and Direct is approx 70 ~ 80
         // A-Jacobi-2 and A-Jacobi-3 are not fast. 
+        // Recommended dragging force = 3
 
         // add positional constraint
-        model.toggle_vertices_fixed({ 0, 420 }, 1000);
+        model.toggle_vertices_fixed({ 0, 100 }, 1000);
 
 		obj_manager.recalc_total_n_constraints();        
     }
 
-    void Instantiator::instance_test()
-    {
-        return;
-        physics_params.mass_per_vertex = 10.0;
-
-        constexpr int w = 1;
-        constexpr int h = 1;
-        // constexpr int d = 7;
-        constexpr int d = 7;
-
-        auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
-        int id = obj_manager.add_model(V, T, boundary_facets);
-        pd::DeformableMesh& model = obj_manager.models.at(id);
-
-        physics_params.enable_gravity = false;
-        
-        model.set_tet_strain_constraints(10000000, pd::SimVector3(0.99, 0.99, 0.99), pd::SimVector3(1.01, 1.01, 1.01));
-
-        std::unordered_set<int> toggle_vertices;
-        for (int i = d; i <= (w + 1) * (h + 1) * (d + 1) - 1; i += d + 1)
-        {
-            toggle_vertices.insert(i);
-            model.set_vertex_mass(i, 1e10);
-        }
-        model.toggle_vertices_fixed(toggle_vertices, 1000000000);
-
-		obj_manager.recalc_total_n_constraints();   
-
-        return;
-
-        /*
-
-        physics_params.mass_per_vertex = 10.0;
-        physics_params.enable_gravity = false;
-
-        float weight = 10000000.0;
-        Eigen::Vector3f min_strain(0.990, 0.990, 0.990);
-        Eigen::Vector3f max_strain(1.010, 1.010, 1.010);
-
-        auto [V, T, boundary_facets] = meshgen::generate_bar(3, 3, 12);
-
-        int id = obj_manager.add_model(V, T, boundary_facets);
-        pd::DeformableMesh& model = obj_manager.models.at(id);
-        
-        model.set_tet_strain_constraints(weight, min_strain, max_strain);
-
-        // model.toggle_vertices_fixed({ 3 }, 1000000000.0);
-
-		obj_manager.recalc_total_n_constraints();*/
-    }
+    void Instantiator::instance_test() {}
 }

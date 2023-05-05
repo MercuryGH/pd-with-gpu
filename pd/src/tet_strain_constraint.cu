@@ -48,7 +48,7 @@ namespace pd
 		constexpr SimScalar EPS = 1e-5;
 		if (volume < EPS)
 		{
-			printf("Tetrahedron %d, %d, %d, %d is too small, the tetrahedralization may be wrong!\n", vertices[0], vertices[1], vertices[2], vertices[3]);
+			printf("Warning: Tetrahedron %d, %d, %d, %d is too small, causing Jacobi method to diverge!\n", vertices[0], vertices[1], vertices[2], vertices[3]);
 			assert(false);
 		}
 

@@ -17,5 +17,9 @@ namespace ui
 		Eigen::Vector3f tet_strain_constraint_max_xyz{ Eigen::Vector3f::Ones() };
 
 		float external_force_val{ 0.1f };
+
+		bool enable_wind{ false };
+		float wind_force_val{ 0.01f };
+		Eigen::Vector3f wind_dir{ 0, 0, 1 };
 	};
 }
