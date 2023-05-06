@@ -254,11 +254,11 @@ namespace ui {
 					auto [V, F] = meshgen::generate_hemisphere(radius);
 					if (add_or_reset == OP_ADD)
 					{
-						obj_manager.add_model(V, F);
+						obj_manager.add_model(V, F, false);
 					}
 					if (add_or_reset == OP_RESET)
 					{
-						obj_manager.reset_model(id, V, F);
+						obj_manager.reset_model(id, V, F, false);
 					}
 				}
 				
@@ -273,11 +273,11 @@ namespace ui {
 					auto [V, F] = meshgen::generate_sphere(radius);
 					if (add_or_reset == OP_ADD)
 					{
-						obj_manager.add_model(V, F);
+						obj_manager.add_model(V, F, false);
 					}
 					if (add_or_reset == OP_RESET)
 					{
-						obj_manager.reset_model(id, V, F);
+						obj_manager.reset_model(id, V, F, false);
 					}
 				}
 				ImGui::TreePop();
@@ -589,6 +589,7 @@ namespace ui {
 		if (ImGui::TreeNode("Bending"))
 		{
 			ImGui::InputFloat(LABEL("weight"), &physics_params.bending_constraint_wc, 1e-9f, 1e-5f, "%.9f");
+			ImGui::Checkbox("Discard quadratic term", &physics_params.discard_bending_constraint_quadratic_term_when_setting);
 			ImGui::Checkbox("Enable", &enable_bending_constraint);
 			ImGui::TreePop();
 		}

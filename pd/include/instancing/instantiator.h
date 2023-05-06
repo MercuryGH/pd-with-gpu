@@ -13,6 +13,7 @@ namespace instancing {
 
         void instance_floor();
 
+        void _instance_bending_hemisphere(pd::SimScalar wc, pd::DataVector3 translation);
         void instance_bending_hemisphere();
 
         void instance_cloth();

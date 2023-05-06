@@ -54,7 +54,7 @@ namespace pd
 		}
 	}
 
-	void DeformableMesh::set_bending_constraints(SimScalar wc)
+	void DeformableMesh::set_bending_constraints(SimScalar wc, bool discard_quadratic_term)
 	{
 		std::vector<bool> borders = igl::is_border_vertex(boundary_facets);
 		for (int i = 0; i < positions().rows(); i++)
@@ -82,12 +82,12 @@ namespace pd
 
 			if (discard_flag)
 			{
-				printf("Discard bending in vertex %d\n", i);
+				// printf("Discard bending at vertex %d\n", i);
 				continue;
 			}
 
 			constraints.push_back(new BendingConstraint(
-				wc, i, neighbor_vertices, p
+				wc, i, neighbor_vertices, p, discard_quadratic_term
 			));
 		}
 	}

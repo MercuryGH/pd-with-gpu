@@ -3,7 +3,7 @@
 
 namespace pd
 {
-	BendingConstraint::BendingConstraint(SimScalar wc, int center_vertex, const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& positions) : Constraint(wc, 1 + neighbor_vertices.size())
+	BendingConstraint::BendingConstraint(SimScalar wc, int center_vertex, const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& positions, bool discard_quadratic_term) : Constraint(wc, 1 + neighbor_vertices.size()), discard_quadratic_term(discard_quadratic_term)
 	{
 		cudaMallocManaged(&vertices, sizeof(VertexIndexType) * n_vertices);
 
@@ -71,31 +71,36 @@ namespace pd
 	{
 		std::vector<Eigen::Triplet<SimScalar>> triplets(3 * n_vertices - 1);
 
-		const VertexIndexType center_vertex = vertices[0];
+		VertexIndexType local_max_vertex_idx = 0;
+		for (int i = 0; i < n_vertices; i++)
+		{
+			local_max_vertex_idx = std::max(local_max_vertex_idx, vertices[i]);
+		}
+
+		Eigen::SparseMatrix<SimScalar> A_c(1, local_max_vertex_idx + 1); // preallocate space is necessary
+		A_c.setZero();
 
 		for (int i = 0; i < n_vertices; i++)
 		{
 			const VertexIndexType v = vertices[i];
+			A_c.insert(0, v) = laplacian_weights[i];
+		}
 
-			// discard terms between adjacent vertices since they are rather too small
-			// this is an approximation and also an optimization
-			for (int j = 0; j < 3; j++)
+		A_c.makeCompressed();
+
+		Eigen::SparseMatrix<SimScalar> AcT_Ac = A_c.transpose() * A_c;
+		AcT_Ac.makeCompressed();
+		for (int i = 0; i < AcT_Ac.outerSize(); i++)
+		{
+			for (Eigen::SparseMatrix<SimScalar>::InnerIterator itr(AcT_Ac, i); itr; ++itr)
 			{
-				const SimScalar val = laplacian_weights[0] * laplacian_weights[i] * wc;
-				// printf("%f, %f, %f\n", laplacian_weights[0], laplacian_weights[i], wc);
-				// printf("%d-%d adds %f\n", center_vertex, v, val);
-				triplets.emplace_back(
-					3 * n_vertex_offset + 3 * center_vertex + j, 
-					3 * n_vertex_offset + 3 * v + j, 
-					val
-				);
-				if (v != center_vertex)
+				for (int j = 0; j < 3; j++)
 				{
-					triplets.emplace_back(
-						3 * n_vertex_offset + 3 * v + j, 
-						3 * n_vertex_offset + 3 * center_vertex + j, 
-						val
-					);
+					// discard quadratic term
+					if (discard_quadratic_term == true && itr.row() != vertices[0] && itr.col() != vertices[0])
+						continue;
+						
+					triplets.emplace_back(3 * n_vertex_offset + 3 * itr.row() + j, 3 * n_vertex_offset + 3 * itr.col() + j, wc * itr.value());
 				}
 			}
 		}
@@ -105,6 +110,7 @@ namespace pd
 
 	__host__ void BendingConstraint::precompute_laplacian_weights(const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& positions)
 	{
+		// TODO: problematic, should minus center of mass rather than use global coordinate
 		const int neighbor_size = neighbor_vertices.size();
 		assert(neighbor_size >= 3); // avoid singular vertex
 
@@ -149,15 +155,20 @@ namespace pd
 			laplacian_weights[0] += static_cast<SimScalar>(coefficient);
 		}
 
-		// Debug only
-		// for (int i = 0; i < neighbor_size; i++)
-		// {
-		// 	printf("vertices %d, weights = %f\n", vertices[0], laplacian_weights[i]);
-		// }
-
 		SimVector3 rest_mean_curvature_vector = apply_laplacian(positions).cast<SimScalar>();
 		// std::cout << rest_mean_curvature_vector << "\n";
 		rest_mean_curvature = rest_mean_curvature_vector.norm();
+
+		// Debug
+		// if (center_vertex == 412)
+		// {
+		// 	std::cout << "rmc = " << rest_mean_curvature << "\n";
+		// 	std::cout << "lw0 = " << laplacian_weights[0] << "\n";
+		// 	for (int i = 1; i < neighbor_size; i++)
+		// 	{
+		// 		printf("vertices %d, weights = %f\n", vertices[0], laplacian_weights[i]);
+		// 	}
+		// }
 	}
 
 	__host__ DataVector3 BendingConstraint::apply_laplacian(const PositionData& positions) const
@@ -167,11 +178,20 @@ namespace pd
 
 		DataVector3 ret;
 		ret.setZero();
-		for (int i = 0; i < n_vertices; i++)
+		// This causes huge numerical error when vertex is far away from origin
+		// for (int i = 0; i < n_vertices; i++)
+		// {
+		// 	const VertexIndexType cur_pos_idx = vertices[i];
+		// 	const DataVector3 cur_pos = positions.row(cur_pos_idx).transpose();
+		// 	ret += cur_pos * laplacian_weights[i];
+		// }
+
+		// This computes extra E times subtraction but is stable in numerics
+		for (int i = 1; i < n_vertices; i++)
 		{
 			const VertexIndexType cur_pos_idx = vertices[i];
-			const DataVector3 cur_pos = positions.row(cur_pos_idx).transpose();
-			ret += cur_pos * laplacian_weights[i];
+			const DataVector3 cur_pos = positions.row(cur_pos_idx).transpose();			
+			ret += (center_pos - cur_pos) * laplacian_weights[i];
 		}
 
 		return ret;
@@ -185,11 +205,11 @@ namespace pd
 		const VertexIndexType center_vertex = vertices[0];
 		const SimVector3 center_pos = { q[3 * center_vertex], q[3 * center_vertex + 1], q[3 * center_vertex + 2] };
 
-		for (int i = 0; i < n_vertices; i++)
+		for (int i = 1; i < n_vertices; i++)
 		{
 			const VertexIndexType cur_pos_idx = vertices[i];
 			const SimVector3 cur_pos = { q[3 * cur_pos_idx], q[3 * cur_pos_idx + 1], q[3 * cur_pos_idx + 2] };
-			ret += cur_pos * laplacian_weights[i];
+			ret += (center_pos - cur_pos) * laplacian_weights[i];
 		}
 		return ret;
 	}

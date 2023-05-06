@@ -28,7 +28,7 @@ namespace ui
 
 		// create a new mesh
 		pd::MeshIDType obj_id = viewer.append_mesh();
-		models.emplace(obj_id, pd::DeformableMesh(V, F, obj_id));
+		models.emplace(obj_id, pd::DeformableMesh(V, F));
 
 		add_simulation_model_info(obj_id);
 
@@ -44,7 +44,7 @@ namespace ui
 
 		// create a new mesh
 		pd::MeshIDType obj_id = viewer.append_mesh();
-		models.emplace(obj_id, pd::DeformableMesh(V, T, boundray_facets, obj_id));
+		models.emplace(obj_id, pd::DeformableMesh(V, T, boundray_facets));
 
 		add_simulation_model_info(obj_id);
 
@@ -107,7 +107,7 @@ namespace ui
 		recalc_total_n_constraints();
 	}
 
-	void ObjManager::reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+	void ObjManager::reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& F, bool enable_rescale)
 	{
 		// check if obj_id corresponods to a deformable mesh
 		if (is_deformable_model(obj_id) == false)
@@ -115,29 +115,35 @@ namespace ui
 			return;
 		}
 
-		// rescale the vertices to make all models look equal in size
-		rescale(V);
+		if (enable_rescale)
+		{
+			// rescale the vertices to make all models look equal in size
+			rescale(V);
+		}
 
 		// reset to a new mesh
 		pd::DeformableMesh& model = models[obj_id];
-		model = pd::DeformableMesh(V, F, obj_id);
+		model = pd::DeformableMesh(V, F);
 
 		reset_simulation_model_info(obj_id);
 	}
 
-	void ObjManager::reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets)
+	void ObjManager::reset_model(pd::MeshIDType obj_id, Eigen::MatrixXd& V, const Eigen::MatrixXi& T, const Eigen::MatrixXi& boundray_facets, bool enable_rescale)
 	{
 		// check if obj_id corresponods to a deformable mesh
 		if (is_deformable_model(obj_id) == false)
 		{
 			return;
 		}
-		// rescale the vertices to make all models look equal in size
-		rescale(V);
+		if (enable_rescale)
+		{
+			// rescale the vertices to make all models look equal in size
+			rescale(V);
+		}
 
 		// reset to a new mesh
 		pd::DeformableMesh& model = models[obj_id];
-		model = pd::DeformableMesh(V, T, boundray_facets, obj_id);
+		model = pd::DeformableMesh(V, T, boundray_facets);
 
 		reset_simulation_model_info(obj_id);
 	}

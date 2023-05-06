@@ -164,7 +164,7 @@ namespace pd {
 
 			if (enable_debug_draw == false)
 			{
-				return;
+				continue;
 			}
 
             for (const VertexIndexType vi : model.get_fixed_vertices())

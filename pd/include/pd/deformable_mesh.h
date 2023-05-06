@@ -32,15 +32,13 @@ namespace pd
 		DeformableMesh() = default;
 
 		// construct from tetrahedron elements
-		DeformableMesh(const PositionData &p, const ElementData &t, const FaceData &boundary_facets, MeshIDType obj_id) :
-			p0(p),
+		DeformableMesh(const PositionData &p, const ElementData &t, const FaceData &boundary_facets) :
 			p(p),
 			e(t),
 			boundary_facets(boundary_facets),
 			m(p.rows()),
 			v(p.rows(), p.cols()),
 			fixed_vertices(),
-			obj_id(obj_id),
 			tet_mesh(true)
 		{
 			m.setOnes(); // Init messes to equally distributed
@@ -62,15 +60,13 @@ namespace pd
 		}
 
 		// construct from triangle elements
-		DeformableMesh(const PositionData &p, const ElementData &f, MeshIDType obj_id) :
-			p0(p),
+		DeformableMesh(const PositionData &p, const ElementData &f) :
 			p(p),
 			e(f),
 			boundary_facets(f),
 			m(p.rows()),
 			v(p.rows(), p.cols()),
 			fixed_vertices(),
-			obj_id(obj_id),
 			tet_mesh(false)
 		{
 			m.setOnes(); // Init messes to equally distributed
@@ -160,12 +156,10 @@ namespace pd
 			}
 		}
 
-		MeshIDType obj_id{ -1 };
-
 	    // methods
 		void toggle_vertices_fixed(const std::unordered_set<VertexIndexType>& v, SimScalar wc);
 		void set_edge_strain_constraints(SimScalar wc);
-		void set_bending_constraints(SimScalar wc);
+		void set_bending_constraints(SimScalar wc, bool discard_quadratic_term=false);
 		void set_tet_strain_constraints(SimScalar wc, SimVector3 min_strain_xyz=SimVector3::Ones(), SimVector3 max_strain_xyz=SimVector3::Ones());
 
 		// Currently use uniform weighted mass. Alternative: use area weighted mass.
@@ -177,7 +171,6 @@ namespace pd
 	private:
 		void add_positional_constraint(VertexIndexType vi, SimScalar wc);
 
-		PositionData p0;  // Rest positions
 		PositionData p;   // Positions
 		PositionData barycenters; // barycenter positions (for tetrahedron visualization only)
 		FaceData boundary_facets; // for rendering only

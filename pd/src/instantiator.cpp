@@ -45,19 +45,16 @@ namespace instancing {
         viewer.core().light_position = viewer.core().light_position + viewer.core().camera_eye;
     }
 
-    void Instantiator::instance_bending_hemisphere()
+    void Instantiator::_instance_bending_hemisphere(pd::SimScalar wc, pd::DataVector3 translation)
     {
         auto [V, F] = meshgen::generate_hemisphere(1);
+
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
+        model.apply_translation(translation);
 
         model.set_edge_strain_constraints(100);
-
-        // maintain curvature
-        // model.set_bending_constraints(5e-7 * 13);
-
-        // small curvature
-        model.set_bending_constraints(5e-7 * 9);
+        model.set_bending_constraints(wc, false);
 
         std::unordered_set<int> toggle_vertices;
         for (int i = 1; i <= 324; i += 17)
@@ -67,6 +64,20 @@ namespace instancing {
         model.toggle_vertices_fixed(toggle_vertices, 100);
 
 		obj_manager.recalc_total_n_constraints();
+    }
+
+    void Instantiator::instance_bending_hemisphere()
+    {
+        pd::DataScalar interval = 1.1;
+        _instance_bending_hemisphere(5e-4, pd::DataVector3(2 * interval, 0, 0));
+
+        _instance_bending_hemisphere(6e-4, pd::DataVector3(interval, 0, 0));
+
+        _instance_bending_hemisphere(5e-3, pd::DataVector3(0, 0, 0));
+
+        _instance_bending_hemisphere(2e-2, pd::DataVector3(-interval, 0, 0));
+
+        _instance_bending_hemisphere(5e-2, pd::DataVector3(-2 * interval, 0, 0));
     }
 
     void Instantiator::instance_cloth()
@@ -81,7 +92,7 @@ namespace instancing {
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         // apply translation
-        model.apply_translation(Eigen::Vector3d(1, 0, 0));
+        model.apply_translation(pd::DataVector3(1, 0, 0));
 
         auto& viewer = obj_manager.viewer;
         int idx = viewer.mesh_index(id);
@@ -109,7 +120,7 @@ namespace instancing {
 
         model.set_edge_strain_constraints(100);
 
-        model.set_bending_constraints(5e-7);
+        model.set_bending_constraints(5e-4, false);
 
         // add positional constraint
         model.toggle_vertices_fixed({ 0, 420 }, 100);
@@ -134,7 +145,7 @@ namespace instancing {
         auto& data = viewer.data_list[idx];
         data.double_sided = true;
 
-        model.apply_translation(Eigen::Vector3d(1, 0, 0));
+        model.apply_translation(pd::DataVector3(1, 0, 0));
 
         model.set_edge_strain_constraints(100);
 
@@ -157,7 +168,7 @@ namespace instancing {
     
         model.set_edge_strain_constraints(100);
 
-        model.set_bending_constraints(5e-7);
+        model.set_bending_constraints(5e-7, true);
 
         // add positional constraint
         model.toggle_vertices_fixed({ 0, 20, 420, 440 }, 100);
@@ -180,7 +191,7 @@ namespace instancing {
         pd::DeformableMesh& model = obj_manager.models.at(id);
 
         // apply translation
-        model.apply_translation(Eigen::Vector3d(1, 0, 0));
+        model.apply_translation(pd::DataVector3(1, 0, 0));
         
         model.set_edge_strain_constraints(20);
 
@@ -208,7 +219,7 @@ namespace instancing {
         
         model.set_edge_strain_constraints(20);
 
-        model.set_bending_constraints(5e-7 * 10);
+        model.set_bending_constraints(5e-7 * 10, true);
 
         std::unordered_set<int> toggle_vertices;
         for (int i = 2; i < usub * (vsub + 1) - vsub + 2; i += vsub + 1)
@@ -358,7 +369,7 @@ namespace instancing {
 
         // use matcap texture
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
-        igl::png::readPNG("../assets/textures/matcap_jade.png", R, G, B, A);
+        igl::png::readPNG("../assets/textures/matcap_march7th.png", R, G, B, A);
 
         auto& viewer = obj_manager.viewer;
 
@@ -480,7 +491,7 @@ namespace instancing {
 
         pd::DeformableMesh& model = obj_manager.models.at(id);
 
-        model.set_tet_strain_constraints(100000);
+        model.set_tet_strain_constraints(10000);
 
 		obj_manager.recalc_total_n_constraints(); 
     }
@@ -499,7 +510,6 @@ namespace instancing {
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         // apply translation
-        // model.apply_translation(Eigen::Vector3d(1, 0, 0));
 
         model.set_edge_strain_constraints(500);
 

@@ -15,7 +15,7 @@ namespace pd
 		/**
 		 * The neighbor_vertices param must be given in sequential coutner-clockwise order.
 		*/
-		BendingConstraint(SimScalar wc, int center_vertex, const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& q);
+		BendingConstraint(SimScalar wc, int center_vertex, const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& q, bool discard_quadratic_term=false);
 
 		BendingConstraint(const BendingConstraint& rhs);
 		BendingConstraint(BendingConstraint&& rhs) noexcept;
@@ -89,5 +89,7 @@ namespace pd
 		SimScalar* laplacian_weights{ nullptr };
 
 		SimScalar rest_mean_curvature{ 0 };
+
+		bool discard_quadratic_term{ false };
     };
 }
