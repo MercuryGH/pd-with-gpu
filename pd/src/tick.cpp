@@ -174,6 +174,13 @@ namespace pd {
 
             if (sel_mesh_id == id)
             {
+				// vertex index too large
+				if (model.positions().rows() <= sel_vertex_idx || model.get_adj_list().size() <= sel_vertex_idx)
+				{
+					printf("Warning: current selected vertex index %d too large!\n", sel_vertex_idx);
+					continue;
+				}
+
                 pd::DataRowVector3 pos = model.positions().row(sel_vertex_idx);
                 viewer.data_list[idx].add_points(pos, YELLOW_COLOR);
 

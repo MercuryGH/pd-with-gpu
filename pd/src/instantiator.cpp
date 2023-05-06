@@ -506,20 +506,21 @@ namespace instancing {
 
     void Instantiator::instance_large_cloth()
     {
-        auto [V, F] = meshgen::generate_cloth(100, 100);
+        auto [V, F] = meshgen::generate_cloth(140, 140);
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         // apply translation
 
-        model.set_edge_strain_constraints(500);
+        model.set_edge_strain_constraints(1500);
 
+        // When cloth size is (100, 100)
         // A-Jacobi-1 is the fastest when pd #itr = 5, solver #itr = 200
         // A-Jacobi FPS is approx 100 and Direct is approx 70 ~ 80
         // A-Jacobi-2 and A-Jacobi-3 are not fast. 
         // Recommended dragging force = 3
 
         // add positional constraint
-        model.toggle_vertices_fixed({ 0, 100 }, 1000);
+        model.toggle_vertices_fixed({ 0, 140 }, 1500);
 
 		obj_manager.recalc_total_n_constraints();        
     }

@@ -32,68 +32,10 @@ namespace pd
 		DeformableMesh() = default;
 
 		// construct from tetrahedron elements
-		DeformableMesh(const PositionData &p, const ElementData &t, const FaceData &boundary_facets) :
-			p(p),
-			e(t),
-			boundary_facets(boundary_facets),
-			m(p.rows()),
-			v(p.rows(), p.cols()),
-			fixed_vertices(),
-			tet_mesh(true)
-		{
-			m.setOnes(); // Init messes to equally distributed
-			v.setZero(); // init velocity to 0
+		DeformableMesh(const PositionData &p, const ElementData &t, const FaceData &boundary_facets);
+		DeformableMesh(const PositionData &p, const ElementData &f);
 
-			// Eigen::VectorXi indicator;
-			// if (igl::is_vertex_manifold(boundary_facets, indicator) == false)
-			// {
-			// 	printf("Warning: Non vertex manifold mesh detected!\n");
-			// }
-			// if (igl::is_edge_manifold(boundary_facets) == false)
-			// {
-			// 	printf("Warning: Non edge manifold mesh detected!\n");
-			// }
-
-			// do not construct ordered adj list since the boundary of tet mesh may be non-manifold
-			igl::adjacency_list(boundary_facets, adj_list, false);
-			igl::barycenter(p, e, barycenters);
-		}
-
-		// construct from triangle elements
-		DeformableMesh(const PositionData &p, const ElementData &f) :
-			p(p),
-			e(f),
-			boundary_facets(f),
-			m(p.rows()),
-			v(p.rows(), p.cols()),
-			fixed_vertices(),
-			tet_mesh(false)
-		{
-			m.setOnes(); // Init messes to equally distributed
-			v.setZero(); // init velocity to 0
-			
-			Eigen::VectorXi indicator;
-			if (igl::is_vertex_manifold(f, indicator) == false)
-			{
-				printf("Warning: Non vertex manifold mesh detected!\n");
-			}
-			if (igl::is_edge_manifold(f) == false)
-			{
-				printf("Warning: Non edge manifold mesh detected!\n");
-			}
-
-			igl::adjacency_list(f, adj_list, true);
-		}
-
-		~DeformableMesh()
-		{
-			// std::cout << "Debug: delete mesh " << this->obj_id << "\n";
-			for (const auto& constraint : constraints)
-			{
-				delete constraint;
-			}
-			constraints.clear();
-		}
+		~DeformableMesh();
 
 		// Debug only
 		void dimension_check() const 

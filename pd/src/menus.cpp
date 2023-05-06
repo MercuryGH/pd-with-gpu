@@ -702,6 +702,8 @@ namespace ui {
 
 			ImGui::Checkbox("Debug draw vertex", &user_control.enable_debug_draw);
 
+			ImGui::InputInt("Set selected vertex index", &user_control.selected_vertex_idx);
+
 			ImGui::InputFloat(LABEL("Point Size"), &viewer.data_list[idx].point_size, 1.f, 10.f);
 
 			int n_vertices, n_faces;
