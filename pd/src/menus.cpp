@@ -719,6 +719,11 @@ namespace ui {
 
 			ImGui::Separator();
 
+			ImGui::Checkbox("Capture pngs", [&]() {
+				return screen_capture_plugin.is_output_images();
+			}, [&](bool value) {
+				screen_capture_plugin.set_output_images(value);
+			});
 			if (ImGui::Button("Capture current state", ImVec2(-1, 0)))
 			{
 				std::string capture_path = igl::file_dialog_save();
@@ -919,10 +924,9 @@ namespace ui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 			if (ImGui::Button("Simulate Single Step", ImVec2(-1, 0)) && viewer.core().is_animating == false)
 			{
-				std::thread t([&] {
+				std::thread ([&] {
 					pd::tick(viewer, obj_manager.models, physics_params, solver_params, solver, f_exts, user_control);
-				});
-				t.detach();
+				}).detach();
 			}
 			ImGui::PopStyleColor(3);
 
