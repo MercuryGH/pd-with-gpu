@@ -449,7 +449,7 @@ namespace instancing {
     {
         Eigen::MatrixXd V;
         Eigen::MatrixXi F;
-        igl::read_triangle_mesh("../assets/meshes/spot_quadrangulated.obj", V, F);
+        igl::read_triangle_mesh("../assets/meshes/spot_triangulated.obj", V, F);
 
         Eigen::MatrixXd TV;
         Eigen::MatrixXi TT;

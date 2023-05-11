@@ -765,7 +765,7 @@ namespace ui {
 	void instantiator_menu(instancing::Instantiator& instantiator)
 	{
 		std::vector<std::function<void(instancing::Instantiator&)>> instantiate_caller = {
-			&instancing::Instantiator::instance_test,
+			// &instancing::Instantiator::instance_test,
 			&instancing::Instantiator::instance_floor,
 			&instancing::Instantiator::instance_cloth,
 			&instancing::Instantiator::instance_4hanged_cloth,
@@ -783,7 +783,7 @@ namespace ui {
 		};
 
 		const char* instances[] = { 
-			"Test",
+			// "Test",
 			"Floor", 
 			"Cloth", 
 			"Corner-pinned cloth",
