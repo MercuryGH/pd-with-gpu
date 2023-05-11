@@ -58,6 +58,10 @@ namespace pd
 		}
 
 		igl::adjacency_list(f, adj_list, true);
+		if (adj_list.size() != p.rows()) 
+		{
+			printf("Warning: Singular vertex that doesn't have any neighbors detected!\n");
+		}
 
 		// std::cout << adj_list.size() << "\n";
 		// std::cout << p.size() << "\n";

@@ -28,7 +28,8 @@ namespace instancing {
 
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> X;
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> A;
-        texturegen::checkerboard_texture(16, 100, X, A);
+        // texturegen::faded_checkerboard_texture(32, 50, X, A); // 1600 * 1600 resolution texture
+        texturegen::faded_checkerboard_texture(16, 100, X, A); // 1600 * 1600 resolution texture
 
         auto& viewer = obj_manager.viewer;
 
@@ -47,6 +48,8 @@ namespace instancing {
 
     void Instantiator::_instance_bending_hemisphere(pd::SimScalar wc, pd::DataVector3 translation)
     {
+        Eigen::MatrixXd UV;
+
         auto [V, F] = meshgen::generate_hemisphere(1);
 
         int id = obj_manager.add_model(V, F);
@@ -88,16 +91,27 @@ namespace instancing {
 
     void Instantiator::instance_cloth_not_bend()
     {
-        auto [V, F] = meshgen::generate_cloth(20, 20);
+        Eigen::MatrixXd UV;
+
+        auto [V, F] = meshgen::generate_cloth(20, 20, UV);
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         // apply translation
         model.apply_translation(pd::DataVector3(1, 0, 0));
 
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+        igl::png::readPNG("../assets/textures/zju.png", R, G, B, A);
+
         auto& viewer = obj_manager.viewer;
         int idx = viewer.mesh_index(id);
         auto& data = viewer.data_list[idx];
         data.double_sided = true;
+        data.set_uv(UV);
+        // assigns lighting params for phong shader (ambient, diffuse, specular)
+        data.uniform_colors(Eigen::Vector3d(0.3, 0.3, 0.3), Eigen::Vector3d(0.6, 0.6, 0.6), Eigen::Vector3d(0.2, 0.2, 0.2));
+        data.set_texture(R, G, B, A);
+        data.show_texture = true;
+        data.show_lines = false;
 
         model.set_edge_strain_constraints(100);
 
@@ -109,14 +123,25 @@ namespace instancing {
 
     void Instantiator::instance_cloth_bend()
     {
-        auto [V, F] = meshgen::generate_cloth(20, 20);
+        Eigen::MatrixXd UV;
+
+        auto [V, F] = meshgen::generate_cloth(20, 20, UV);
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+        igl::png::readPNG("../assets/textures/zju.png", R, G, B, A);
 
         auto& viewer = obj_manager.viewer;
         int idx = viewer.mesh_index(id);
         auto& data = viewer.data_list[idx];
         data.double_sided = true;
+        data.set_uv(UV);
+        // assigns lighting params for phong shader (ambient, diffuse, specular)
+        data.uniform_colors(Eigen::Vector3d(0.3, 0.3, 0.3), Eigen::Vector3d(0.6, 0.6, 0.6), Eigen::Vector3d(0.2, 0.2, 0.2));
+        data.set_texture(R, G, B, A);
+        data.show_texture = true;
+        data.show_lines = false;
 
         model.set_edge_strain_constraints(100);
 
@@ -269,6 +294,7 @@ namespace instancing {
 
         // model.set_tet_strain_constraints(400, Eigen::Vector3f(0.95f, 0.95f, 0.95f), Eigen::Vector3f(1.05f, 1.05f, 1.05f));
 
+        // model.set_tet_strain_constraints(100000, pd::SimVector3(0.99, 0.99, 0.99), pd::SimVector3(1.01, 1.01, 1.01));
         model.set_tet_strain_constraints(1000, pd::SimVector3(0.99, 0.99, 0.99), pd::SimVector3(1.01, 1.01, 1.01));
 
         std::unordered_set<int> toggle_vertices;
@@ -412,6 +438,7 @@ namespace instancing {
 
         pd::DeformableMesh& model = obj_manager.models.at(id);
 
+        model.apply_translation(pd::DataVector3(2, 0, 0));
         model.set_tet_strain_constraints(1000);
         model.toggle_vertices_fixed({ 1107, 1600, 1575, 1591 }, 100);
 
@@ -506,12 +533,19 @@ namespace instancing {
 
     void Instantiator::instance_large_cloth()
     {
-        auto [V, F] = meshgen::generate_cloth(140, 140);
+        // int n_rows = 20;
+        int n_rows = 140;
+        int n_cols = 140;
+        // int n_cols = 20;
+
+        Eigen::MatrixXd UV;
+        auto [V, F] = meshgen::generate_cloth(n_rows, n_cols, UV);
         int id = obj_manager.add_model(V, F);
         pd::DeformableMesh& model = obj_manager.models.at(id);
         // apply translation
 
         model.set_edge_strain_constraints(1500);
+        model.set_bending_constraints(5e-3);
 
         // When cloth size is (100, 100)
         // A-Jacobi-1 is the fastest when pd #itr = 5, solver #itr = 200
@@ -520,10 +554,50 @@ namespace instancing {
         // Recommended dragging force = 3
 
         // add positional constraint
-        model.toggle_vertices_fixed({ 0, 140 }, 1500);
+        model.toggle_vertices_fixed({ 0, (n_rows + 1) * n_cols }, 1500);
+        
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+        igl::png::readPNG("../assets/textures/zju.png", R, G, B, A);
+
+        auto& viewer = obj_manager.viewer;
+
+		int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.set_uv(UV);
+        // assigns lighting params for phong shader (ambient, diffuse, specular)
+        data.uniform_colors(Eigen::Vector3d(0.3, 0.3, 0.3), Eigen::Vector3d(0.6, 0.6, 0.6), Eigen::Vector3d(0.2, 0.2, 0.2));
+        data.set_texture(R, G, B, A);
+        data.show_texture = true;
+        data.show_lines = false;
 
 		obj_manager.recalc_total_n_constraints();        
     }
 
-    void Instantiator::instance_test() {}
+    void Instantiator::instance_test() 
+    {
+        Eigen::MatrixXd V, UV, N, FTC, FN;
+        Eigen::MatrixXi F;
+
+        // igl::readOBJ("../assets/meshes/spot_triangulated.obj", V, UV, N, F, FTC, FN);
+        igl::readPLY("../assets/meshes/spot.ply", V, F, N, UV);
+
+        int id = obj_manager.add_model(V, F, false); // don't scale the model
+
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+        igl::png::readPNG("../assets/textures/spot_texture.png", R, G, B, A);
+
+        auto& viewer = obj_manager.viewer;
+
+		int idx = viewer.mesh_index(id);
+        auto& data = viewer.data_list[idx];
+        data.uniform_colors(Eigen::Vector3d(0.3, 0.3, 0.3), Eigen::Vector3d(0.6, 0.6, 0.6), Eigen::Vector3d(0.2, 0.2, 0.2));
+        data.show_lines = false;
+        data.set_uv(UV);
+        data.set_texture(R, G, B, A);
+        data.show_texture = true;
+
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+		obj_manager.recalc_total_n_constraints();
+    }
 }

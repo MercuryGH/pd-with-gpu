@@ -4,7 +4,7 @@
 #include <igl/boundary_facets.h>
 
 namespace meshgen {
-	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_plane(int x, int y, int usub, int vsub)
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_plane(int x, int y, int usub, int vsub, Eigen::MatrixXd& UV)
 	{
 		const int u_n_verts = usub + 1;
 		const int v_n_verts = vsub + 1;
@@ -18,6 +18,7 @@ namespace meshgen {
 
 		Eigen::MatrixXd V(n_verts, 3);
 		Eigen::MatrixXi F(n_tris, 3);
+		UV.resize(n_verts, 2);
 
 		int face_cnt = 0;
 		float u = 0;
@@ -33,6 +34,7 @@ namespace meshgen {
 				const int idx = i * v_n_verts + j;
 	
                 V.row(idx) << (double)vertex_x, (double)vertex_y, (double)vertex_z;
+				UV.row(idx) << (double)u, (double)v;
 
 				if (i < usub && j < vsub)
 				{
@@ -47,7 +49,13 @@ namespace meshgen {
 
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cloth(int n_rows, int n_cols)
 	{
-		return generate_plane(n_rows, n_cols, n_rows, n_cols);
+		Eigen::MatrixXd uv;
+		return generate_plane(n_rows, n_cols, n_rows, n_cols, uv);
+	}
+
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cloth(int n_rows, int n_cols, Eigen::MatrixXd& uv)
+	{
+		return generate_plane(n_rows, n_cols, n_rows, n_cols, uv);
 	}
 
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_sphere(float radius, int usub, int vsub, float urange, float vrange)

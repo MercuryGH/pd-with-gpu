@@ -1,7 +1,7 @@
 #include <texturegen/texture_generator.h>
 
 namespace texturegen {
-    void checkerboard_texture(const int s, const int f,
+    void faded_checkerboard_texture(const int s, const int f,
                          Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic>& X,
                          Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic>& A)
     {

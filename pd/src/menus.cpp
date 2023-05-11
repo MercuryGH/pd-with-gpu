@@ -660,7 +660,7 @@ namespace ui {
 
 			if (user_control.apply_ext_force)
 			{
-				ImGui::Text("Vertex forced: ", user_control.ext_forced_vertex_idx);
+				ImGui::Text("Vertex forced: %d", user_control.ext_forced_vertex_idx);
 			}
 
 			ImGui::InputFloat(LABEL("dragging force"), &physics_params.external_force_val, 1.f, 10.f, "%.2f");
@@ -702,7 +702,7 @@ namespace ui {
 
 			ImGui::Checkbox("Debug draw vertex", &user_control.enable_debug_draw);
 
-			ImGui::InputInt("Set selected vertex index", &user_control.selected_vertex_idx);
+			ImGui::InputInt("Select vertex", &user_control.selected_vertex_idx);
 
 			ImGui::InputFloat(LABEL("Point Size"), &viewer.data_list[idx].point_size, 1.f, 10.f);
 
@@ -719,9 +719,20 @@ namespace ui {
 
 			ImGui::Separator();
 
-			if (screen_capture_plugin.is_capturing() == false)
+			if (ImGui::Button("Capture current state", ImVec2(-1, 0)))
 			{
-				if (ImGui::Button("Start capture", ImVec2(-1, 0))) 
+				std::string capture_path = igl::file_dialog_save();
+				if (capture_path.empty() == false)
+				{
+					screen_capture_plugin.capture_current_state(capture_path);
+				}
+			}
+			if (screen_capture_plugin.is_capturing_sequence() == false)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.33, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.33, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.33, 0.8f, 0.8f));
+				if (ImGui::Button("Capture sequence", ImVec2(-1, 0))) 
 				{
 					std::string capture_path = igl::file_dialog_save();
 					if (capture_path.empty() == false)
@@ -729,14 +740,19 @@ namespace ui {
 						screen_capture_plugin.start_capture(capture_path);
 					}
 				}
+				ImGui::PopStyleColor(3);
 			}
 			else
 			{
 				ImGui::Text("Captured %d frames", screen_capture_plugin.cur_capture_frame_id());
-				if (ImGui::Button("Stop capture", ImVec2(-1, 0)))
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button("Stop capture sequence", ImVec2(-1, 0)))
 				{
 					screen_capture_plugin.stop_capture();
 				}
+				ImGui::PopStyleColor(3);
 			}
 		}
     }
@@ -744,7 +760,7 @@ namespace ui {
 	void instantiator_menu(instancing::Instantiator& instantiator)
 	{
 		std::vector<std::function<void(instancing::Instantiator&)>> instantiate_caller = {
-			// &instancing::Instantiator::instance_test,
+			&instancing::Instantiator::instance_test,
 			&instancing::Instantiator::instance_floor,
 			&instancing::Instantiator::instance_cloth,
 			&instancing::Instantiator::instance_4hanged_cloth,
@@ -762,7 +778,7 @@ namespace ui {
 		};
 
 		const char* instances[] = { 
-			// "Test",
+			"Test",
 			"Floor", 
 			"Cloth", 
 			"Corner-pinned cloth",
@@ -810,7 +826,7 @@ namespace ui {
 		igl::opengl::glfw::imgui::ImGuizmoWidget& gizmo
     )
     {
-        if (ImGui::CollapsingHeader("Simulating Control"), ImGuiTreeNodeFlags_DefaultOpen)
+        if (ImGui::CollapsingHeader("Simulation Control"), ImGuiTreeNodeFlags_DefaultOpen)
 		{
 			ImGui::Text("Solver is %s", solver.is_dirty() ? "not ready." : "ready.");
 			if (solver.is_dirty() == true)

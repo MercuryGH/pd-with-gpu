@@ -5,8 +5,9 @@
 
 namespace meshgen {
 	// visitor pattern
-	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_plane(int x, int y, int usub, int vsub);
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_plane(int x, int y, int usub, int vsub, Eigen::MatrixXd& uv);
 
+	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cloth(int n_rows, int n_cols, Eigen::MatrixXd& uv);
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_cloth(int n_rows, int n_cols);
 
 	std::pair<Eigen::MatrixXd, Eigen::MatrixXi> generate_sphere(float radius, int usub=20, int vsub=16, float urange=1.0f, float vrange=1.0f);

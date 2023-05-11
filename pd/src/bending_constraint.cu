@@ -110,7 +110,6 @@ namespace pd
 
 	__host__ void BendingConstraint::precompute_laplacian_weights(const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& positions)
 	{
-		// TODO: problematic, should minus center of mass rather than use global coordinate
 		const int neighbor_size = neighbor_vertices.size();
 		assert(neighbor_size >= 3); // avoid singular vertex
 

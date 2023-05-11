@@ -15,7 +15,12 @@ namespace ui
 
         bool post_draw() override
         {
-            if (capturing == false)
+            if (sequence_capturing == false && single_image_capturing == false)
+            {
+                return false;
+            }
+
+            if (sequence_capturing == true && viewer->core().is_animating == false)
             {
                 return false;
             }
@@ -42,6 +47,10 @@ namespace ui
             std::string path = path_prefix + n_frame_str + ".png";
             // invoke a file saver thread
             std::thread{ save_png_file, path, std::move(pixels), width, height }.detach();
+            if (single_image_capturing == true)
+            {
+                single_image_capturing = false;
+            }
 
             return false;
         }
@@ -50,12 +59,19 @@ namespace ui
         {
             path_prefix = path;
             capture_idx = 0;
-            capturing = true;
+            sequence_capturing = true;
         }
 
-        void stop_capture() { capturing = false; }
+        void stop_capture() { sequence_capturing = false; }
 
-        bool is_capturing() const { return capturing; }
+        void capture_current_state(std::string path)
+        {
+            path_prefix = path;
+            capture_idx = 0;
+            single_image_capturing = true;
+        }
+
+        bool is_capturing_sequence() const { return sequence_capturing; }
         int cur_capture_frame_id() const { return capture_idx; }
 
     private:
@@ -83,6 +99,7 @@ namespace ui
 
         std::string path_prefix;
         int capture_idx;
-        bool capturing{ false };
+        bool sequence_capturing{ false };
+        bool single_image_capturing{ false };
     };
 }
