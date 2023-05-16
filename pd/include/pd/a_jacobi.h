@@ -23,7 +23,7 @@ namespace pd
 			const SimScalar* __restrict__ x,
 			const SimScalar* __restrict__ prev_x,
 			SimScalar** __restrict__ d_1_ring_neighbors,
-			int** __restrict__ d_1_ring_neighbor_indices,
+			VertexIndexType** __restrict__ d_1_ring_neighbor_indices,
 			const int* __restrict__ d_1_ring_neighbor_sizes,
 			const SimScalar* __restrict__ d_diagonals,
 			const SimScalar* __restrict__ d_b_term,
@@ -41,7 +41,7 @@ namespace pd
 			const SimScalar* __restrict__ prev_x_2,
 
 			SimScalar** __restrict__ d_2_ring_neighbors,
-			int** __restrict__ d_2_ring_neighbor_indices,
+			VertexIndexType** __restrict__ d_2_ring_neighbor_indices,
 			const int* __restrict__ d_2_ring_neighbor_sizes,
 
 			const SimScalar* __restrict__ d_diagonals, // D_ii
@@ -64,7 +64,7 @@ namespace pd
 			const SimScalar* __restrict__ prev_x_3,
 
 			SimScalar** __restrict__ d_3_ring_neighbors,
-			int** __restrict__ d_3_ring_neighbor_indices,
+			VertexIndexType** __restrict__ d_3_ring_neighbor_indices,
 			const int* __restrict__ d_3_ring_neighbor_sizes,
 
 			const SimScalar* __restrict__ d_diagonals, // D_ii
@@ -103,12 +103,12 @@ namespace pd
 
 		// bridges between CPU mem and GPU mem.
 		SimScalar** k_ring_neighbors[A_JACOBI_MAX_ORDER];
-		int** k_ring_neighbor_indices[A_JACOBI_MAX_ORDER];
+		VertexIndexType** k_ring_neighbor_indices[A_JACOBI_MAX_ORDER];
 
 		// GPU mem
 		// forall i, B_{is} ... B_{sj} for nonzero terms (reachable j). Total space = O(V + E)
 		SimScalar** d_k_ring_neighbors[A_JACOBI_MAX_ORDER];
-		int** d_k_ring_neighbor_indices[A_JACOBI_MAX_ORDER];
+		VertexIndexType** d_k_ring_neighbor_indices[A_JACOBI_MAX_ORDER];
 		int* d_k_ring_neighbor_sizes[A_JACOBI_MAX_ORDER]; // indicates the size of d_1_ring_neighbors
 
 		// forall i, D_{ii}

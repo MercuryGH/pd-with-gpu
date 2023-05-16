@@ -65,7 +65,7 @@ namespace pd {
 			cudaFree(vertices);
 		}
 
-		int get_involved_vertices(int** vertices) const;
+		int get_involved_vertices(VertexIndexType** vertices) const;
 
 		void set_vertex_offset(int n_vertex_offset);
 		

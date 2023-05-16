@@ -45,7 +45,7 @@ namespace pd
 		const SimScalar* __restrict__ x,
 		const SimScalar* __restrict__ prev_x,
 		SimScalar** __restrict__ d_1_ring_neighbors,
-		int** __restrict__ d_1_ring_neighbor_indices,
+		VertexIndexType** __restrict__ d_1_ring_neighbor_indices,
 		const int* __restrict__ d_1_ring_neighbor_sizes,
 		const SimScalar* __restrict__ d_diagonals,
 		const SimScalar* __restrict__ d_b_term,
@@ -59,7 +59,7 @@ namespace pd
 		if (idx < n_vertex)
 		{
 			const SimScalar* B_ijs = d_1_ring_neighbors[idx];
-			const int* js = d_1_ring_neighbor_indices[idx];
+			const VertexIndexType* js = d_1_ring_neighbor_indices[idx];
 
 			SimScalar sum_0 = 0.0f;
 			SimScalar sum_1 = 0.0f;
@@ -95,7 +95,7 @@ namespace pd
 		const SimScalar* __restrict__ d_b,
 
 		SimScalar** __restrict__ d_1_ring_neighbors,
-		int** __restrict__ d_1_ring_neighbor_indices,
+		VertexIndexType** __restrict__ d_1_ring_neighbor_indices,
 		const int* __restrict__ d_1_ring_neighbor_sizes,
 
 		const SimScalar* __restrict__ d_diagonals,
@@ -108,7 +108,7 @@ namespace pd
 		{
 			// b_terms:
 			const SimScalar* B_ijs_b = d_1_ring_neighbors[idx];
-			const int* js_b = d_1_ring_neighbor_indices[idx];
+			const VertexIndexType* js_b = d_1_ring_neighbor_indices[idx];
 
 			SimScalar b_term_0 = 0.0f;
 			SimScalar b_term_1 = 0.0f;
@@ -143,7 +143,7 @@ namespace pd
 		const SimScalar* __restrict__ prev_x_2,
 
 		SimScalar** __restrict__ d_2_ring_neighbors,
-		int** __restrict__ d_2_ring_neighbor_indices,
+		VertexIndexType** __restrict__ d_2_ring_neighbor_indices,
 		const int* __restrict__ d_2_ring_neighbor_sizes,
 
 		const SimScalar* __restrict__ d_diagonals, // D_ii
@@ -159,7 +159,7 @@ namespace pd
 		if (idx < n_vertex)
 		{
 			const SimScalar* B_issjs = d_2_ring_neighbors[idx];
-			const int* js = d_2_ring_neighbor_indices[idx];
+			const VertexIndexType* js = d_2_ring_neighbor_indices[idx];
 
 			SimScalar sum_0_1 = 0.0f;
 			SimScalar sum_1_1 = 0.0f;
@@ -205,11 +205,11 @@ namespace pd
 		const SimScalar* __restrict__ d_b,
 
 		SimScalar** __restrict__ d_1_ring_neighbors,
-		int** __restrict__ d_1_ring_neighbor_indices,
+		VertexIndexType** __restrict__ d_1_ring_neighbor_indices,
 		const int* __restrict__ d_1_ring_neighbor_sizes,
 
 		SimScalar** __restrict__ d_2_ring_neighbors,
-		int** __restrict__ d_2_ring_neighbor_indices,
+		VertexIndexType** __restrict__ d_2_ring_neighbor_indices,
 		const int* __restrict__ d_2_ring_neighbor_sizes,
 
 		const SimScalar* __restrict__ d_diagonals,
@@ -222,7 +222,7 @@ namespace pd
 		{
 			// b_terms_1:
 			const SimScalar* B_ijs_b = d_1_ring_neighbors[idx];
-			const int* js_b_1 = d_1_ring_neighbor_indices[idx];
+			const VertexIndexType* js_b_1 = d_1_ring_neighbor_indices[idx];
 
 			SimScalar b_term_0_1 = 0.0f;
 			SimScalar b_term_1_1 = 0.0f;
@@ -241,7 +241,7 @@ namespace pd
 
 			// b_terms_2:
 			const SimScalar* B_issjs_b = d_2_ring_neighbors[idx];
-			const int* js_b_2 = d_2_ring_neighbor_indices[idx];
+			const VertexIndexType* js_b_2 = d_2_ring_neighbor_indices[idx];
 
 			SimScalar b_term_0_2 = 0.0f;
 			SimScalar b_term_1_2 = 0.0f;
@@ -279,7 +279,7 @@ namespace pd
 		const SimScalar* __restrict__ prev_x_3,
 
 		SimScalar** __restrict__ d_3_ring_neighbors,
-		int** __restrict__ d_3_ring_neighbor_indices,
+		VertexIndexType** __restrict__ d_3_ring_neighbor_indices,
 		const int* __restrict__ d_3_ring_neighbor_sizes,
 
 		const SimScalar* __restrict__ d_diagonals, // D_ii
@@ -294,7 +294,7 @@ namespace pd
 		if (idx < n_vertex)
 		{
 			const SimScalar* B_ittssjs = d_3_ring_neighbors[idx];
-			const int* js = d_3_ring_neighbor_indices[idx];
+			const VertexIndexType* js = d_3_ring_neighbor_indices[idx];
 
 			SimScalar sum_0_1 = 0.0f;
 			SimScalar sum_1_1 = 0.0f;
@@ -555,11 +555,11 @@ namespace pd
 		{
 			// --- Compute d_a_products, d_a_products_idx and d_a_products_sizes
 			checkCudaErrors(cudaMalloc((void***)&d_k_ring_neighbors[k], sizeof(SimScalar*) * n_vertex));
-			checkCudaErrors(cudaMalloc((void***)&d_k_ring_neighbor_indices[k], sizeof(int*) * n_vertex));
+			checkCudaErrors(cudaMalloc((void***)&d_k_ring_neighbor_indices[k], sizeof(VertexIndexType*) * n_vertex));
 			checkCudaErrors(cudaMalloc((void**)&d_k_ring_neighbor_sizes[k], sizeof(int) * n_vertex));
 			// to avoid indexing device memory on the host, use tmp host memory
 			k_ring_neighbors[k] = (SimScalar**)malloc(sizeof(SimScalar*) * n_vertex);
-			k_ring_neighbor_indices[k] = (int**)malloc(sizeof(int*) * n_vertex);
+			k_ring_neighbor_indices[k] = (VertexIndexType**)malloc(sizeof(VertexIndexType*) * n_vertex);
 			k_ring_neighbor_sizes[k].resize(n_vertex);
 
 			for (int i = 0; i < n_vertex; i++)
@@ -571,20 +571,20 @@ namespace pd
 				checkCudaErrors(
 					cudaMalloc((void**)&k_ring_neighbors[k][i], sizeof(SimScalar) * n_adj_vertex));
 				checkCudaErrors(
-					cudaMalloc((void**)&k_ring_neighbor_indices[k][i], sizeof(int) * n_adj_vertex));
+					cudaMalloc((void**)&k_ring_neighbor_indices[k][i], sizeof(VertexIndexType) * n_adj_vertex));
 				k_ring_neighbor_sizes[k][i] = n_adj_vertex;
 
 				checkCudaErrors(
 					cudaMemcpy(k_ring_neighbors[k][i], neighbor_B_vals.data(), sizeof(SimScalar) * n_adj_vertex, cudaMemcpyHostToDevice));
 				checkCudaErrors(
-					cudaMemcpy(k_ring_neighbor_indices[k][i], neighbor_indices.data(), sizeof(int) * n_adj_vertex, cudaMemcpyHostToDevice));
+					cudaMemcpy(k_ring_neighbor_indices[k][i], neighbor_indices.data(), sizeof(VertexIndexType) * n_adj_vertex, cudaMemcpyHostToDevice));
 			}
 
 			// copy memory
 			checkCudaErrors(
 				cudaMemcpy(d_k_ring_neighbors[k], k_ring_neighbors[k], sizeof(SimScalar*) * n_vertex, cudaMemcpyHostToDevice));
 			checkCudaErrors(
-				cudaMemcpy(d_k_ring_neighbor_indices[k], k_ring_neighbor_indices[k], sizeof(int*) * n_vertex, cudaMemcpyHostToDevice));
+				cudaMemcpy(d_k_ring_neighbor_indices[k], k_ring_neighbor_indices[k], sizeof(VertexIndexType*) * n_vertex, cudaMemcpyHostToDevice));
 			checkCudaErrors(
 				cudaMemcpy(d_k_ring_neighbor_sizes[k], k_ring_neighbor_sizes[k].data(), sizeof(int) * n_vertex, cudaMemcpyHostToDevice));
 		}

@@ -174,7 +174,6 @@ namespace pd
 			SimScalar x = (SimScalar)q[3 * v];
 			SimScalar y = (SimScalar)q[3 * v + 1];
 			SimScalar z = (SimScalar)q[3 * v + 2];
-			// printf("x,y,z = %f %f %f\n", x,y,z);
 
 			cur_pos[i] = { x, y, z };
 		}
@@ -193,13 +192,6 @@ namespace pd
 		const SimMatrix3 F = D_s * D_m_inv; // deformation gradient
 	#endif
 
-		// printf("D_s = %f %f %f\n", D_s(0, 0), D_s(1, 1), D_s(2, 2));
-		// printf("D_s Dminv = %f %f %f %f %f %f\n", D_s(0, 0), D_s(1, 1), D_s(2, 2), D_m_inv(0, 0), D_m_inv(1, 1), D_m_inv(2, 2));
-		// printf("F, det(F) = %f %f %f %f\n", F(0, 0), F(1, 1), F(2, 2), determinant3(F));
-	#ifdef __CUDA_ARCH__
-		// while (1);
-	#endif
-
 		const bool tet_inverted = determinant3(F) < 0;
 	#ifdef __CUDA_ARCH__
 		// GPU side SVD
@@ -215,13 +207,10 @@ namespace pd
 		const SimMatrix3& V = svd.matrixV();
 	#endif
 
-	#ifdef __CUDA_ARCH__
-		// printf("sigmas = %f, %f, %f\n", sigma(0), sigma(1), sigma(2));
-	#endif
-
 		for (int i = 0; i < 3; i++)
 		{
 			sigma(i) = std::clamp(sigma(i), (SimScalar)min_strain_xyz(i), (SimScalar)max_strain_xyz(i));
+			// sigma(i) = 1.0 / sigma(i); // unstable
 		}
 
 		// This code is necessary to preserve the orientation of the tetrahedron
@@ -232,14 +221,11 @@ namespace pd
 
 	#ifdef __CUDA_ARCH__
 		const SimMatrix3 Achpc = multiply3x3(V, multiply_diagx3(sigma, U.transpose())); // equivalent to (U * sigma * V^T)^{-1}
-		// printf("sigmas = %f, %f, %f\n", sigma(0), sigma(1), sigma(2));
-		// printf("Achpc = %f %f %f\n", Achpc(0, 0), Achpc(1, 1), Achpc(2, 2));
-
-		// while (1);
 	#else
 		// U * sigma * V^T is NEARLY the rotation part of deformation gradient assumes simga(i) is clamp to nearly 1
 		// Thus we can transpose it to get the inversion of this matrix so as to restore the deformation
 		const SimMatrix3 Achpc = V * sigma.asDiagonal() * U.transpose(); // equivalent to (U * sigma * V^T)^{-1}
+		// const SimMatrix3 Achpc = F.inverse(); // unstable
 		// Note: if we don't transpose U * sigma * V^T, the simulation very become stiff and weird
 	#endif
 
