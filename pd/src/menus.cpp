@@ -724,7 +724,7 @@ namespace ui {
 			}, [&](bool value) {
 				screen_capture_plugin.set_output_images(value);
 			});
-			if (ImGui::Button("Capture current state", ImVec2(-1, 0)))
+			if (ImGui::Button("Capture current frame", ImVec2(-1, 0)))
 			{
 				std::string capture_path = igl::file_dialog_save();
 				if (capture_path.empty() == false)
