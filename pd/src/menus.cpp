@@ -706,15 +706,15 @@ namespace ui {
 
 			ImGui::InputFloat(LABEL("Point Size"), &viewer.data_list[idx].point_size, 1.f, 10.f);
 
-			int n_vertices, n_faces;
-			n_vertices = n_faces = 0;
+			int n_vertices, n_elements;
+			n_vertices = n_elements = 0;
 			for (const auto& [id, model] : models)
 			{
 				n_vertices += model.positions().rows();
-				n_faces += model.faces().rows();
+				n_elements += model.get_elements().rows();
 			}
 			ImGui::Text("#Vertex = %d", n_vertices);
-			ImGui::Text("#Face = %d", n_faces);
+			ImGui::Text("#Element = %d", n_elements);
 			// ImGui::Text("#DOF = %d", model.positions().rows() * 3 - model.n_edges);
 
 			ImGui::Separator();
