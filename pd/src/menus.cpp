@@ -734,7 +734,7 @@ namespace ui {
 			}
 			if (screen_capture_plugin.is_capturing_sequence() == false)
 			{
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.33, 0.6, 0.6);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.33, 0.6, 0.6));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.33, 0.7, 0.7));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.33, 0.8, 0.8));
 				if (ImGui::Button("Capture sequence", ImVec2(-1, 0))) 
