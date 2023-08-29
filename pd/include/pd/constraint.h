@@ -3,7 +3,6 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
-#include <cuda_runtime.h>
 
 #include <pd/types.h>
 
@@ -68,7 +67,7 @@ namespace pd {
 		int get_involved_vertices(VertexIndexType** vertices) const;
 
 		void set_vertex_offset(int n_vertex_offset);
-		
+
 	private:
 		void realloc_vertices(int size);
 

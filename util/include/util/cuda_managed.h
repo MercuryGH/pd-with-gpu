@@ -20,7 +20,7 @@ namespace util
 
         /**
          * @brief rewrited delete operator for cuda managed object
-         * @note cudaDeviceSynchronize in device code is deprecated so using new/delete in 
+         * @note cudaDeviceSynchronize in device code is deprecated so using new/delete in
          * device code always causes problem now. But we can still use stack object safely.
          */
         __host__ __device__ void operator delete(void* ptr)

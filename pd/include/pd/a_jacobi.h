@@ -1,9 +1,7 @@
 #pragma once
 #include <unordered_map>
-#include <cuda_runtime.h>
 
 #include <pd/types.h>
-
 #include <pd/linear_sys_solver.h>
 
 namespace pd
@@ -28,7 +26,7 @@ namespace pd
 			const SimScalar* __restrict__ d_diagonals,
 			const SimScalar* __restrict__ d_b_term,
 			int n_vertex,  // #Vertex, parallelism is n but not 3n
-			SimScalar omega, // chebyshev param omega 
+			SimScalar omega, // chebyshev param omega
 			SimScalar under_relaxation // under-relaxation coeff
 		);
 
@@ -48,7 +46,7 @@ namespace pd
 
 			const SimScalar* __restrict__ b_term,
 			int n_vertex,  // #Vertex
-			SimScalar omega, // chebyshev param omega 
+			SimScalar omega, // chebyshev param omega
 			SimScalar under_relaxation // under-relaxation coeff
 		);
 
@@ -70,7 +68,7 @@ namespace pd
 			const SimScalar* __restrict__ d_diagonals, // D_ii
 			const SimScalar* __restrict__ b,
 			int n_vertex,  // #Vertex
-			SimScalar omega, // chebyshev param omega 
+			SimScalar omega, // chebyshev param omega
 			SimScalar under_relaxation // under-relaxation coeff
 		);
 
@@ -91,7 +89,7 @@ namespace pd
 
 		int n{ 0 };
 		// A is an n * n with 3 * 3 block matrix
-		// total space for x and b is 3 * #Vertex * sizeof(float) 
+		// total space for x and b is 3 * #Vertex * sizeof(float)
 		// total space for A = D + B is at most (#Vertex * sizeof(float))^2 but not 3 times of it
 		// A is a sparse matrix so there must be some optimization methods
 

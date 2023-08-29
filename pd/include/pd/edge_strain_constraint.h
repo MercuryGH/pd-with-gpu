@@ -1,7 +1,6 @@
 #pragma once
 
 #include <pd/constraint.h>
-#include <pd/types.h>
 
 namespace pd {
 	class EdgeStrainConstraint : public Constraint

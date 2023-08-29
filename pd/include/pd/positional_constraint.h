@@ -14,7 +14,7 @@ namespace pd {
 			Constraint(wc, 1),
 			p0(p.row(vi).transpose().cast<SimScalar>())
 		{
-			cudaMallocManaged(&vertices, sizeof(int) * 1);
+			cudaMallocManaged(&vertices, sizeof(VertexIndexType) * 1);
 			vertices[0] = vi;
 		}
 

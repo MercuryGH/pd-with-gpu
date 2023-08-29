@@ -1,8 +1,5 @@
 #pragma once
 
-#include <condition_variable>
-#include <mutex>
-
 namespace util {
     class ProgressPercentage {
     public:

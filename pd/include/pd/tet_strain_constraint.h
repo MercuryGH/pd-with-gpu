@@ -3,8 +3,6 @@
 #include <pd/constraint.h>
 #include <pd/types.h>
 
-#include <util/svd3_cuda.h>
-
 namespace pd
 {
     class TetStrainConstraint: public Constraint

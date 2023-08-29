@@ -1,5 +1,4 @@
 #pragma once
-#include <cuda_runtime.h>
 #include <pd/linear_sys_solver.h>
 
 namespace pd

@@ -4,30 +4,32 @@
 #include <vector>
 #include <numeric>
 #include <unordered_set>
+#include <memory>
 
-#include <igl/adjacency_list.h>
-
-#include <igl/is_vertex_manifold.h>
-#include <igl/is_edge_manifold.h>
-
-#include <igl/edges.h>
-#include <igl/is_border_vertex.h>
-#include <igl/adjacency_list.h>
-#include <igl/barycenter.h>
 #include <Eigen/Core>
 
-#include <primitive/primitive.h>
-#include <pd/constraint.h>
 #include <pd/types.h>
 
-#include <thrust/host_vector.h>
-#include <thrust/universal_vector.h>
+#include <primitive/primitive.h>
+
+namespace thrust // forward declaration for thrust::host_vector
+{
+	template<typename, typename>
+	class host_vector;
+}
 
 namespace pd
 {
+	class Constraint; // forward declaration to hide file constraint.h
+
 	class DeformableMesh {
 		friend class Solver;
 		friend class AJacobi;
+
+	private:
+		struct pImpl;
+		std::unique_ptr<pImpl> p_impl;
+
 	public:
 		DeformableMesh() = default;
 
@@ -35,68 +37,44 @@ namespace pd
 		DeformableMesh(const PositionData &p, const ElementData &t, const FaceData &boundary_facets);
 		DeformableMesh(const PositionData &p, const ElementData &f);
 
+		// copy and move constructor
+		DeformableMesh(const DeformableMesh& rhs);
+		DeformableMesh(DeformableMesh&& rhs) noexcept;
+		DeformableMesh& operator=(const DeformableMesh& rhs);
+		DeformableMesh& operator=(DeformableMesh&& rhs) noexcept;
+
 		~DeformableMesh();
 
-		// Debug only
-		void dimension_check() const 
-		{
-			assert(m.rows() == p.rows());
-		}
-
 		// getters
-		bool empty() const { return p.rows() == 0; }
-		const PositionData& positions() const { return p; }
-		const FaceData& faces() const { return boundary_facets; }
-		const thrust::host_vector<pd::Constraint*>& get_all_constraints() const { return constraints; }
-		bool is_vertex_fixed(VertexIndexType vi) const { return fixed_vertices.find(vi) != fixed_vertices.end(); };
-		const std::unordered_set<int>& get_fixed_vertices() const { return fixed_vertices; }
-		const std::vector<std::vector<VertexIndexType>>& get_adj_list() const { return adj_list; }
-		int n_constraints() const { return constraints.size(); }
-		bool is_tet_mesh() const { return tet_mesh; }
-		const PositionData& get_element_barycenters() const { return barycenters; }
-		const ElementData& get_elements() const { return e; }
+		bool empty() const;
+		const PositionData& positions() const;
+		const VelocityData& velocities() const;
+		const FaceData& faces() const;
+		// forward declaration needs a default for the second template parameter
+		const thrust::host_vector<Constraint*, std::allocator<Constraint*>>& get_all_constraints() const;
+		bool is_vertex_fixed(VertexIndexType vi) const;
+		const std::unordered_set<int>& get_fixed_vertices() const;
+		const std::vector<std::vector<VertexIndexType>>& get_adj_list() const;
+		int n_constraints() const;
+		bool is_tet_mesh() const;
+		const PositionData& get_element_barycenters() const;
+		const ElementData& get_elements() const;
+		DataMatrixX3& vertex_normals() const;
 
-		void set_vertex_mass(VertexIndexType vid, DataScalar mass) { m(vid) = mass; }
+		void set_vertex_mass(VertexIndexType vid, DataScalar mass);
 
 		/**
 		 * @brief Get the edges from elements
 		 * @note edges are restored from triangles or tetrahedra data
 		 * @return Eigen::MatrixXi #edges*2 array of integers
 		 */
-		Eigen::MatrixX2i get_edges() const 
-		{ 
-			Eigen::MatrixX2i edges; 
-			igl::edges(e, edges); 
-			return edges; 
-		}
-		const MassData& get_masses() const { return m; }
-
+		Eigen::MatrixX2i get_edges() const;
+		const MassData& masses() const;
 		// setters
-		void reset_constraints()
-		{
-			v.setZero();
-			constraints.clear();
-			fixed_vertices.clear();
-		}
-
-		void update_positions_and_velocities(const PositionData& p, const VelocityData& v)
-		{
-			this->p = p;
-			this->v = v;
-		}
-
-		void set_positions(const PositionData& p)
-		{
-			this->p = p;
-		}
-
-		void apply_translation(DataVector3 translate)
-		{
-			for (int i = 0; i < p.rows(); i++)
-			{
-				p.row(i) += translate.transpose();
-			}
-		}
+		void reset_constraints();
+		void update_positions_and_velocities(const PositionData& p, const VelocityData& v);
+		void set_positions(const PositionData& p);
+		void apply_translation(DataVector3 translate);
 
 	    // methods
 		void toggle_vertices_fixed(const std::unordered_set<VertexIndexType>& v, SimScalar wc);
@@ -110,26 +88,6 @@ namespace pd
 
 		static void resolve_collision(const std::unordered_map<pd::MeshIDType, std::unique_ptr<primitive::Primitive>>& rigid_colliders, SimMatrixX3& q_explicit);
 
-	private:
 		void add_positional_constraint(VertexIndexType vi, SimScalar wc);
-
-		PositionData p;   // Positions
-		PositionData barycenters; // barycenter positions (for tetrahedron visualization only)
-		FaceData boundary_facets; // for rendering only
-
-		// Indicates the model is of 
-		// triangle elements (=faces) or tetrahedra elements.
-		// Dimensions may differ between different elements.
-		// We need to restore the edges information from the elements matrix.
-		ElementData e; 
-		bool tet_mesh{ false };
-
-		MassData m;      // Per-vertex mass
-		VelocityData v;  // Per-vertex velocity
-		thrust::host_vector<pd::Constraint*> constraints; // Vector of constraints
-
-		std::vector<std::vector<VertexIndexType>> adj_list; // adjancecy list (tri mesh: sorted, tet mesh: not sorted)
-
-		std::unordered_set<VertexIndexType> fixed_vertices; // store all fixed vertex
 	};
 }

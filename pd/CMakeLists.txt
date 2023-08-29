@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 include(FetchContent)
-
-set(LIBIGL_OPENGL ON  CACHE INTERNAL "libigl with opengl"  )
-set(LIBIGL_GLFW   ON  CACHE INTERNAL "libigl with glfw"    )
-set(LIBIGL_PNG    ON  CACHE INTERNAL "libigl with png"     )
-set(LIBIGL_COPYLEFT_TETGEN   ON  CACHE INTERNAL "libigl with tetgen"  )
-set(LIBIGL_IMGUI  ON  CACHE INTERNAL "libigl with imgui"   )
+include(../cmake/utils.cmake)
 
 set(FETCHCONTENT_QUIET FALSE)
 FetchContent_Declare(
@@ -14,31 +9,60 @@ FetchContent_Declare(
 #   GIT_TAG        v2.4.0
 # use the latest version is OK
   GIT_TAG        main
+  # GIT_TAG      5ded7da0868123b75969ebe548cb71abedf5cec9
   GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(_libigl)
 
-file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h)
 if (CUDA_ENABLE)
-    include_directories("/opt/cuda/include")
-    file(GLOB_RECURSE cuda_srcs src/*.cu)
-    add_executable(pd ${cuda_srcs} ${srcs})
-else()
-    add_executable(pd ${srcs})
+    set(LIB_NAME "pd-algo")
+
+    file(GLOB_RECURSE algo_headers CONFIGURE_DEPENDS include/*.h)
+    file(GLOB_RECURSE algo_srcs CONFIGURE_DEPENDS src/*.cpp src/*.cu)
+    add_headers(export_headers
+        include/io/io_data.h
+        include/io/mesh_io.h
+        include/io/simulation_control.h
+
+        include/pd/deformable_mesh.h
+        include/pd/types.h
+        include/pd/algo_ctrl.h
+
+        include/primitive/primitive.h
+
+        ../util/include/util/singleton.h
+    )
+    # file(GLOB_RECURSE export_headers CONFIGURE_DEPENDS include/*.h )
+
+    message(STATUS "header is ${export_headers}")
+    find_cuda()
+
+    add_library(${LIB_NAME} SHARED ${algo_headers} ${algo_srcs})
+    target_compile_options(${LIB_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
+    target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
+    set_target_properties(${LIB_NAME} PROPERTIES
+        CUDA_RUNTIME_LIBRARY SHARED
+        PUBLIC_HEADER "${export_headers}" # if don't use quotes, only the 1st header is installed
+    )
+    target_include_directories(${LIB_NAME} PUBLIC include)
+
+    target_link_libraries(${LIB_NAME}
+        PUBLIC
+        igl::core
+        util
+    )
+
+    install(
+        TARGETS ${LIB_NAME}
+        LIBRARY
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+    # install(
+        # FILES ${CMAKE_BINARY_DIR}/mylib.pc
+        # DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
+    # )
+
 endif()
-
-#add_executable(pd ${srcs})
-target_compile_options(pd PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
-target_compile_features(pd PRIVATE cxx_std_17)
-
-target_include_directories(pd PUBLIC include)
-
-target_link_libraries(pd 
-PRIVATE 
-    igl::core 
-    igl::imgui
-    igl::png
-    igl_copyleft::tetgen
-    util
-)
-

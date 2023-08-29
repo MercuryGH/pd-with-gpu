@@ -1,5 +1,4 @@
 #pragma once
-#include <cuda_runtime.h>
 
 #include <pd/constraint.h>
 #include <pd/positional_constraint.h>
@@ -17,7 +16,7 @@ namespace pd
 	{
 	public:
 		/**
-		 * @brief Solver free local step GPU memory. 
+		 * @brief Solver free local step GPU memory.
 		 * Call when dirty
 		 */
 		void free_local_gpu_memory_entry();
@@ -71,9 +70,9 @@ namespace pd
 	static __host__ __device__ void fix_vtable_pointer(const T* obj);
 
 	/**
-	 * @brief This kernel function fixes all cloned constraints' vtable to device memory, 
+	 * @brief This kernel function fixes all cloned constraints' vtable to device memory,
 	 * also create GPU (copy) cache on the constraints.
-	 * 
+	 *
 	 * @tparam T Constraint type
 	 * @param constraints cloned constraints with type T
 	 * @param n number of constraints
@@ -83,10 +82,10 @@ namespace pd
 
 	/**
 	 * @brief Call destructor for all device constraints
-	 * @bug This function fails when n_constraints is large, unknown reason. 
+	 * @bug This function fails when n_constraints is large, unknown reason.
 	 * Calling new/delete in device code with some newer devices presents this problem.
 	 * @warning Currently not use it
-	 * 
+	 *
 	 * @param d_cloned_constraints Constraints to be free
 	 * @param n_constraints #d_cloned_constraints
 	 */
@@ -95,7 +94,7 @@ namespace pd
 
 	/**
 	 * @brief GPU implemented local step
-	 * 
+	 *
 	 * @param d_b @see formula
 	 * @param d_q_nplus1 @see formula
 	 * @param d_cloned_constraints all constraints

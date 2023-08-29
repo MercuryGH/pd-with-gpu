@@ -1,7 +1,6 @@
 #pragma once
 
 #include <pd/constraint.h>
-#include <pd/types.h>
 
 #include <Eigen/Geometry>
 
@@ -15,7 +14,7 @@ namespace pd
 		/**
 		 * The neighbor_vertices param must be given in sequential coutner-clockwise order.
 		*/
-		BendingConstraint(SimScalar wc, int center_vertex, const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& q, bool discard_quadratic_term=false);
+		BendingConstraint(SimScalar wc, VertexIndexType center_vertex, const std::vector<VertexIndexType>& neighbor_vertices, const PositionData& q, bool discard_quadratic_term=false);
 
 		BendingConstraint(const BendingConstraint& rhs);
 		BendingConstraint(BendingConstraint&& rhs) noexcept;
