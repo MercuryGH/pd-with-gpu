@@ -255,12 +255,12 @@ namespace instancing {
         for (int i = 2; i < usub * (vsub + 1) - vsub + 2; i += vsub + 1)
         {
             toggle_vertices.insert(i);
-            std::cout << i << ", ";
+            // std::cout << i << ", ";
         }
         for (int i = vsub; i < usub * (vsub + 1); i += vsub + 1)
         {
             toggle_vertices.insert(i);
-            std::cout << i << ", ";
+            // std::cout << i << ", ";
         }
         model.toggle_vertices_fixed(toggle_vertices, 10);
 
@@ -272,7 +272,29 @@ namespace instancing {
         constexpr int w = 3;
         constexpr int h = 3;
         constexpr int d = 12;
-        auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
+        // auto [V, T, boundary_facets] = meshgen::generate_bar(w, h, d);
+
+        Eigen::MatrixXd V;
+        Eigen::MatrixXi T;
+        Eigen::MatrixXi boundary_facets;
+		igl::readMESH("/home/xinghai/codes/pd-with-gpu/assets/meshes/bar_tet.mesh", V, T, boundary_facets);
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+
+        // std::cout << "MeshVersionFormatted 1 \nDimension 3\n Vertices\n" << V.rows() << "\n";
+        // for (int i = 0; i < V.rows(); i++) {
+        //     std::cout << V.row(i) << " 1 " << "\n";
+        // }
+        // std::cout << "Triangles\n";
+        // std::cout << boundary_facets.rows() << "\n";
+        // for (int i = 0; i < boundary_facets.rows(); i++) {
+        //     std::cout << boundary_facets.row(i) + Eigen::RowVector3i(1, 1, 1) << " 1 " << "\n";
+        // }
+        // std::cout << "Tetrahedra\n";
+        // std::cout << T.rows() << "\n";
+        // for (int i = 0; i < T.rows(); i++) {
+        //     std::cout << T.row(i) + Eigen::RowVector4i(1, 1, 1, 1) << " 1 " << "\n";
+        // }
+
         int id = obj_manager.add_model(V, T, boundary_facets);
         pd::DeformableMesh& model = obj_manager.models.at(id);
 
@@ -426,7 +448,7 @@ namespace instancing {
         Eigen::MatrixXd V;
         Eigen::MatrixXi T;
         Eigen::MatrixXi F;
-		igl::readMESH("../assets/meshes/bunny_tet.mesh", V, T, F);
+		igl::readMESH("/home/xinghai/codes/pd-with-gpu/assets/meshes/bunny_tet.mesh", V, T, F);
         // use matcap texture
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
         // igl::png::readPNG("../assets/textures/matcap_jade.png", R, G, B, A);
@@ -591,56 +613,103 @@ namespace instancing {
         using D3 = struct {
             double x, y, z;
         };
-        using I3 = struct {
-            int x, y, z;
+        using I1 = struct {
+            int x;
         };
 
+        Eigen::MatrixXd V;
+        Eigen::MatrixXi T;
+        Eigen::MatrixXi F;
+		igl::readMESH("/home/xinghai/codes/pd-with-gpu/assets/meshes/bunny_tet.mesh", V, T, F);
+        // use matcap texture
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+        // igl::png::readPNG("../assets/textures/matcap_jade.png", R, G, B, A);
+
         std::vector<D3> vertices;
-        vertices.push_back(D3{ 0, 0, 0 });
-        vertices.push_back(D3{ 0, 1, 0 });
-        vertices.push_back(D3{ 0, 0, 1 });
-        std::vector<int> indices;
-        indices.push_back( 0 );
-        indices.push_back( 1 );
-        indices.push_back( 2 );
-
-        mesh_io.import_triangle_mesh(114514, vertices, indices);
-
-        std::cout << io::IOData::instance().models.at(114514).positions() << "\n";
-
-        sim_ctrl.add_positional_constraint(114514, 0, 1);
-
-        for (int i = 0; i < 20; i++)
-        {
-            std::cout << "Frame " << i << ": \n";
-            sim_ctrl.physics_tick();
+        for (int i = 0; i < V.rows(); i++) {
+            auto v3 = V.row(i);
+            vertices.emplace_back(v3[0], v3[1], v3[2]);
+            // std::cout << vertices[vertices.size() - 1].x << "\n";
         }
+        // while (1);
+
+        std::vector<I1> indices;
+        for (int i = 0; i < F.rows(); i++) {
+            auto v3 = F.row(i);
+            indices.emplace_back(v3[0]);
+            indices.emplace_back(v3[1]);
+            indices.emplace_back(v3[2]);
+        }
+        std::vector<I1> tets;
+        for (int i = 0; i < T.rows(); i++) {
+            auto v4 = T.row(i);
+            tets.emplace_back(v4[0]);
+            tets.emplace_back(v4[1]);
+            tets.emplace_back(v4[2]);
+            tets.emplace_back(v4[3]);
+        }
+
+        // int id = obj_manager.add_model(V, T, F); // scale the model
+        mesh_io.import_tetrahedron_mesh(114514, vertices, indices, tets);
+
+        return;
+//
+//         std::vector<D3> vertices;
+//         vertices.push_back(D3{ 0, 0, 0 });
+//         vertices.push_back(D3{ 0, 1, 0 });
+//         vertices.push_back(D3{ 0, 0, 1 });
+//         vertices.push_back(D3{ 1, 0, 0 });
+//         std::vector<int> indices;
+//         indices.push_back( 0 );
+//         indices.push_back( 1 );
+//         indices.push_back( 2 );
+//         indices.push_back( 0 );
+//         indices.push_back( 2 );
+//         indices.push_back( 3 );
+//         std::vector<int> tets;
+//         tets.push_back(0);
+//         tets.push_back(1);
+//         tets.push_back(2);
+//         tets.push_back(3);
+//
+//         // mesh_io.import_triangle_mesh(114514, vertices, indices);
+//         mesh_io.import_tetrahedron_mesh(114514, vertices, indices, tets);
+//
+//         std::cout << io::IOData::instance().models.at(114514).positions() << "\n";
+//
+//         sim_ctrl.add_positional_constraint(114514, 0, 1);
+//
+//         for (int i = 0; i < 20; i++)
+//         {
+//             std::cout << "Frame " << i << ": \n";
+//             sim_ctrl.physics_tick();
+//         }
 
         return;
 
-        Eigen::MatrixXd V, UV, N, FTC, FN;
-        Eigen::MatrixXi F;
-
-        // igl::readOBJ("../assets/meshes/spot_triangulated.obj", V, UV, N, F, FTC, FN);
-        igl::readPLY("../assets/meshes/spot.ply", V, F, N, UV);
-
-        int id = obj_manager.add_model(V, F, false); // don't scale the model
-
-        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
-        // igl::png::readPNG("../assets/textures/spot_texture.png", R, G, B, A);
-
-        auto& viewer = obj_manager.viewer;
-
-		int idx = viewer.mesh_index(id);
-        auto& data = viewer.data_list[idx];
-        data.uniform_colors(Eigen::Vector3d(0.3, 0.3, 0.3), Eigen::Vector3d(0.6, 0.6, 0.6), Eigen::Vector3d(0.2, 0.2, 0.2));
-        data.show_lines = false;
-        data.set_uv(UV);
-        data.set_texture(R, G, B, A);
-        data.show_texture = true;
-
-        pd::DeformableMesh& model = obj_manager.models.at(id);
-
-		obj_manager.recalc_total_n_constraints();
+//         Eigen::MatrixXd V, UV, N, FTC, FN;
+//         Eigen::MatrixXi F;
+//
+//         // igl::readOBJ("../assets/meshes/spot_triangulated.obj", V, UV, N, F, FTC, FN);
+//         igl::readPLY("../assets/meshes/spot.ply", V, F, N, UV);
+//
+//         int id = obj_manager.add_model(V, F, false); // don't scale the model
+//
+//         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
+//         // igl::png::readPNG("../assets/textures/spot_texture.png", R, G, B, A);
+//
+//         auto& viewer = obj_manager.viewer;
+//
+// 		int idx = viewer.mesh_index(id);
+//         auto& data = viewer.data_list[idx];
+//         data.uniform_colors(Eigen::Vector3d(0.3, 0.3, 0.3), Eigen::Vector3d(0.6, 0.6, 0.6), Eigen::Vector3d(0.2, 0.2, 0.2));
+//         data.show_lines = false;
+//         data.set_uv(UV);
+//         data.set_texture(R, G, B, A);
+//         data.show_texture = true;
+//
+//         pd::DeformableMesh& model = obj_manager.models.at(id);
+//
+// 		obj_manager.recalc_total_n_constraints();
     }
 }

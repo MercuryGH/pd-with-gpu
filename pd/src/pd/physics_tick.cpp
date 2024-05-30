@@ -1,4 +1,5 @@
 #include <pd/physics_tick.h>
+#include <igl/per_vertex_normals.h>
 
 #include <Eigen/Geometry>
 
@@ -21,10 +22,10 @@ namespace pd {
 
         mesh_io.export_triangle_mesh(114514, v2);
 
-        for (int i = 0; i < v2.size(); i++)
-        {
-            std::cout << v2[i].r << " " << v2[i].g << " " << v2[i].b << "\n";
-        }
+        // for (int i = 0; i < v2.size(); i++)
+        // {
+        //     std::cout << v2[i].r << " " << v2[i].g << " " << v2[i].b << "\n";
+        // }
 	}
 
 	void compute_external_force(
@@ -120,17 +121,25 @@ namespace pd {
 			solver.set_dirty(false);
 		}
 		solver.step(models, f_exts, rigid_colliders, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
-		// solver.test_step(f_exts, solver_params.n_solver_pd_iterations, solver_params.n_itr_solver_iterations);
 
-		if (user_control.headless_mode == true)
-		{
-			debug_tick(models);
-		}
+		// if (user_control.headless_mode == true)
+		// {
+		// 	debug_tick(models);
+		// }
 
 		// reset external force
 		for (auto& [id, f_ext] : f_exts)
 		{
 			f_ext.setZero();
+		}
+
+		// calculate vertex normals
+		for (auto& [id, model] : models)
+		{
+			if (model.is_tet_mesh() == false)
+			{
+				igl::per_vertex_normals(model.positions(), model.faces(), model.vertex_normals());
+			}
 		}
 	}
 }

@@ -32,7 +32,7 @@ namespace meshgen {
 				const float vertex_z = (v - 0.5f) * y;
 
 				const int idx = i * v_n_verts + j;
-	
+
                 V.row(idx) << (double)vertex_x, (double)vertex_y, (double)vertex_z;
 				UV.row(idx) << (double)u, (double)v;
 
@@ -62,7 +62,7 @@ namespace meshgen {
 	{
 		const bool closed_meridian = (urange == 1.0f); // generate circle with closed meridian
 		const int modular = usub * (vsub + 1);
-    
+
 		const int u_n_verts = usub + 1;
 		const int v_n_verts = vsub + 1;
 
@@ -132,11 +132,11 @@ namespace meshgen {
 		return generate_sphere(radius, usub, vsub, 1.0f, 0.5f);
 	}
 
-	Eigen::Vector3f cylinder_coord(float theta, float height) 
+	Eigen::Vector3f cylinder_coord(float theta, float height)
 	{
 		return Eigen::Vector3f(
 			std::sin(theta),
-			height, 
+			height,
 			std::cos(theta)
 		);
 	}
@@ -175,7 +175,7 @@ namespace meshgen {
 				pos.y() = height;
 
 				const int idx = i * v_n_verts + j;
-				V.row(idx) << (double)pos.x(), (double)pos.y(), (double)pos.z(); 
+				V.row(idx) << (double)pos.x(), (double)pos.y(), (double)pos.z();
 
 				const int offset_idx = vertex_n_offset + idx;
 				if (i < usub && j < cir_vsub)
@@ -289,12 +289,12 @@ namespace meshgen {
 		return { V, F };
 	}
 
-	Eigen::Vector3f cone_coord(float theta, float y, float height) 
+	Eigen::Vector3f cone_coord(float theta, float y, float height)
 	{
 		float scale = 1.0 - y / height;
 		return Eigen::Vector3f(
 			std::sin(theta) * scale,
-			y, 
+			y,
 			std::cos(theta) * scale
 		);
 	}
@@ -416,7 +416,7 @@ namespace meshgen {
 			for (int j = 0; j < v_n_verts; j++, v += dv)
 			{
 				const float phi = v * 2 * M_PI;
-				
+
 				Eigen::Vector3f pos = torus_coord(theta, phi, main_radius, ring_radius);
 				Eigen::Vector3f center = torus_coord(theta, phi, main_radius, 0);
 
@@ -460,7 +460,7 @@ namespace meshgen {
 		const int z_n_vertex = depth + 1;
 
 		// x, y, z <-> width, height, depth
-		const auto base3_vertex_id = [x_n_vertex, y_n_vertex, z_n_vertex](int i, int j, int k) 
+		const auto base3_vertex_id = [x_n_vertex, y_n_vertex, z_n_vertex](int i, int j, int k)
 		{
 			return i * y_n_vertex * z_n_vertex + j * z_n_vertex + k;
 		};
@@ -522,7 +522,7 @@ namespace meshgen {
 						T.row(cur_row + 1) = Eigen::RowVector4i(v6, v1, v3, v2);
 						T.row(cur_row + 2) = Eigen::RowVector4i(v4, v1, v6, v5);
 						T.row(cur_row + 3) = Eigen::RowVector4i(v6, v3, v4, v7);
-						T.row(cur_row + 4) = Eigen::RowVector4i(v3, v1, v6, v4);	
+						T.row(cur_row + 4) = Eigen::RowVector4i(v3, v1, v6, v4);
 					}
 				}
 			}
@@ -530,11 +530,11 @@ namespace meshgen {
 
 		// extract boundary facets for rendering only.
 		// the simultaion process does not require the facet data
-		Eigen::MatrixXi boundary_facets; 
-    	igl::boundary_facets(T, boundary_facets); 
+		Eigen::MatrixXi boundary_facets;
+    	igl::boundary_facets(T, boundary_facets);
 
 		// inverse face based
-		T = T.rowwise().reverse().eval(); 
+		T = T.rowwise().reverse().eval();
     	boundary_facets = boundary_facets.rowwise().reverse().eval();
 
 		return { V, T, boundary_facets };

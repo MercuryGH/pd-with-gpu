@@ -5,7 +5,7 @@
 #include <Eigen/SVD>
 #include <Eigen/Geometry>
 
-#include <util/svd3_cuda.h>
+#include <pd/svd3_cuda.h>
 
 namespace pd
 {
@@ -152,18 +152,18 @@ namespace pd
 	__device__ void TetStrainConstraint::gpu_svd3(const SimMatrix3& mat, SimMatrix3& U, SimVector3& sigma, SimMatrix3& V)
 	{
 		// Note: This svd method takes all as float but not double
-		// util::svd(
-		// 	mat(0, 0), mat(0, 1), mat(0, 2),
-		// 	mat(1, 0), mat(1, 1), mat(1, 2),
-		// 	mat(2, 0), mat(2, 1), mat(2, 2),
-		// 	U(0, 0), U(0, 1), U(0, 2),
-		// 	U(1, 0), U(1, 1), U(1, 2),
-		// 	U(2, 0), U(2, 1), U(2, 2),
-		// 	sigma(0), sigma(1), sigma(2),
-		// 	V(0, 0), V(0, 1), V(0, 2),
-		// 	V(1, 0), V(1, 1), V(1, 2),
-		// 	V(2, 0), V(2, 1), V(2, 2)
-		// );
+		svd(
+			mat(0, 0), mat(0, 1), mat(0, 2),
+			mat(1, 0), mat(1, 1), mat(1, 2),
+			mat(2, 0), mat(2, 1), mat(2, 2),
+			U(0, 0), U(0, 1), U(0, 2),
+			U(1, 0), U(1, 1), U(1, 2),
+			U(2, 0), U(2, 1), U(2, 2),
+			sigma(0), sigma(1), sigma(2),
+			V(0, 0), V(0, 1), V(0, 2),
+			V(1, 0), V(1, 1), V(1, 2),
+			V(2, 0), V(2, 1), V(2, 2)
+		);
 	}
 
 	__host__ __device__ void TetStrainConstraint::project_c_AcTAchpc(SimScalar* __restrict__ b, const SimScalar* __restrict__ q) const
