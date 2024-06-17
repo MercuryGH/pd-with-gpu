@@ -622,6 +622,8 @@ namespace ui {
 			ImGui::SameLine();
 			if (ImGui::Button("Load vertex group"))
 			{
+				printf("Loaded vertex group: %s\n", vertices_to_be_toggled.c_str());
+
 				user_control.toggle_fixed_vertex_idxs = user_control.vertex_idxs_memory;
 				user_control.toggle_vertex_fix = true;
 			}

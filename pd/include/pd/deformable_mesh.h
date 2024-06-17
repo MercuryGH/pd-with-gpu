@@ -12,11 +12,7 @@
 
 #include <primitive/primitive.h>
 
-namespace thrust // forward declaration for thrust::host_vector
-{
-	template<typename, typename>
-	class host_vector;
-}
+
 
 namespace pd
 {
@@ -51,7 +47,7 @@ namespace pd
 		const VelocityData& velocities() const;
 		const FaceData& faces() const;
 		// forward declaration needs a default for the second template parameter
-		const thrust::host_vector<Constraint*, std::allocator<Constraint*>>& get_all_constraints() const;
+		const std::vector<Constraint*, std::allocator<Constraint*>>& get_all_constraints() const;
 		bool is_vertex_fixed(VertexIndexType vi) const;
 		const std::unordered_set<int>& get_fixed_vertices() const;
 		const std::vector<std::vector<VertexIndexType>>& get_adj_list() const;

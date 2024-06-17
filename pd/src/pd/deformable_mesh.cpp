@@ -17,9 +17,6 @@
 
 #include <primitive/primitive.h>
 
-#include <thrust/host_vector.h>
-#include <thrust/universal_vector.h>
-
 namespace pd
 {
 	struct DeformableMesh::pImpl final
@@ -71,7 +68,7 @@ namespace pd
 
 		MassData m;      // Per-vertex mass
 		VelocityData v;  // Per-vertex velocity
-		thrust::host_vector<pd::Constraint*> constraints; // Vector of constraints
+		std::vector<pd::Constraint*> constraints; // Vector of constraints
 
 		std::vector<std::vector<VertexIndexType>> adj_list; // adjancecy list (tri mesh: sorted, tet mesh: not sorted)
 
@@ -168,7 +165,7 @@ namespace pd
 	}
 	const VelocityData& DeformableMesh::velocities() const { return p_impl->v; }
 	const FaceData& DeformableMesh::faces() const { return p_impl->boundary_facets; }
-	const thrust::host_vector<Constraint*>& DeformableMesh::get_all_constraints() const { return p_impl->constraints; }
+	const std::vector<Constraint*>& DeformableMesh::get_all_constraints() const { return p_impl->constraints; }
 	bool DeformableMesh::is_vertex_fixed(VertexIndexType vi) const { return p_impl->fixed_vertices.find(vi) != p_impl->fixed_vertices.end(); };
 	const std::unordered_set<int>& DeformableMesh::get_fixed_vertices() const { return p_impl->fixed_vertices; }
 	const std::vector<std::vector<VertexIndexType>>& DeformableMesh::get_adj_list() const { return p_impl->adj_list; }

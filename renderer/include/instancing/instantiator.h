@@ -33,7 +33,9 @@ namespace instancing {
 
         void instance_ball();
 
-        void instance_obj_model(const std::string& file_path);
+        void instance_tet_obj_model(const std::string& file_path);
+        void instance_tri_obj_model(const std::string& file_path);
+
         void instance_bunny();
 
         void instance_pinned_armadillo();

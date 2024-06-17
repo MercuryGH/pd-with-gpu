@@ -7,14 +7,14 @@
 #include <pd/tet_strain_constraint.h>
 #include <pd/types.h>
 
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-
 namespace pd
 {
 	class GpuLocalSolver
 	{
 	public:
+		GpuLocalSolver();
+		~GpuLocalSolver();
+
 		/**
 		 * @brief Solver free local step GPU memory.
 		 * Call when dirty
@@ -29,7 +29,7 @@ namespace pd
 		 * not implemented anymore
 		 * @warning Currently not use it
 		 */
-		void gpu_object_creation_serial(const thrust::host_vector<pd::Constraint*>& constraints);
+		void gpu_object_creation_serial(const std::vector<pd::Constraint*>& constraints);
 
 		/**
 		 * @brief Enable objects on GPU parallelly
@@ -40,31 +40,16 @@ namespace pd
 		void gpu_local_step_entry(const SimPositions& q_nplus1, SimVectorX& b);
 
 	private:
-		int n_constraints{ 0 };
-		bool is_allocated{ false };
-
-		// constraints
-		thrust::host_vector<pd::Constraint*> cloned_constraints;
-
-		thrust::device_vector<pd::Constraint*> d_cloned_constraints; // use for kernel invoke
-
-		// use to fix vtables
-		thrust::host_vector<const pd::PositionalConstraint*> pcs;
-		thrust::host_vector<const pd::EdgeStrainConstraint*> escs;
-		thrust::host_vector<const pd::BendingConstraint*> bcs;
-		thrust::host_vector<const pd::TetStrainConstraint*> tscs;
-
-		int* d_local_cnt; // GPU counter for objects (use in serial creation only)
-		SimScalar* d_q_nplus1;
-		SimScalar* d_b;
+		struct Impl;
+		Impl* impl;
 	};
 
 	// virtual table handling
 	template<typename T>
-	static void restore_dev_vtable_entry(const thrust::host_vector<T*>& cs);
+	static void restore_dev_vtable_entry(const std::vector<T*>& cs);
 
 	template<typename T>
-	static void restore_host_vtable_entry(const thrust::host_vector<T*>& cs);
+	static void restore_host_vtable_entry(const std::vector<T*>& cs);
 
 	template<typename T>
 	static __host__ __device__ void fix_vtable_pointer(const T* obj);

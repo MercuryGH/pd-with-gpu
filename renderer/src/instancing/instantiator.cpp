@@ -277,7 +277,9 @@ namespace instancing {
         Eigen::MatrixXd V;
         Eigen::MatrixXi T;
         Eigen::MatrixXi boundary_facets;
+
 		igl::readMESH("/home/xinghai/codes/pd-with-gpu/assets/meshes/bar_tet.mesh", V, T, boundary_facets);
+
         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> R, G, B, A;
 
         // std::cout << "MeshVersionFormatted 1 \nDimension 3\n Vertices\n" << V.rows() << "\n";
@@ -342,11 +344,11 @@ namespace instancing {
 
     void Instantiator::instance_ball()
     {
-        // under relaxation = 0.7 for A-Jacobi is OK
-        instance_obj_model("../assets/meshes/sphere.obj");
+        // instance_tet_obj_model("../assets/meshes/sphere.obj");
+        instance_tri_obj_model("/home/xinghai/codes/animation-xinghai-forked/animation-xinghai-forked/ext-test-projective-dynamics/runtime/ext-test-projective-dynamics/model/clothes/tshirt-merged.obj");
     }
 
-    void Instantiator::instance_obj_model(const std::string& file_path)
+    void Instantiator::instance_tet_obj_model(const std::string& file_path)
     {
         Eigen::MatrixXd V;
         Eigen::MatrixXi F;
@@ -363,6 +365,29 @@ namespace instancing {
         model.set_tet_strain_constraints(10000, pd::SimVector3(0.9, 0.9, 0.9), pd::SimVector3(1, 1, 1));
 
         // model.toggle_vertices_fixed({ 61 }, 100);
+
+		obj_manager.recalc_total_n_constraints();
+    }
+
+    void Instantiator::instance_tri_obj_model(const std::string& file_path) {
+        Eigen::MatrixXd V;
+        Eigen::MatrixXi F;
+        igl::read_triangle_mesh(file_path, V, F);
+        int id = obj_manager.add_model(V, F, true);
+
+        pd::DeformableMesh& model = obj_manager.models.at(id);
+
+        // model.set_edge_strain_constraints(100);
+        // model.set_edge_strain_constraints(1000);
+        model.set_edge_strain_constraints(10000);
+
+        // model.set_bending_constraints(5e-4, false); // Self-intersect
+        // model.set_bending_constraints(5e-3, false); // seldom self-intersect
+        model.set_bending_constraints(5e-2, false);
+        // model.set_bending_constraints(5e-1, false); // very rigid
+
+        // add positional constraint
+        // model.toggle_vertices_fixed({ 1969, 1967, 4, 1309, 1311, 5, 1310, 655, 659, 3, 1308, 653, 1307, 2, 1306, 1, 1972, 1305, 0, 654, 656, 1968, 657, 658, 1970, 1971 }, 10);
 
 		obj_manager.recalc_total_n_constraints();
     }
