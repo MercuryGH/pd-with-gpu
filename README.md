@@ -1,6 +1,7 @@
 # Deformable mesh simulator
 
-My graduation thesis project. *An Efficient Deformable Object Simulator Based on GPU and Projective Dynamics*.
+My graduation thesis project. *An Efficient Deformable Object Simulator Based on GPU and Projective Dynamics*. You can check for the [thesis](https://zrephel.fun/2024/05/27/%E5%9F%BA%E4%BA%8EPD%E7%9A%84%E5%BC%B9%E6%80%A7%E4%BD%93%E4%BB%BF%E7%9C%9F%E7%9A%84%E5%B9%B6%E8%A1%8C%E7%AE%97%E6%B3%95/ug_thesis.pdf)
+ here.
 
 ## Build
 
